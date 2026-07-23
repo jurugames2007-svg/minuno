@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#2a1408" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Maxine" />
+    <meta name="description" content="Maxine · Panadería Encantada — rescata a Javiera de las garras de Bigotes el Feo cavando por la cocina encantada." />
+    <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='34' r='22' fill='%23e3c79a'/><circle cx='24' cy='32' r='3' fill='%231a0a04'/><circle cx='40' cy='32' r='3' fill='%231a0a04'/><ellipse cx='32' cy='40' rx='4' ry='3' fill='%231a0a04'/><path d='M10 28 Q4 44 14 50' stroke='%23b8956a' stroke-width='6' fill='none' stroke-linecap='round'/><path d='M54 28 Q60 44 50 50' stroke='%23b8956a' stroke-width='6' fill='none' stroke-linecap='round'/></svg>" />
+    <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%232a1408'/><circle cx='32' cy='34' r='18' fill='%23e3c79a'/><circle cx='26' cy='32' r='2.4' fill='%231a0a04'/><circle cx='38' cy='32' r='2.4' fill='%231a0a04'/><ellipse cx='32' cy='39' rx='3' ry='2.2' fill='%231a0a04'/></svg>" />
+    <link rel="manifest" id="manifest-link" />
+    <title>Maxine · Panadería Encantada</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet" />
+    <style>
+      html, body { margin: 0; height: 100%; background: #140804; overflow: hidden; font-family: "Nunito", system-ui, sans-serif; }
+      #splash {
+        position: fixed; inset: 0; z-index: 9999;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+        background: radial-gradient(120% 90% at 50% 0%, #5a2810 0%, #2a1408 55%, #0a0402 100%);
+        transition: opacity .55s ease;
+      }
+      #splash.hide { opacity: 0; pointer-events: none; }
+      #splash.gone { display: none; }
+      #splash .logo {
+        font-family: "Fredoka", system-ui, sans-serif; font-weight: 700; font-size: 56px; letter-spacing: -1px;
+        color: #fff3d6; text-shadow: 0 4px 0 #7a3410, 0 6px 0 #3a1808, 0 8px 18px rgba(0,0,0,.6);
+        -webkit-text-stroke: 2px #5a2810; animation: sp-pop .8s cubic-bezier(.2,1.4,.4,1) both;
+      }
+      #splash .sub { font-family: "Press Start 2P", monospace; font-size: 9px; color: #ffd27a; letter-spacing: 2px; animation: sp-fade 1.2s ease .3s both; }
+      #splash .status { font-family: "Press Start 2P", monospace; font-size: 8px; color: #ffb347; letter-spacing: 1px; min-height: 12px; }
+      #splash .pup { width: 120px; height: 120px; animation: sp-bob 1.4s ease-in-out infinite; filter: drop-shadow(0 10px 14px rgba(0,0,0,.5)); }
+      #splash .bar { width: 180px; height: 8px; border-radius: 6px; background: #3a2010; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,.5); }
+      #splash .bar > i { display: block; height: 100%; width: 30%; border-radius: 6px; background: linear-gradient(90deg, #ffb347, #ffd27a); animation: sp-load 1.4s ease-in-out infinite; }
+      #splash .flour { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: #fff7e0; opacity: .6; animation: sp-rise linear infinite; }
+      #splash .err { color: #ff8fa0; font-family: "Press Start 2P", monospace; font-size: 8px; max-width: 80%; text-align: center; line-height: 1.6; display: none; }
+      #splash.error .err { display: block; }
+      #splash.error .bar, #splash.error .pup { display: none; }
+      @keyframes sp-pop { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+      @keyframes sp-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes sp-bob { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-8px) rotate(2deg); } }
+      @keyframes sp-load { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }
+      @keyframes sp-rise { 0% { transform: translateY(20px); opacity: 0; } 20% { opacity: .7; } 100% { transform: translateY(-120px); opacity: 0; } }
+    </style>
+  </head>
+  <body>
+    <div id="splash">
+      <div class="logo">MAXINE</div>
+      <svg class="pup" viewBox="0 0 100 100">
+        <ellipse cx="50" cy="72" rx="22" ry="15" fill="#e3c79a" stroke="#6a4420" stroke-width="1.2"/>
+        <path d="M26 34 Q14 44 16 66 Q22 68 28 60 Q32 48 34 38 Z" fill="#b8956a" stroke="#5e3a18" stroke-width="1"/>
+        <path d="M74 34 Q86 44 84 66 Q78 68 72 60 Q68 48 66 38 Z" fill="#b8956a" stroke="#5e3a18" stroke-width="1"/>
+        <path d="M28 38 Q28 20 50 18 Q72 20 72 38 Q74 52 66 58 Q50 62 34 58 Q26 52 28 38 Z" fill="#e3c79a" stroke="#6a4420" stroke-width="1.2"/>
+        <path d="M42 20 q-2 8 -6 12 M48 18 q0 8 -2 14 M54 18 q2 8 4 12" stroke="#8a6a44" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+        <path d="M38 42 Q50 38 62 42 Q64 52 58 58 Q50 62 42 58 Q36 52 38 42 Z" fill="#fff1d0"/>
+        <circle cx="40" cy="42" r="3.6" fill="#2a1408"/><circle cx="60" cy="42" r="3.6" fill="#2a1408"/>
+        <circle cx="41" cy="41" r="1" fill="#fff"/><circle cx="61" cy="41" r="1" fill="#fff"/>
+        <path d="M45 47 Q50 44 55 47 Q56 51 50 53 Q44 51 45 47 Z" fill="#1a0e08"/>
+        <path d="M36 56 Q50 62 64 56 L60 70 L50 74 L40 70 Z" fill="#e23b3b" stroke="#7a1410" stroke-width="1"/>
+      </svg>
+      <div class="sub">PANADERÍA ENCANTADA</div>
+      <div class="bar"><i></i></div>
+      <div class="status" id="sp-status">HORNEANDO…</div>
+      <div class="err" id="sp-err"></div>
+    </div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // --- scatter flour ---
+      (function () {
+        var s = document.getElementById('splash');
+        for (var i = 0; i < 18; i++) {
+          var f = document.createElement('span'); f.className = 'flour';
+          f.style.left = (Math.random() * 100) + '%'; f.style.bottom = '0';
+          f.style.animationDuration = (4 + Math.random() * 4) + 's';
+          f.style.animationDelay = (Math.random() * 3) + 's';
+          s.appendChild(f);
+        }
+      })();
+      // --- splash controller, exposed globally so React or fallback can call it ---
+      (function () {
+        var removed = false;
+        window.hideSplash = function (errMsg) {
+          var s = document.getElementById('splash'); if (!s || removed) return;
+          if (errMsg) { s.classList.add('error'); var e = document.getElementById('sp-err'); if (e) e.textContent = errMsg; var st = document.getElementById('sp-status'); if (st) st.textContent = 'ERROR'; return; }
+          var st = document.getElementById('sp-status'); if (st) st.textContent = 'LISTO ✓';
+          removed = true;
+          setTimeout(function () { s.classList.add('hide'); setTimeout(function () { s.classList.add('gone'); }, 700); }, 220);
+        };
+        // hard fallback: if React never signals ready, still free the screen
+        window.addEventListener('load', function () { setTimeout(function () { if (!removed) window.hideSplash(); }, 1500); });
+        setTimeout(function () { if (!removed) window.hideSplash(); }, 6000);
+        // PWA manifest via blob (works from file:// and singlefile builds)
+        try {
+          var m = { name: "Maxine · Panadería Encantada", short_name: "Maxine", start_url: ".", display: "standalone", orientation: "portrait", background_color: "#140804", theme_color: "#2a1408",
+            icons: [{ src: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%232a1408'/><circle cx='96' cy='102' r='54' fill='%23e3c79a'/><circle cx='78' cy='96' r='7' fill='%231a0a04'/><circle cx='114' cy='96' r='7' fill='%231a0a04'/><ellipse cx='96' cy='117' rx='9' ry='6.5' fill='%231a0a04'/></svg>", sizes: "192x192", type: "image/svg+xml", purpose: "any" }] };
+          var blob = new Blob([JSON.stringify(m)], { type: 'application/manifest+json' });
+          var link = document.getElementById('manifest-link'); if (link) link.href = URL.createObjectURL(blob);
+        } catch (e) { /* ignore */ }
+      })();
+      // capture early module errors so the splash never hangs
+      window.addEventListener('error', function (ev) { try { window.hideSplash && window.hideSplash('Error: ' + (ev.message || ev.error)); } catch (_) {} });
+      window.addEventListener('unhandledrejection', function (ev) { try { window.hideSplash && window.hideSplash('Error: ' + (ev.reason && ev.reason.message || ev.reason)); } catch (_) {} });
+    </script>
+  </body>
+</html>

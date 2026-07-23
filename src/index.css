@@ -1,0 +1,140 @@
+@import "tailwindcss";
+
+:root {
+  --cocoa: #2a1408;
+  --cocoa-2: #3d1d0c;
+  --crust: #6b3410;
+  --amber: #ffb347;
+  --honey: #ffd27a;
+  --cream: #fff3d6;
+  --berry: #e8506b;
+  --leaf: #7fc24a;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: #1a0c04;
+  color: var(--cream);
+  font-family: "Nunito", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+  touch-action: none;
+  user-select: none;
+}
+
+.font-display {
+  font-family: "Fredoka", system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+.font-pixel {
+  font-family: "Press Start 2P", monospace;
+  letter-spacing: 0.02em;
+}
+
+/* ---------- ambient motion ---------- */
+@keyframes wag {
+  0%, 100% { transform: rotate(-18deg); }
+  50% { transform: rotate(22deg); }
+}
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+@keyframes blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+@keyframes float-up {
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  10% { opacity: 0.8; }
+  100% { transform: translateY(-120px) translateX(var(--drift, 10px)); opacity: 0; }
+}
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.06); }
+}
+@keyframes shake {
+  0%,100% { transform: translate(0,0); }
+  20% { transform: translate(-3px, 1px); }
+  40% { transform: translate(3px, -1px); }
+  60% { transform: translate(-2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+}
+@keyframes pop-in {
+  0% { transform: scale(0.4); opacity: 0; }
+  70% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); }
+}
+@keyframes slide-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes steam {
+  0% { transform: translateY(0) scale(1); opacity: 0; }
+  30% { opacity: 0.5; }
+  100% { transform: translateY(-60px) scale(1.8); opacity: 0; }
+}
+@keyframes flicker {
+  0%,100% { opacity: 1; transform: scaleY(1); }
+  45% { opacity: 0.85; transform: scaleY(1.08) translateY(-1px); }
+  70% { opacity: 0.95; transform: scaleY(0.96); }
+}
+@keyframes sheen {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(220%); }
+}
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+@keyframes hop {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.wag { transform-origin: 80% 50%; animation: wag 0.55s ease-in-out infinite; }
+.bob { animation: bob 2.2s ease-in-out infinite; }
+.blink { transform-origin: center; animation: blink 4s ease-in-out infinite; }
+.shake { animation: shake 0.35s linear; }
+.pop { animation: pop-in 0.45s cubic-bezier(.2,1.4,.4,1) both; }
+.slide-up { animation: slide-up 0.5s ease both; }
+.flicker { transform-origin: bottom center; animation: flicker 0.9s ease-in-out infinite; }
+.hop { animation: hop 1.4s ease-in-out infinite; }
+
+.flour {
+  position: absolute;
+  width: 4px; height: 4px; border-radius: 50%;
+  background: radial-gradient(circle, #fff7e0 0%, rgba(255,247,224,0) 70%);
+  animation: float-up linear infinite;
+  pointer-events: none;
+}
+
+.pixelated { image-rendering: pixelated; image-rendering: crisp-edges; }
+
+/* pixel brick wall */
+.brick {
+  background-color: #8a5a3a;
+  background-image:
+    linear-gradient(335deg, rgba(0,0,0,.18) 23px, transparent 23px),
+    linear-gradient(155deg, rgba(0,0,0,.18) 23px, transparent 23px),
+    linear-gradient(335deg, rgba(255,255,255,.06) 23px, transparent 23px),
+    linear-gradient(155deg, rgba(255,255,255,.06) 23px, transparent 23px),
+    linear-gradient(to right, #6f4628 0 2px, transparent 2px 48px),
+    linear-gradient(to bottom, #6f4628 0 2px, transparent 2px 24px);
+  background-size: 48px 24px;
+}
+
+.wood {
+  background:
+    repeating-linear-gradient(90deg, #6b3d1c 0 2px, transparent 2px 26px),
+    linear-gradient(180deg, #8a5128, #5a3216);
+}
+
+.btn-3d {
+  position: relative;
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+.btn-3d:active { transform: translateY(3px); }
+
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { scrollbar-width: none; }
