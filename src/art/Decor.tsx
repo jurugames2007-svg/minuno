@@ -160,6 +160,15 @@ export function PowerIcon({ kind, size = 26 }: { kind: string; size?: number }) 
         <path d="M10 10 q2 -4 4 -2 M22 10 q-2 -4 -4 -2" stroke="#fff" strokeWidth="1.4" fill="none" />
       </svg>
     );
+  if (kind === "boost")
+    return (
+      <svg {...common}>
+        <circle cx="16" cy="18" r="9" fill="#ffd27a" stroke="#a8730a" strokeWidth="1.2" />
+        <path d="M12 14 l4 6 l4 -6" fill="#ff5a2a" stroke="#7a1410" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="16" cy="14" r="1.4" fill="#fff" />
+        <path d="M8 22 q8 3 16 0" fill="none" stroke="#7a4410" strokeWidth="1" />
+      </svg>
+    );
   // magnet
   return (
     <svg {...common}>

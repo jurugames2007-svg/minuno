@@ -37,6 +37,8 @@ export type SkinId =
   // V2 Minecraft
   | "steve"
   | "creeper"
+  // V2 Star Wars
+  | "darth"
   // V2 Disfraces
   | "unicornio"
   | "pirata"
@@ -107,6 +109,7 @@ export const SKINS: Skin[] = [
   // V2 Minecraft
   { id: "steve", name: "Steve Schnauzer", tag: "Minecraft", price: 500, rarity: "Raro", blurb: "Camisa azul, pantalón pardo y pico de hierro en mano." },
   { id: "creeper", name: "Creeper-schnauzer", tag: "Minecraft", price: 580, rarity: "Raro", blurb: "Pelaje verde pixelado y cara de 'sss...' Explosivo." },
+  { id: "darth", name: "Darth Schnauzer", tag: "Star Wars · Sith", price: 850, rarity: "Legendario", blurb: "Casco negro brillante, capa negra y ojos rojos intensos. El lado oscuro de la panadería." },
   // V2 Disfraces
   { id: "unicornio", name: "Schnauzer Unicornio", tag: "Fantasía", price: 620, rarity: "Épico", blurb: "Cuerno arcoíris y melena multicolor brillante." },
   { id: "pirata", name: "Schnauzer Pirata", tag: "Ahoy!", price: 540, rarity: "Raro", blurb: "Parche, pañuelo rojo y garfio crujiente." },

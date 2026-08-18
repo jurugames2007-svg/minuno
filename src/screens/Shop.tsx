@@ -88,8 +88,8 @@ export default function Shop({ skin, owned, crumbs, ownedTools, startTool, onEqu
 
       {/* tabs */}
       <div className="absolute left-2 right-2 z-30 flex gap-1.5" style={{ top: "calc(2% + 34px)" }}>
-        <TabBtn active={tab === "skins"} onClick={() => setTab("skins")} label="PIELES" emoji="👗" />
-        <TabBtn active={tab === "tools"} onClick={() => setTab("tools")} label="HERRAMIENTAS" emoji="🧸" />
+        <TabBtn active={tab === "skins"} onClick={() => setTab("skins")} label="PIELES" emoji="PIE" />
+        <TabBtn active={tab === "tools"} onClick={() => setTab("tools")} label="HERRAMIENTAS" emoji="HER" />
       </div>
 
       {/* counter zone */}
@@ -144,7 +144,7 @@ export default function Shop({ skin, owned, crumbs, ownedTools, startTool, onEqu
               <div className="font-display font-bold text-[#3a2010] text-sm leading-none flex items-center justify-center gap-1">
                 <span>{curTool.name}</span>
               </div>
-              <div className="font-pixel text-[7px] mt-0.5" style={{ color: RANK_COLOR[rank] }}>{rank.toUpperCase()} · ⚡ x{curTool.speedMul.toFixed(2)}</div>
+              <div className="font-pixel text-[7px] mt-0.5" style={{ color: RANK_COLOR[rank] }}>{rank.toUpperCase()} · VEL x{curTool.speedMul.toFixed(2)}</div>
             </>
           )}
         </div>
@@ -158,12 +158,12 @@ export default function Shop({ skin, owned, crumbs, ownedTools, startTool, onEqu
           <div className="space-y-1">
             <p className="font-display text-amber-100/90 text-[12px] leading-snug px-2">{curTool.desc}</p>
             <div className="flex flex-wrap items-center justify-center gap-1">
-              <StatChip label={`⚡ x${curTool.speedMul.toFixed(2)}`} color="#ffd27a" />
+              <StatChip label={`VEL x${curTool.speedMul.toFixed(2)}`} color="#ffd27a" />
               {curTool.wide && <StatChip label="↔ rompe al lado" color="#7fd0ff" />}
               {curTool.reach && <StatChip label="⇒ alcance 2" color="#7fd0ff" />}
               {curTool.slowAura && <StatChip label="🐢 aura lenta" color="#b06bff" />}
               {curTool.bounce && <StatChip label="🛡 1 rebote" color="#7fc24a" />}
-              {curTool.healOnDig && <StatChip label="❤ cura al cavar" color="#ff8fa0" />}
+              {curTool.healOnDig && <StatChip label="COR cura al cavar" color="#ff8fa0" />}
             </div>
           </div>
         )}
@@ -240,7 +240,7 @@ export default function Shop({ skin, owned, crumbs, ownedTools, startTool, onEqu
                   <div className={sel ? "hop" : ""}><Plushie id={t.id} size={56} /></div>
                 </div>
                 <div className="font-pixel text-[7px] text-amber-100 leading-tight text-center truncate w-full">{t.name}</div>
-                <div className="font-pixel text-[6px]" style={{ color: "#ffd27a" }}>⚡x{t.speedMul.toFixed(1)}</div>
+                <div className="font-pixel text-[6px]" style={{ color: "#ffd27a" }}>VELx{t.speedMul.toFixed(1)}</div>
                 {own ? (
                   isStart ? (
                     <div className="font-pixel text-[7px]" style={{ color: "#ffd27a" }}>ARRANQUE</div>
