@@ -502,11 +502,23 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
         const slowAura = t.slowAura && Math.hypot(e.x - (p.x + PW / 2), e.y - (p.y + PH / 2)) < TILE * 2.4 ? 0.35 : 1;
         if (e.type === "spoon") {
           e.x += e.vx * slowAura * dt; if (e.x < e.minX) { e.x = e.minX; e.vx = Math.abs(e.vx); } if (e.x > e.maxX) { e.x = e.maxX; e.vx = -Math.abs(e.vx); }
+          if (e.stateT > 1.7) {
+            e.stateT = 0;
+            const dx = (p.x + PW / 2) - e.x, dy = (p.y + PH / 2) - e.y; const d = Math.hypot(dx, dy) || 1;
+            world.current.bullets.push({ id: ids.current++, x: e.x, y: e.y, vx: (dx / d) * 150, vy: (dy / d) * 150, life: 2.2, kind: "crumb" });
+          }
         } else if (e.type === "mouse") {
           e.x += e.vx * slowAura * dt; if (e.x < e.minX) { e.x = e.minX; e.vx = Math.abs(e.vx); } if (e.x > e.maxX) { e.x = e.maxX; e.vx = -Math.abs(e.vx); }
           e.vy += 700 * dt; e.y += e.vy * dt; if (e.y > e.homeY) { e.y = e.homeY; e.vy = 0; if (Math.random() < 0.01) e.vy = -220; }
+          if (e.stateT > 1.4 && Math.abs(e.x - (p.x + PW / 2)) < 90) {
+            e.stateT = 0; e.vy = -260; e.vx = ((p.x + PW / 2) > e.x ? 1 : -1) * 110;
+          }
         } else if (e.type === "whisk") {
-          if (e.stateT > 0.6) { e.stateT = 0; e.vx = (Math.random() - 0.5) * 120; e.vy = (Math.random() - 0.5) * 120; }
+          if (e.stateT > 1.1) {
+            e.stateT = 0; e.vx = (Math.random() - 0.5) * 120; e.vy = (Math.random() - 0.5) * 120;
+            const dx = (p.x + PW / 2) - e.x, dy = (p.y + PH / 2) - e.y; const d = Math.hypot(dx, dy) || 1;
+            world.current.bullets.push({ id: ids.current++, x: e.x, y: e.y, vx: (dx / d) * 130, vy: (dy / d) * 130, life: 1.8, kind: "dust" });
+          }
           e.x += e.vx * slowAura * dt; e.y += e.vy * slowAura * dt;
           if (e.x < e.minX) { e.x = e.minX; e.vx = Math.abs(e.vx); } if (e.x > e.maxX) { e.x = e.maxX; e.vx = -Math.abs(e.vx); }
           if (e.y < e.homeY - 30) { e.y = e.homeY - 30; e.vy = Math.abs(e.vy); } if (e.y > e.homeY + 30) { e.y = e.homeY + 30; e.vy = -Math.abs(e.vy); }
