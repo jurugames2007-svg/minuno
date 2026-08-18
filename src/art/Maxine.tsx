@@ -144,6 +144,53 @@ export default function Maxine({ skin = "default", pose = "idle", facing = 1, si
         </g>}
         {/* COSTUME: mahoraga hakama + sash */}
         {skin === "mahoraga" && <g><path d="M28 74 L24 92 L40 90 L50 92 L60 90 L76 92 L72 74 Z" fill="#14181c" stroke="#000" strokeWidth="1" /><rect x="28" y="70" width="44" height="6" fill="#8a9498" stroke="#3a4044" strokeWidth="0.8" /><path d="M46 73 q-4 4 -2 8 q4 -2 6 -4 q2 2 6 4 q2 -4 -2 -8 Z" fill="#8a9498" stroke="#3a4044" strokeWidth="0.6" /><path d="M32 78 l0 10 M42 78 l0 12 M58 78 l0 12 M68 78 l0 10" stroke="#3a4044" strokeWidth="0.6" /></g>}
+        {/* COSTUME: gojo — silver uniform */}
+        {skin === "gojo" && <g><path d="M29 66 Q50 55 71 66 L70 84 Q50 91 30 84 Z" fill="#e8f1ff" stroke="#7a8ab0" strokeWidth="1.2"/><path d="M29 66 Q50 60 71 66 L71 68 Q50 63 29 68 Z" fill="#ffffff" opacity="0.8"/><circle cx="38" cy="72" r="1" fill="#7a8ab0"/><circle cx="62" cy="72" r="1" fill="#7a8ab0"/></g>}
+        {/* COSTUME: nobara — brown coat red buttons hammer */}
+        {skin === "nobara" && <g><path d="M28 66 Q50 55 72 66 L71 84 Q50 91 29 84 Z" fill="#6a3a1a" stroke="#3a2010" strokeWidth="1.2"/><path d="M34 70 h6 v6 h-6 Z" fill="#d44a6a" stroke="#5a1020" strokeWidth="0.7"/><path d="M60 70 h6 v6 h-6 Z" fill="#d44a6a" stroke="#5a1020" strokeWidth="0.7"/><rect x="44" y="73" width="12" height="3" fill="#c9a86a"/></g>}
+        {/* COSTUME: megumi — black uniform with dog shadow */}
+        {skin === "megumi" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#1a1a2e" stroke="#0a0a1a" strokeWidth="1.2"/><path d="M44 72 Q50 76 56 72" stroke="#7a8ab0" strokeWidth="0.8" fill="none"/><circle cx="50" cy="76" r="1.5" fill="#7a8ab0"/></g>}
+        {/* COSTUME: sukuna — kimono open with tattoos */}
+        {skin === "sukuna" && <g><path d="M28 66 Q50 55 72 66 L72 84 Q50 91 28 84 Z" fill="#c93030" stroke="#7a1020" strokeWidth="1.2"/><path d="M36 66 L42 84 M58 66 L64 84" stroke="#1a0a0a" strokeWidth="1"/><path d="M44 70 Q50 74 56 70" stroke="#000" strokeWidth="0.8" fill="none"/></g>}
+        {/* COSTUME: draculaura — pink victorian dress */}
+        {skin === "draculaura" && <g><path d="M28 68 Q50 60 72 68 L74 84 Q50 90 26 84 Z" fill="#ff8fb6" stroke="#b02a66" strokeWidth="1.2"/><path d="M28 68 Q50 64 72 68 L71 72 Q50 68 29 72 Z" fill="#1a1a1a" opacity="0.9"/><circle cx="50" cy="76" r="2" fill="#fff"/></g>}
+        {/* COSTUME: frankie — stitched green jacket */}
+        {skin === "frankie" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#7fc24a" stroke="#2a5a10" strokeWidth="1.2"/><path d="M34 68 L34 84 M50 68 L50 84 M66 68 L66 84" stroke="#2a5a10" strokeWidth="0.6" strokeDasharray="2 2"/></g>}
+        {/* COSTUME: schnauzarella — blue ball gown */}
+        {skin === "schnauzarella" && <g><path d="M26 68 Q50 58 74 68 L76 84 Q50 92 24 84 Z" fill="#7fd0ff" stroke="#1a5a8a" strokeWidth="1.2"/><path d="M26 68 Q50 64 74 68 L73 72 Q50 68 27 72 Z" fill="#fff" opacity="0.6"/></g>}
+        {/* COSTUME: ariel — mermaid tail */}
+        {skin === "ariel" && <g><path d="M30 68 Q50 62 70 68 L68 84 Q50 92 32 84 Z" fill="#00b8a9" stroke="#0a5a4a" strokeWidth="1.2"/><path d="M50 84 L46 92 L54 92 Z" fill="#00b8a9" stroke="#0a5a4a" strokeWidth="0.8"/><circle cx="50" cy="74" r="2.5" fill="#ffd27a" stroke="#7a5a0a" strokeWidth="0.6"/></g>}
+        {/* COSTUME: captain — star shield */}
+        {skin === "captain" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#1a3a8a" stroke="#0a1a4a" strokeWidth="1.2"/><circle cx="50" cy="74" r="6" fill="#fff" stroke="#d9342b" strokeWidth="1.2"/><path d="M50 68 l2 4 l4 0 l-3 3 l1 4 l-4 -3 l-4 3 l1 -4 l-3 -3 l4 0 Z" fill="#d9342b"/></g>}
+        {/* COSTUME: bat — black cape */}
+        {skin === "bat" && <g><path d="M22 48 Q14 78 26 92 L50 86 L74 92 Q86 78 78 48 Q66 56 50 56 Q34 56 22 48 Z" fill="#1a1a1a" stroke="#000" strokeWidth="1.2"/><path d="M26 52 Q22 76 30 88 L50 82 L70 88 Q78 76 74 52 Q64 60 50 60 Q36 60 26 52 Z" fill="#3a3a3a" opacity="0.9"/></g>}
+        {/* COSTUME: huggy — already blue fur via palette, add bow tie */}
+        {skin === "huggy" && <g><path d="M40 58 Q50 62 60 58 L60 64 Q50 68 40 64 Z" fill="#ffd27a" stroke="#7a5a2a" strokeWidth="0.8"/><circle cx="50" cy="62" r="1.5" fill="#d9342b"/></g>}
+        {/* COSTUME: catnap — purple collar moon */}
+        {skin === "catnap" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#7a3ab0" stroke="#3a1a5a" strokeWidth="1.2"/><circle cx="50" cy="72" r="3" fill="#ffd27a" stroke="#7a5a2a" strokeWidth="0.6"/><path d="M50 72 Q52 74 50 76 Q48 74 50 72" fill="#7a3ab0"/></g>}
+        {/* COSTUME: eleven — pink dress + waffle */}
+        {skin === "eleven" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#ff8fb6" stroke="#b02a66" strokeWidth="1.2"/><rect x="44" y="72" width="12" height="6" rx="1" fill="#e3c79a" stroke="#7a5a2c" strokeWidth="0.6"/><path d="M46 73 h8 M48 75 h4" stroke="#7a5a2c" strokeWidth="0.6"/></g>}
+        {/* COSTUME: rm — leather jacket */}
+        {skin === "rm" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#1a1a1a" stroke="#000" strokeWidth="1.2"/><path d="M38 66 L38 84 M62 66 L62 84" stroke="#3a3a3a" strokeWidth="1"/><rect x="44" y="71" width="12" height="7" rx="1" fill="#c9a86a" stroke="#7a5a2a" strokeWidth="0.8"/><path d="M50 71 v7" stroke="#7a5a2c" strokeWidth="0.6"/><circle cx="46" cy="74" r="0.6" fill="#fff"/><circle cx="54" cy="74" r="0.6" fill="#fff"/></g>}
+        {/* COSTUME: steve — blue shirt pickaxe */}
+        {skin === "steve" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#3a8ac0" stroke="#1a4a6e" strokeWidth="1.2"/><rect x="48" y="70" width="10" height="3" fill="#7a5a2c"/><rect x="56" y="68" width="3" height="8" fill="#d7d2c4"/></g>}
+        {/* COSTUME: creeper — pixel green */}
+        {skin === "creeper" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#7fc24a" stroke="#2a5a10" strokeWidth="1.2"/><rect x="34" y="70" width="6" height="6" fill="#1a1a1a"/><rect x="60" y="70" width="6" height="6" fill="#1a1a1a"/><rect x="44" y="76" width="12" height="3" fill="#1a1a1a"/></g>}
+        {/* COSTUME: unicornio — rainbow body */}
+        {skin === "unicornio" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#fff" stroke="#d9a6ff" strokeWidth="1.2"/><path d="M30 66 Q50 62 70 66 L70 70 Q50 66 30 70 Z" fill="url(#fur-unicornio)" opacity="0.35"/></g>}
+        {/* COSTUME: pirata — red coat */}
+        {skin === "pirata" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#d9342b" stroke="#7a1410" strokeWidth="1.2"/><circle cx="42" cy="72" r="1.2" fill="#ffd27a"/><circle cx="58" cy="72" r="1.2" fill="#ffd27a"/></g>}
+        {/* COSTUME: astronauta — white suit */}
+        {skin === "astronauta" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#fff" stroke="#7a8aa8" strokeWidth="1.2"/><rect x="44" y="70" width="12" height="6" rx="1" fill="#d8f4ff" stroke="#7a8aa8" strokeWidth="0.6"/><circle cx="50" cy="73" r="1" fill="#ff3030"/></g>}
+        {/* COSTUME: zombie — torn green */}
+        {skin === "zombie" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#7fc24a" stroke="#2a5a10" strokeWidth="1.2"/><path d="M34 70 L36 84 M60 72 L58 84" stroke="#1a1a1a" strokeWidth="1" strokeDasharray="2 2"/></g>}
+        {/* COSTUME: ninja — black suit */}
+        {skin === "ninja" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#1a1a1a" stroke="#000" strokeWidth="1.2"/><path d="M38 70 L38 84 M62 70 L62 84" stroke="#3a3a3a" strokeWidth="1"/></g>}
+        {/* COSTUME: mago — robe stars */}
+        {skin === "mago" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#1a1a5a" stroke="#0a0a3a" strokeWidth="1.2"/><circle cx="40" cy="72" r="1" fill="#ffd27a"/><circle cx="60" cy="74" r="1" fill="#ffd27a"/><path d="M50 70 l1 2 l2 0 l-1 2 l1 2 l-2 -1 l-2 1 l1 -2 l-1 -2 l2 0 Z" fill="#ffd27a"/></g>}
+        {/* COSTUME: payaso — polka dots */}
+        {skin === "payaso" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#fff" stroke="#d7d2c4" strokeWidth="1.2"/><circle cx="38" cy="72" r="2" fill="#ff5fa0"/><circle cx="62" cy="72" r="2" fill="#7fd0ff"/><circle cx="50" cy="76" r="2" fill="#ffd27a"/></g>}
+
         {/* kissy long arms — v2 thicker + fur texture */}
         {isKissy && <g>
           <path d="M30 68 Q12 58 6 72 Q2 82 12 86 Q9 80 15 77 Q11 85 20 83" fill="none" stroke="#ff7fb0" strokeWidth="7.2" strokeLinecap="round" />
