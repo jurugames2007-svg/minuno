@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactElement } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import Maxine, { type Pose } from "../art/Maxine";
 import { Plushie, TOOL_MAP, TOOLS, type ToolId } from "../art/Plushie";
 import { Bread, type BreadType, Heart, Crown, PowerIcon, Flour, zoneOf, ZONE_NAME } from "../art/Decor";
@@ -111,8 +111,12 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
     if (off >= LEVEL_LEN && off < LEVEL_LEN + ARENA_H) {
       const row = new Array(COLS).fill(0) as Cell[]; row[0] = 2; row[COLS - 1] = 2;
       const local = off - LEVEL_LEN;
-      if (local === 3) { row[1] = 2; row[2] = 2; row[COLS - 3] = 2; row[COLS - 2] = 2; }
-      if (local === 6) { row[3] = 2; row[4] = 2; }
+      // suelo de pelea + plataformas para esquivar
+      if (local === ARENA_H - 1) { for (let c = 1; c < COLS - 1; c++) row[c] = 6; }
+      else if (local === 1) { row[1] = 6; row[COLS - 2] = 6; }
+      else if (local === 3) { row[1] = 6; row[2] = 6; row[COLS - 3] = 6; row[COLS - 2] = 6; }
+      else if (local === 5) { row[3] = 6; row[4] = 6; }
+      else if (local === 7) { row[2] = 6; row[COLS - 3] = 6; }
       w.rows[r] = row; w.isBoss[r] = true; return;
     }
     // DOOR
@@ -139,7 +143,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
     if (veinCol.current < 1) veinCol.current = 1; if (veinCol.current > COLS - 2) veinCol.current = COLS - 2;
     const v = veinCol.current; cells[v] = 0; cells[v + 1] = 0;
     // V2: fila de plataforma flotante (torre) — 30% prob cada 3 filas
-    const isPlatformRow = R() < 0.32 && (r % 3 === 0) && off > 3 && off < LEVEL_LEN - 2;
+    const isPlatformRow = R() < 0.48 && (r % 2 === 0) && off > 2 && off < LEVEL_LEN - 2;
     if (isPlatformRow) {
       // Convertir a fila de plataformas: vacía con muros laterales y plataformas flotantes 6
       for(let c=1;c<COLS-1;c++) cells[c]=0;
@@ -658,6 +662,15 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
           {world.current.bullets.filter((b) => b.y > cam - 40 && b.y < cam + STAGE_H + 40).map((b) => <BulletView key={b.id} b={b} />)}
           {particles.current.map((q, i) => (<div key={i} className="absolute rounded-full" style={{ left: q.x, top: q.y, width: q.size, height: q.size, background: q.color, opacity: Math.max(0, q.life / q.max) }} />))}
 
+          {bossActive.current && boss.current && boss.current.telegraph > 0 && boss.current.atkW > 0 && (
+            <div className="absolute pointer-events-none" style={{
+              left: boss.current.atkX, top: boss.current.atkY, width: boss.current.atkW, height: boss.current.atkH,
+              border: "2px dashed #ff3060", background: "rgba(255,48,96,0.22)", borderRadius: 10,
+              boxShadow: "inset 0 0 16px #ff306066, 0 0 12px #ff306044",
+            }}>
+              <div className="absolute left-1/2 -translate-x-1/2 -top-7 font-display font-bold text-[28px] leading-none" style={{ color: "#ffd27a", textShadow: "0 0 10px #ff3030, 0 2px 0 #7a1410" }}>!</div>
+            </div>
+          )}
           {bossActive.current && boss.current && (
             <div className="absolute" style={{ left: boss.current.x - 55, top: boss.current.y - 55, pointerEvents: "none" }}>
               <BossView boss={boss.current} size={110} />
@@ -710,7 +723,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
         <div className="absolute top-[58px] left-1/2 -translate-x-1/2 z-30 pointer-events-none flex items-center gap-1 bg-black/35 rounded-full px-2 py-0.5 border border-amber-300/20"><Plushie id={tool.current} size={14} /><span className="font-display font-semibold text-[11px] text-amber-100">{TOOL_MAP[tool.current].name}</span></div>
         <div className="absolute top-[86px] left-1/2 -translate-x-1/2 z-30 pointer-events-none text-center">
           <div className="font-display text-[11px] text-amber-100/70 bg-black/30 rounded-full px-2 py-0.5">
-            {!p.onGround ? "Salto · puño para atacar" : p.vy > 0 ? "Cayendo… salta para subir" : "Mueve · cava hacia abajo"}
+            {bossActive.current ? "Esquivá la zona roja · pegá cuando esté vulnerable" : !p.onGround ? "Deslizá arriba para saltar" : "Deslizá para moverte · toca para pegar"}
           </div>
         </div>
 
@@ -737,17 +750,14 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
           </div>
         )}
 
-        {/* controls */}
-        <div className="absolute bottom-3 left-3 flex gap-2 z-30">
-          <TouchBtn aria-label="Mover izquierda" label="◀" onDown={() => (input.current.left = true)} onUp={() => (input.current.left = false)} />
-          <TouchBtn aria-label="Mover derecha" label="▶" onDown={() => (input.current.right = true)} onUp={() => (input.current.right = false)} />
-        </div>
-        <div className="absolute bottom-3 right-3 flex flex-col items-end gap-2 z-30">
-          <TouchBtn aria-label="Saltar" label="SALTO" color="jump" onDown={() => (input.current.jumpEdge = true)} onUp={() => {}} />
-          <div className="flex gap-2">
-            <TouchBtn aria-label="Atacar" label="👊" color="attack" onDown={() => (input.current.attackEdge = true)} onUp={() => {}} />
-            <TouchBtn aria-label="Cavar" label="CAVAR" color="dig" big onDown={() => (input.current.digEdge = true)} onUp={() => {}} />
-          </div>
+        <TouchPad
+          onMove={(dir) => { input.current.left = dir < 0; input.current.right = dir > 0; }}
+          onJump={() => { input.current.jumpEdge = true; }}
+          onDig={() => { input.current.digEdge = true; }}
+          onAttack={() => { input.current.attackEdge = true; }}
+        />
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-30 pointer-events-none font-display text-[10px] text-amber-100/55 bg-black/35 px-2 py-0.5 rounded-full">
+          Deslizá ← → · arriba salta · abajo cava · toca pega
         </div>
 
         {paused && !resting && (
@@ -767,13 +777,34 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
   );
 }
 
-function TouchBtn({ label, onDown, onUp, big, color, "aria-label": ariaLabel }: { label: string; onDown: () => void; onUp: () => void; big?: boolean; color?: "jump" | "attack" | "dig"; "aria-label"?: string }) {
-  const palette = color === "jump" ? ["#7fc24a", "#3a7a1a", "#1a3a08"] : color === "attack" ? ["#d96bff", "#7a1aa8", "#3a0858"] : color === "dig" ? ["#ff7a4a", "#d9342b", "#7a1410"] : ["#7a5a3a", "#3a2410", "#1a0c04"];
+function TouchPad({ onMove, onJump, onDig, onAttack }: { onMove: (dir: -1 | 0 | 1) => void; onJump: () => void; onDig: () => void; onAttack: () => void }) {
+  const g = useRef({ x: 0, y: 0, t: 0, jumped: false, dug: false, id: -1 });
+  const end = (e: PointerEvent<HTMLDivElement>) => {
+    if (g.current.id !== e.pointerId && g.current.id !== -1) return;
+    const dx = e.clientX - g.current.x; const dy = e.clientY - g.current.y;
+    const dt = performance.now() - g.current.t;
+    const dist = Math.hypot(dx, dy);
+    if (dist < 18 && dt < 320) onAttack();
+    onMove(0); g.current.id = -1;
+  };
   return (
-    <button onPointerDown={(e) => { e.preventDefault(); onDown(); }} onPointerUp={onUp} onPointerLeave={onUp} onPointerCancel={onUp}
-      className={`btn-3d select-none font-display font-bold text-amber-50 rounded-full border-b-4 active:border-b-0 ${big ? "px-5 py-3 text-base" : "w-14 h-14 text-lg"}`}
-      aria-label={ariaLabel || label}
-      style={{ background: `linear-gradient(180deg,${palette[0]},${palette[1]})`, borderColor: palette[2], boxShadow: "0 4px 10px rgba(0,0,0,.4), inset 0 2px 0 rgba(255,255,255,.25)" }}>{label}</button>
+    <div
+      className="absolute inset-0 z-20"
+      style={{ touchAction: "none" }}
+      onPointerDown={(e) => {
+        if (g.current.id !== -1) return;
+        (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+        g.current = { x: e.clientX, y: e.clientY, t: performance.now(), jumped: false, dug: false, id: e.pointerId };
+      }}
+      onPointerMove={(e) => {
+        if (g.current.id !== e.pointerId) return;
+        const dx = e.clientX - g.current.x; const dy = e.clientY - g.current.y;
+        if (Math.abs(dx) > 16) onMove(dx < 0 ? -1 : 1);
+        if (dy < -36 && !g.current.jumped) { onJump(); g.current.jumped = true; }
+        if (dy > 36 && !g.current.dug) { onDig(); g.current.dug = true; }
+      }}
+      onPointerUp={end} onPointerCancel={end}
+    />
   );
 }
 
@@ -798,27 +829,48 @@ function Tile({ c, r, cell, zone }: { c: number; r: number; cell: Cell; zone: st
   if (cell === 3) return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE }}><svg width={TILE} height={TILE} viewBox="0 0 45 45"><rect x="0" y="34" width="45" height="11" fill={P.wallDk} />{Array.from({ length: 5 }).map((_, i) => <path key={i} d={`M${3 + i * 9} 34 L${7.5 + i * 9} 8 L${12 + i * 9} 34 Z`} fill="#d7d2c4" stroke="#5a5545" strokeWidth="1" />)}</svg></div>);
   if (cell === 4) return <div className="absolute rounded-md" style={{ left: x + 3, top: y + 3, width: TILE - 6, height: TILE - 6, background: "radial-gradient(circle at 40% 30%, #ffe08a99, #c9842a99)", border: "2px solid #7a441066" }} />;
   if (cell === 5) return <div className="absolute rounded-md" style={{ left: x + 2, top: y + 6, width: TILE - 4, height: TILE - 10, background: "linear-gradient(180deg,#5a4010aa,#2a1c08cc)", border: "1px solid #ffe06655" }} />;
-  if (cell === 6) return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: `linear-gradient(180deg, ${P.wall} 0%, ${P.wallDk} 100%)`, boxShadow: `inset 0 -3px 0 rgba(0,0,0,0.25), inset 0 2px 0 rgba(255,255,255,0.2)`, border: `1px solid ${P.wallDk}`, animation: "bob 2.2s ease-in-out infinite" }}><div className="absolute" style={{ left: 4, top: 8, right: 4, height: 2, background: P.wallDk, opacity: 0.5, borderRadius: 1 }} /><div className="absolute" style={{ left: 6, top: 16, width: 6, height: 6, background: "#5a2a0a", borderRadius: 1, opacity: 0.3 }} /><div className="absolute" style={{ left: TILE-12, top: 16, width: 6, height: 6, background: "#5a2a0a", borderRadius: 1, opacity: 0.3 }} /><div className="absolute left-1/2 -translate-x-1/2 top-2 text-[6px] font-pixel text-amber-200/60 uppercase tracking-wide">plataforma</div></div>); // PLATFORM flotante - sólida y saltable
+  if (cell === 6) return (<div className="absolute" style={{ left: x, top: y + 18, width: TILE, height: TILE - 18, background: `linear-gradient(180deg, ${P.wall} 0%, ${P.wallDk} 100%)`, boxShadow: `inset 0 -3px 0 rgba(0,0,0,0.25), inset 0 2px 0 rgba(255,255,255,0.2)`, borderRadius: "8px 8px 3px 3px", border: `1px solid ${P.wallDk}` }}><div className="absolute" style={{ left: 6, top: 6, right: 6, height: 3, background: "#fff3d655", borderRadius: 2 }} /></div>);
   if (cell === 2) return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: P.wall, boxShadow: `inset 0 -4px 0 ${P.wallDk}, inset 0 3px 0 rgba(255,255,255,.18)` }}><div className="absolute inset-0" style={{ backgroundImage: `linear-gradient(to right, ${P.wallDk}66 0 2px, transparent 2px ${TILE / 2}px), linear-gradient(to bottom, ${P.wallDk}66 0 2px, transparent 2px ${TILE / 2}px)`, backgroundSize: `${TILE / 2}px ${TILE / 2}px` }} /></div>);
   return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: P.dirt, boxShadow: `inset 0 -4px 0 ${P.dirtDk}, inset 0 3px 0 rgba(255,255,255,.12)` }}><div className="absolute rounded-sm" style={{ left: 6, top: 8, width: 7, height: 6, background: P.dirtDk, opacity: 0.6 }} /><div className="absolute rounded-sm" style={{ left: 26, top: 20, width: 9, height: 7, background: P.dirtDk, opacity: 0.5 }} />{zone === "horno" && <div className="absolute rounded-full" style={{ left: 30, top: 8, width: 4, height: 4, background: "#ff7a2a", boxShadow: "0 0 6px #ff7a2a", animation: "flicker 1s infinite" }} />}</div>);
 }
 
 function ArenaTile({ c, r }: { c: number; r: number }) {
   const x = c * TILE, y = r * TILE;
-  return <div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: "radial-gradient(circle at 50% 0%, #3a1a3044, #14081488)", boxShadow: "inset 0 0 0 1px #ff306011" }} />;
+  const check = (c + r) % 2 === 0;
+  return <div className="absolute" style={{
+    left: x, top: y, width: TILE, height: TILE,
+    background: check ? "linear-gradient(180deg,#4a2414,#2a140c)" : "linear-gradient(180deg,#3a1c10,#1c0e08)",
+    boxShadow: "inset 0 0 0 1px #ff7a2a18",
+  }} />;
 }
 function Torch({ c, r }: { c: number; r: number }) {
   const x = c * TILE + (c === 0 ? TILE - 8 : 2);
   return (
     <div className="absolute pointer-events-none" style={{ left: x, top: r * TILE + 6, width: 10, height: 20 }}>
-      <rect x="3" y="8" width="4" height="10" fill="#3a2010" />
+      <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-1.5 h-3" style={{ background: "#3a2010" }} />
       <div className="absolute left-1/2 -translate-x-1/2 top-0 w-3 h-4 rounded-full flicker" style={{ background: "radial-gradient(circle,#ffd27a,#ff5a2a 70%,transparent)", filter: "drop-shadow(0 0 8px #ff7a2a)" }} />
     </div>
   );
 }
 function RestTile({ c, r, level }: { c: number; r: number; level: number }) {
-  const x = c * TILE, y = r * TILE; const isMid = c === 3 || c === 4; const isTop = offOf(r) === LEVEL_LEN + ARENA_H + 1;
-  return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: "repeating-conic-gradient(#e8c89a 0% 25%, #d9a86a 0% 50%) 0 0 / 22px 22px", boxShadow: "inset 0 0 0 1px #7a441033" }}>{isTop && isMid && <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"><div className="bg-[#fff3d6] border-2 border-[#7a3410] rounded px-2 py-0.5 font-display font-bold text-[#7a3410] text-[10px] shadow pop whitespace-nowrap">¡NIVEL {level}! · descanso</div></div>}</div>);
+  const x = c * TILE, y = r * TILE;
+  const isBanner = c === 3 && offOf(r) === LEVEL_LEN + ARENA_H + 1;
+  return (
+    <div className="absolute" style={{
+      left: x, top: y, width: TILE, height: TILE,
+      background: "linear-gradient(180deg,#8a5128 0%,#6a3a18 100%)",
+      boxShadow: "inset 0 2px 0 #c9842a55, inset 0 -3px 0 #3a201088",
+    }}>
+      <div className="absolute left-1 right-1 top-3 h-1 rounded-full" style={{ background: "#5a2a1088" }} />
+      {isBanner && (
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10" style={{ width: TILE * 3 }}>
+          <div className="bg-[#fff3d6] border-2 border-[#7a3410] rounded-xl px-3 py-1.5 font-display font-bold text-[#7a3410] text-[12px] shadow-lg whitespace-nowrap text-center">
+            Descanso · nivel {level}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function KitchenBG({ depth }: { depth: number }) {

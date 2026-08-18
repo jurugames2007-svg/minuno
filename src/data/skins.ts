@@ -55,7 +55,23 @@ export type SkinId =
   | "boxer"
   | "laufey"
   | "penguin"
-  | "bigotes";
+  | "bigotes"
+  | "eevee"
+  | "kira"
+  | "spooky"
+  | "matrona"
+  | "subzero"
+  | "barbie"
+  | "bebe"
+  | "abuela"
+  | "sabio"
+  | "freddy"
+  | "foxy"
+  | "bonnie"
+  | "chica"
+  | "hada"
+  | "panadero"
+  | "croissant";
 
 export type SkinRarity = "Común" | "Raro" | "Épico" | "Legendario" | "Feo";
 export type SkinCategory =
@@ -68,6 +84,9 @@ export type SkinCategory =
   | "Star Wars"
   | "Minecraft"
   | "Disfraz"
+  | "FNAF"
+  | "Pokémon"
+  | "Familia"
   | "Feo";
 
 export type SkinUnlock = "shop" | "bigotes";
@@ -141,6 +160,19 @@ export const SKINS: Skin[] = [
   { id: "laufey", name: "Laufey", tag: "Jazz", price: 760, rarity: "Épico", category: "Disfraz", unlock: "shop", blurb: "Flequillo de cortina, vestido vintage y micrófono de oro. Baller de la panadería." },
   { id: "penguin", name: "Pingüino", tag: "Ártico", price: 520, rarity: "Raro", category: "Disfraz", unlock: "shop", blurb: "Esmoquin natural, pico naranja y aletas para deslizarse." },
   { id: "bigotes", name: "Bigotes el Feo", tag: "Solo al derrotarlo", price: 0, rarity: "Feo", category: "Feo", unlock: "bigotes", blurb: "Parche, collar de pinchos y dientes chuecos. Se pone la piel del villano… si sobrevive a él." },
+  { id: "eevee", name: "Eevee", tag: "Pokémon", price: 640, rarity: "Épico", category: "Pokémon", unlock: "shop", blurb: "Melena crema, collar de pelusa y orejitas marrones. Evoluciona… en pancito." },
+  { id: "kira", name: "Kira", tag: "Pastora", price: 580, rarity: "Raro", category: "Familia", unlock: "shop", blurb: "Pastora alemana: silla negra, capa fuego y mirada de guardiana." },
+  { id: "spooky", name: "Spooky", tag: "Gato negro", price: 420, rarity: "Raro", category: "Disfraz", unlock: "shop", blurb: "Gato negro de medianoche, ojos amarillos y cola de bruja." },
+  { id: "matrona", name: "Matrona", tag: "Obstetricia", price: 700, rarity: "Épico", category: "Familia", unlock: "shop", blurb: "Uniforme rojo de matrona chilena, cruz blanca y estetoscopio. A cuidar pancitos." },
+  { id: "subzero", name: "Sub-Zero", tag: "Lin Kuei", price: 860, rarity: "Legendario", category: "Héroes", unlock: "shop", blurb: "Máscara azul, hielo en las patas y klon-clone de harina." },
+  { id: "barbie", name: "Barbie", tag: "Malibú", price: 720, rarity: "Épico", category: "Princesa", unlock: "shop", blurb: "Moño rubio, vestido rosa y estrella. Puedes ser lo que quieras hornear." },
+  { id: "bebe", name: "Maxine Bebé", tag: "Familia", price: 300, rarity: "Común", category: "Familia", unlock: "shop", blurb: "Gorro de lana, chupete y pañal de tela. Todavía no cava, pero lo intenta." },
+  { id: "abuela", name: "Maxine Abuelita", tag: "Familia", price: 480, rarity: "Raro", category: "Familia", unlock: "shop", blurb: "Gafas, chal de lana y canas. Hornea desde 1978." },
+  { id: "sabio", name: "Maxine Sabia", tag: "Familia", price: 900, rarity: "Legendario", category: "Familia", unlock: "shop", blurb: "Barba larga, báculo de baguette y halo de migas. Conoce la receta secreta." },
+  { id: "freddy", name: "Freddy", tag: "FNAF", price: 780, rarity: "Épico", category: "FNAF", unlock: "shop", blurb: "Sombrero de copa, micrófono y corbatín. La pizzería abre a medianoche." },
+  { id: "foxy", name: "Foxy", tag: "FNAF", price: 800, rarity: "Épico", category: "FNAF", unlock: "shop", blurb: "La más tierna del muelle: parche rosa, cola esponjosa y garrito de caramelo." },
+  { id: "bonnie", name: "Bonnie", tag: "FNAF", price: 760, rarity: "Épico", category: "FNAF", unlock: "shop", blurb: "Conejo violeta, guitarra roja y orejas enormes." },
+  { id: "chica", name: "Chica", tag: "FNAF", price: 760, rarity: "Épico", category: "FNAF", unlock: "shop", blurb: "Babero LET'S EAT y cupcake. Pico de pollito, corazón de hojaldre." },
 ];
 
 export const RARITY_COLOR: Record<SkinRarity, string> = {
@@ -153,6 +185,9 @@ export const RARITY_COLOR: Record<SkinRarity, string> = {
 
 export const CATEGORIES: SkinCategory[] = [
   "Clásico",
+  "Familia",
+  "FNAF",
+  "Pokémon",
   "Jujutsu",
   "Monster High",
   "Princesa",

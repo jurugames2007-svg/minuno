@@ -39,10 +39,18 @@ function palette(skin: SkinId): Pal {
   if (skin === "catto") return { main: "#d9c39a", light: "#f0e0b8", dark: "#b8956a", darkR: "#8a6a44", cream: "#fff1d0", creamSh: "#ecd2a0", earIn: "#ff8fa0", outline: "#6a4420", nose: "#ff7a9a" };
   if (skin === "ender") return { main: "#1a1a2e", light: "#2a2a4a", dark: "#0a0a1a", darkR: "#000", cream: "#1a1a2e", creamSh: "#0a0a1a", earIn: "#b06bff", outline: "#000", nose: "#b06bff" };
   if (skin === "unicornio") return { main: "#fff4fb", light: "#ffffff", dark: "#f0c8e8", darkR: "#d9a6ff", cream: "#fff", creamSh: "#ffe0f0", earIn: "#ff8fb6", outline: "#b06bff", nose: "#ff5fa0" };
+  if (skin === "eevee") return { main: "#c4843a", light: "#e8b06a", dark: "#8a5420", darkR: "#5a3410", cream: "#fff3d6", creamSh: "#e8d2a0", earIn: "#f0c090", outline: "#5a3410", nose: "#3a2010" };
+  if (skin === "kira") return { main: "#c9842a", light: "#e8b86a", dark: "#2a1a10", darkR: "#1a1008", cream: "#f4e8d0", creamSh: "#d8c4a0", earIn: "#1a1a1a", outline: "#1a1008", nose: "#1a0e08" };
+  if (skin === "spooky") return { main: "#1a1a1e", light: "#3a3a42", dark: "#0a0a0c", darkR: "#000", cream: "#2a2a30", creamSh: "#141418", earIn: "#ffb347", outline: "#000", nose: "#1a0e08" };
+  if (skin === "freddy") return { main: "#8a4a18", light: "#c9842a", dark: "#5a2a0a", darkR: "#3a1808", cream: "#f0d2a0", creamSh: "#d4b070", earIn: "#5a2a0a", outline: "#2a1408", nose: "#1a0e08" };
+  if (skin === "foxy") return { main: "#d44a2a", light: "#ff8a5a", dark: "#8a2410", darkR: "#5a1408", cream: "#fff1d0", creamSh: "#f0c8a0", earIn: "#ff8fa0", outline: "#5a1408", nose: "#1a0e08" };
+  if (skin === "bonnie") return { main: "#6a4ab0", light: "#9a7ad8", dark: "#3a2870", darkR: "#241850", cream: "#e8d8ff", creamSh: "#c8b0e8", earIn: "#ff8fa0", outline: "#241850", nose: "#1a0e08" };
+  if (skin === "chica") return { main: "#f0c040", light: "#ffe066", dark: "#c99020", darkR: "#8a6010", cream: "#fff8d0", creamSh: "#f0d890", earIn: "#ff8fa0", outline: "#8a6010", nose: "#e07020" };
+  if (skin === "croissant") return { main: "#e8a048", light: "#ffd27a", dark: "#b86a20", darkR: "#7a4410", cream: "#fff3d6", creamSh: "#f0c890", earIn: "#ffb347", outline: "#6a3410", nose: "#8a4418" };
   return BASE;
 }
 
-const BODY_SKINS = new Set<SkinId>(["kissy", "pochacco", "mahoraga", "yarnaby", "huggy", "catnap", "dogday", "craftycorn", "creeper", "zombie", "penguin", "bigotes", "catto", "ender", "unicornio"]);
+const BODY_SKINS = new Set<SkinId>(["kissy", "pochacco", "mahoraga", "yarnaby", "huggy", "catnap", "dogday", "craftycorn", "creeper", "zombie", "penguin", "bigotes", "catto", "ender", "unicornio", "eevee", "kira", "spooky", "freddy", "foxy", "bonnie", "chica", "croissant"]);
 
 export default function Maxine({ skin = "default", pose = "idle", facing = 1, size = 120, className = "", animate = true }: Props) {
   const tailWag = animate && (pose === "idle" || pose === "win" || pose === "dig");
@@ -52,8 +60,8 @@ export default function Maxine({ skin = "default", pose = "idle", facing = 1, si
   const isKissy = skin === "kissy";
   const isHuggy = skin === "huggy";
   const belly = isKissy ? "#ffd0e2" : skin === "penguin" ? "#f7f3ea" : pal.cream;
-  const hideBeard = skin === "mahoraga" || skin === "pochacco" || skin === "penguin" || skin === "creeper" || skin === "spider";
-  const hideTuft = hideBeard || skin === "gojo" || skin === "yuta" || skin === "yuji" || skin === "eleven" || skin === "laufey" || skin === "padme" || skin === "steve" || skin === "alex" || skin === "darth" || skin === "nobara" || skin === "megumi" || skin === "jasmine" || skin === "bella" || skin === "tiana" || skin === "clawdeen" || skin === "cleo" || skin === "ghoulia" || skin === "draculaura";
+  const hideBeard = skin === "mahoraga" || skin === "pochacco" || skin === "penguin" || skin === "creeper" || skin === "spider" || skin === "spooky" || skin === "eevee" || skin === "kira" || skin === "freddy" || skin === "foxy" || skin === "bonnie" || skin === "chica" || skin === "croissant";
+  const hideTuft = hideBeard || skin === "gojo" || skin === "yuta" || skin === "yuji" || skin === "eleven" || skin === "laufey" || skin === "padme" || skin === "steve" || skin === "alex" || skin === "darth" || skin === "nobara" || skin === "megumi" || skin === "jasmine" || skin === "bella" || skin === "tiana" || skin === "clawdeen" || skin === "cleo" || skin === "ghoulia" || skin === "draculaura" || skin === "barbie" || skin === "matrona" || skin === "bebe" || skin === "abuela" || skin === "sabio" || skin === "subzero" || skin === "hada" || skin === "panadero";
 
   const Wiry = ({ cx, cy, n = 6, r = 10, color }: { cx: number; cy: number; n?: number; r?: number; color?: string }) => (
     <g stroke={color || pal.darkR} strokeWidth="0.9" fill="none" strokeLinecap="round" opacity="0.85">
@@ -93,7 +101,7 @@ export default function Maxine({ skin = "default", pose = "idle", facing = 1, si
             </g>
           ) : skin === "pochacco" ? (
             <path d="M70 62 Q80 58 82 66 Q78 70 72 68 Z" fill="#1a1a1a" />
-          ) : skin === "catto" || skin === "catnap" ? (
+          ) : skin === "catto" || skin === "catnap" || skin === "spooky" || skin === "eevee" ? (
             <path d="M68 64 Q86 58 90 40 Q92 34 88 32 Q86 40 82 46 Q84 38 80 36 Q78 48 70 58 Z" fill={pal.main} stroke={pal.outline} strokeWidth="1" />
           ) : skin === "penguin" ? (
             <ellipse cx="76" cy="68" rx="5" ry="8" fill="#1a1a22" stroke="#000" strokeWidth="0.6" transform="rotate(30 76 68)" />
@@ -193,7 +201,7 @@ export default function Maxine({ skin = "default", pose = "idle", facing = 1, si
             </g>
           )}
 
-          {(skin === "catto" || skin === "catnap") && <g stroke="#fff" strokeWidth="0.8" strokeLinecap="round"><path d="M36 48 l-12 -2 M36 50 l-12 1 M36 52 l-12 3 M64 48 l12 -2 M64 50 l12 1 M64 52 l12 3" /></g>}
+          {(skin === "catto" || skin === "catnap" || skin === "spooky") && <g stroke="#fff" strokeWidth="0.8" strokeLinecap="round"><path d="M36 48 l-12 -2 M36 50 l-12 1 M36 52 l-12 3 M64 48 l12 -2 M64 50 l12 1 M64 52 l12 3" /></g>}
 
           {/* eyes */}
           {skin === "mahoraga" ? null : hurt ? (
@@ -551,6 +559,91 @@ function BodyCostume({ skin }: { skin: SkinId }) {
       {Array.from({ length: 7 }).map((_, i) => <path key={i} d={`M${36 + i * 4.6} 62 l1 -5 l1 5 Z`} fill="#d7d2c4" />)}
     </g>;
     case "bow": return <path d="M38 58 Q50 64 62 58 L58 68 L50 70 L42 68 Z" fill="#e23b3b" stroke="#7a1410" strokeWidth="1" />;
+    case "eevee": return <g>
+      <ellipse cx="50" cy="62" rx="12" ry="6" fill="#fff3d6" />
+      <path d="M32 58 Q28 48 36 52 Q34 58 32 60 Z" fill="#fff3d6" />
+      <path d="M68 58 Q72 48 64 52 Q66 58 68 60 Z" fill="#fff3d6" />
+    </g>;
+    case "kira": return <g>
+      <path d="M30 62 Q40 58 50 64 Q60 58 70 62" fill="none" stroke="#1a1a1a" strokeWidth="4" />
+      <path d="M36 56 L32 72 M64 56 L68 72" stroke="#1a1a1a" strokeWidth="3.2" />
+      <ellipse cx="38" cy="66" rx="5" ry="7" fill="#1a1a1a" />
+      <ellipse cx="62" cy="66" rx="5" ry="7" fill="#1a1a1a" />
+    </g>;
+    case "spooky": return <g>
+      <path d="M40 60 Q50 66 60 60" fill="none" stroke="#ffb347" strokeWidth="1.2" />
+      <circle cx="50" cy="68" r="2" fill="#7a1430" />
+    </g>;
+    case "matrona": return <g>
+      <path d="M28 62 Q50 54 72 62 L74 86 Q50 94 26 86 Z" fill="#d41a1a" stroke="#7a0808" strokeWidth="1.2" />
+      <path d="M40 58 Q50 62 60 58 L58 68 Q50 72 42 68 Z" fill="#b01010" />
+      <path d="M48 64 h4 v6 h-4 Z" fill="#fff" />
+      <path d="M46 66 h8" stroke="#fff" strokeWidth="1.6" />
+      <circle cx="50" cy="76" r="3" fill="#d7d2c4" stroke="#2a2a2a" strokeWidth="0.7" />
+    </g>;
+    case "subzero": return <g>
+      <path d="M30 62 Q50 54 70 62 L70 84 Q50 92 30 84 Z" fill="#1a4a8a" stroke="#0a2048" strokeWidth="1.2" />
+      <path d="M30 62 Q50 58 70 62 L68 68 Q50 64 32 68 Z" fill="#7fd0ff" opacity="0.55" />
+      <path d="M36 70 h28" stroke="#7fd0ff" strokeWidth="1.4" />
+      <path d="M28 66 Q16 60 12 74" stroke="#1a4a8a" strokeWidth="5" fill="none" strokeLinecap="round" />
+      <path d="M72 66 Q84 60 88 74" stroke="#1a4a8a" strokeWidth="5" fill="none" strokeLinecap="round" />
+    </g>;
+    case "barbie": return <g>
+      <path d="M26 66 Q50 56 74 66 L78 90 Q50 96 22 90 Z" fill="#ff6bb5" stroke="#b02a66" strokeWidth="1.2" />
+      <path d="M26 66 Q50 60 74 66 L72 72 Q50 66 28 72 Z" fill="#ffd0e8" />
+      <circle cx="50" cy="76" r="2.4" fill="#ffd27a" />
+    </g>;
+    case "bebe": return <g>
+      <path d="M34 70 Q50 66 66 70 L64 84 Q50 88 36 84 Z" fill="#fff3d6" stroke="#e8c8a0" strokeWidth="1" />
+      <path d="M40 78 h20" stroke="#ff8fb6" strokeWidth="2" />
+      <circle cx="50" cy="62" r="3" fill="#ff8fb6" />
+    </g>;
+    case "abuela": return <g>
+      <path d="M28 64 Q50 58 72 64 L74 86 Q50 92 26 86 Z" fill="#7a3a6a" stroke="#3a1830" strokeWidth="1.2" />
+      <path d="M30 72 q20 8 40 0" stroke="#c9a86a" strokeWidth="1.4" fill="none" />
+    </g>;
+    case "sabio": return <g>
+      <path d="M28 64 Q50 56 72 64 L74 88 Q50 94 26 88 Z" fill="#3a2a18" stroke="#1a1008" strokeWidth="1.2" />
+      <path d="M32 70 q18 10 36 0" stroke="#c9a86a" strokeWidth="1.6" fill="none" />
+      <rect x="74" y="48" width="3.2" height="36" rx="1" fill="#d99243" />
+      <circle cx="75.6" cy="46" r="4" fill="#7fc24a" stroke="#2a5a10" strokeWidth="0.6" />
+    </g>;
+    case "freddy": return <g>
+      <path d="M32 62 Q50 58 68 62 L66 78 Q50 84 34 78 Z" fill="#5a2a0a" />
+      <path d="M44 64 L50 74 L56 64 Z" fill="#1a1a1a" />
+      <rect x="46" y="70" width="8" height="3" fill="#c9a86a" />
+    </g>;
+    case "foxy": return <g>
+      <path d="M36 60 Q50 66 64 60 L62 70 Q50 74 38 70 Z" fill="#ff8fa0" />
+      <circle cx="50" cy="66" r="2" fill="#fff" />
+      <path d="M72 70 Q86 64 88 78" stroke="#ffd27a" strokeWidth="3" fill="none" strokeLinecap="round" />
+      <path d="M86 76 q5 2 2 7 q-5 0 -5 -5" fill="#ffd27a" />
+    </g>;
+    case "bonnie": return <g>
+      <path d="M32 64 Q50 58 68 64 L66 80 Q50 86 34 80 Z" fill="#4a2888" />
+      <rect x="70" y="58" width="6" height="18" rx="1" fill="#d9342b" />
+      <path d="M68 56 h10 l-2 6 h-6 Z" fill="#c02828" />
+    </g>;
+    case "chica": return <g>
+      <path d="M32 62 Q50 56 68 62 L70 78 Q50 84 30 78 Z" fill="#fff" stroke="#3a2010" strokeWidth="0.8" />
+      <text x="50" y="74" textAnchor="middle" fontFamily="Fredoka, sans-serif" fontWeight="700" fontSize="5" fill="#d9342b">EAT</text>
+    </g>;
+    case "hada": return <g>
+      <path d="M18 40 Q6 28 16 18 Q28 28 26 44 Z" fill="#d8f4ff" stroke="#7fd0ff" strokeWidth="0.8" opacity="0.85" />
+      <path d="M82 40 Q94 28 84 18 Q72 28 74 44 Z" fill="#ffe0f0" stroke="#ff8fb6" strokeWidth="0.8" opacity="0.85" />
+      <path d="M32 64 Q50 56 68 64 L70 84 Q50 90 30 84 Z" fill="#f4e8ff" stroke="#b06bff" strokeWidth="1" />
+      <path d="M32 64 Q50 60 68 64 L66 70 Q50 66 34 70 Z" fill="#fff" opacity="0.7" />
+    </g>;
+    case "panadero": return <g>
+      <path d="M30 64 Q50 56 70 64 L70 84 Q50 92 30 84 Z" fill="#fff" stroke="#c8c0b0" strokeWidth="1.2" />
+      <path d="M30 76 Q50 82 70 76 L70 86 Q50 92 30 86 Z" fill="#1a3a6a" />
+      <path d="M32 70 h36" stroke="#d9342b" strokeWidth="2" />
+    </g>;
+    case "croissant": return <g>
+      <path d="M28 62 Q50 70 72 62" stroke="#fff3d6" strokeWidth="2.4" fill="none" />
+      <path d="M30 68 Q50 76 70 68" stroke="#ffd27a" strokeWidth="2" fill="none" />
+      <path d="M32 74 Q50 80 68 74" stroke="#c9842a" strokeWidth="1.6" fill="none" />
+    </g>;
     default: return null;
   }
 }
@@ -626,7 +719,7 @@ function Ears({ skin, pal, Wiry }: { skin: SkinId; pal: Pal; Wiry: (p: { cx: num
   if (skin === "yuta" || skin === "yuji" || skin === "megumi") {
     return <><path d="M28 32 Q20 40 26 52 Q34 46 36 36 Z" fill="#2a1a10" /><path d="M72 32 Q80 40 74 52 Q66 46 64 36 Z" fill="#2a1a10" /></>;
   }
-  if (skin === "catto" || skin === "catnap") {
+  if (skin === "catto" || skin === "catnap" || skin === "spooky") {
     return <><path d="M28 32 L22 12 L40 26 Z" fill={pal.main} stroke={pal.outline} strokeWidth="1" /><path d="M30 28 L26 16 L36 25 Z" fill="#ff8fa0" /><path d="M72 32 L78 12 L60 26 Z" fill={pal.main} stroke={pal.outline} strokeWidth="1" /><path d="M70 28 L74 16 L64 25 Z" fill="#ff8fa0" /></>;
   }
   if (skin === "pochacco") {
@@ -634,6 +727,17 @@ function Ears({ skin, pal, Wiry }: { skin: SkinId; pal: Pal; Wiry: (p: { cx: num
   }
   if (skin === "penguin") {
     return <><ellipse cx="30" cy="36" rx="5" ry="8" fill="#1a1a22" /><ellipse cx="70" cy="36" rx="5" ry="8" fill="#1a1a22" /></>;
+  }
+  if (skin === "eevee") {
+    return <><path d="M26 30 L16 8 L40 24 Z" fill="#c4843a" stroke="#5a3410" strokeWidth="0.8" /><path d="M28 26 L20 12 L36 22 Z" fill="#fff3d6" /><path d="M74 30 L84 8 L60 24 Z" fill="#c4843a" stroke="#5a3410" strokeWidth="0.8" /><path d="M72 26 L80 12 L64 22 Z" fill="#fff3d6" /></>;
+  }
+  if (skin === "kira") {
+    return <><path d="M26 32 L18 8 L38 24 Z" fill="#2a1a10" stroke="#1a1008" strokeWidth="0.8" /><path d="M74 32 L82 8 L62 24 Z" fill="#c9842a" stroke="#1a1008" strokeWidth="0.8" /></>;
+  }
+  if (skin === "foxy" || skin === "bonnie") {
+    const c = skin === "foxy" ? "#d44a2a" : "#6a4ab0";
+    const inC = skin === "foxy" ? "#ff8fa0" : "#ff8fa0";
+    return <><path d="M30 28 L22 0 L38 22 Z" fill={c} stroke="#2a1008" strokeWidth="0.7" /><path d="M32 24 L26 6 L36 20 Z" fill={inC} /><path d="M70 28 L78 0 L62 22 Z" fill={c} stroke="#2a1008" strokeWidth="0.7" /><path d="M68 24 L74 6 L64 20 Z" fill={inC} /></>;
   }
   if (skin === "mahoraga" || skin === "darth") return null;
   if (skin === "bigotes") {
@@ -892,6 +996,101 @@ function HeadGear({ skin }: { skin: SkinId }) {
       <path d="M30 16 Q50 2 70 16" fill="#ff8a28" />
       <circle cx="50" cy="50" r="3.2" fill="#d9342b" stroke="#7a1410" strokeWidth="0.6" />
     </g>;
+    case "barbie": return <g>
+      <path d="M22 30 Q16 0 40 10 Q34 22 30 32 Z" fill="#ffe066" />
+      <path d="M78 30 Q84 0 60 10 Q66 22 70 32 Z" fill="#ffe066" />
+      <path d="M28 18 Q50 -4 72 18 Q64 10 50 8 Q36 10 28 18 Z" fill="#ffd27a" />
+      <path d="M40 8 Q50 -2 54 12 Q50 6 44 10 Z" fill="#ffe89a" />
+      <circle cx="50" cy="10" r="2.2" fill="#ff5fa0" />
+    </g>;
+    case "matrona": return <g>
+      <path d="M28 22 Q50 8 72 22 L70 30 Q50 18 30 30 Z" fill="#fff" stroke="#d41a1a" strokeWidth="1.2" />
+      <rect x="42" y="10" width="16" height="12" rx="2" fill="#d41a1a" />
+      <path d="M48 12 h4 v8 h-4 Z" fill="#fff" />
+      <path d="M46 16 h8" stroke="#fff" strokeWidth="2" />
+    </g>;
+    case "subzero": return <g>
+      <path d="M28 26 Q50 12 72 26 L70 48 Q50 54 30 48 Z" fill="#1a4a8a" stroke="#0a2048" strokeWidth="1.2" />
+      <rect x="32" y="34" width="36" height="10" rx="3" fill="#0a2048" />
+      <rect x="34" y="36" width="12" height="6" rx="1.5" fill="#7fd0ff" />
+      <rect x="54" y="36" width="12" height="6" rx="1.5" fill="#7fd0ff" />
+      <path d="M36 46 Q50 50 64 46" stroke="#7fd0ff" strokeWidth="1.2" fill="none" />
+    </g>;
+    case "bebe": return <g>
+      <path d="M30 22 Q50 4 70 22 Q64 14 50 14 Q36 14 30 22 Z" fill="#ffd0e8" stroke="#d980b0" strokeWidth="0.8" />
+      <circle cx="50" cy="8" r="4" fill="#fff" />
+      <circle cx="50" cy="8" r="2" fill="#ff8fb6" />
+      <ellipse cx="50" cy="56" rx="4" ry="3.2" fill="#ff8fa0" stroke="#c44a6a" strokeWidth="0.5" />
+    </g>;
+    case "abuela": return <g>
+      <path d="M26 28 Q28 10 50 8 Q72 10 74 28 Q68 16 50 16 Q32 16 26 28 Z" fill="#e8e4dc" />
+      <path d="M30 22 Q50 12 70 22" fill="#d8d4cc" />
+      <circle cx="40" cy="40" r="6.4" fill="none" stroke="#7fd0ff" strokeWidth="1.4" />
+      <circle cx="60" cy="40" r="6.4" fill="none" stroke="#7fd0ff" strokeWidth="1.4" />
+      <path d="M46 40 h8" stroke="#7fd0ff" strokeWidth="1.2" />
+    </g>;
+    case "sabio": return <g>
+      <path d="M34 52 Q50 78 66 52 Q60 70 50 72 Q40 70 34 52 Z" fill="#f4f1e6" stroke="#c9c2ae" strokeWidth="0.8" />
+      <path d="M38 58 q4 8 0 14 M50 60 q0 12 0 16 M62 58 q-4 8 0 14" stroke="#e8e0d0" strokeWidth="1.4" fill="none" />
+      <ellipse cx="50" cy="16" rx="10" ry="3" fill="#ffd27a" opacity="0.7" />
+    </g>;
+    case "freddy": return <g>
+      <ellipse cx="50" cy="10" rx="10" ry="4" fill="#1a1a1a" />
+      <rect x="46" y="2" width="8" height="8" rx="1" fill="#1a1a1a" />
+      <ellipse cx="50" cy="2" rx="6" ry="2.4" fill="#1a1a1a" />
+      <circle cx="50" cy="10" r="1.4" fill="#c9a86a" />
+      <ellipse cx="32" cy="22" rx="6" ry="5" fill="#5a2a0a" stroke="#2a1408" strokeWidth="0.6" />
+      <ellipse cx="68" cy="22" rx="6" ry="5" fill="#5a2a0a" stroke="#2a1408" strokeWidth="0.6" />
+    </g>;
+    case "foxy": return <g>
+      <circle cx="40" cy="40" r="7" fill="#ff8fb6" stroke="#b02a66" strokeWidth="0.8" />
+      <path d="M36 40 q4 -2 8 0" stroke="#fff" strokeWidth="0.8" fill="none" />
+      <path d="M39 37 l2 2 l3 -4" fill="none" stroke="#fff" strokeWidth="0.7" />
+      <ellipse cx="36" cy="48" rx="3.2" ry="2" fill="#ff8fa0" opacity="0.8" />
+      <ellipse cx="64" cy="48" rx="3.2" ry="2" fill="#ff8fa0" opacity="0.8" />
+      <path d="M72 18 Q80 6 70 8 Q66 16 68 22" fill="#ff8fb6" />
+      <circle cx="72" cy="10" r="2.2" fill="#fff" />
+    </g>;
+    case "bonnie": return <g>
+      <ellipse cx="50" cy="52" rx="4" ry="3" fill="#3a1a5a" />
+      <path d="M44 54 Q50 58 56 54" stroke="#2a1040" strokeWidth="1" fill="none" />
+    </g>;
+    case "chica": return <g>
+      <path d="M42 10 L50 0 L58 10 Z" fill="#d9342b" stroke="#7a1410" strokeWidth="0.6" />
+      <path d="M46 12 L50 4 L54 12 Z" fill="#ff5a4a" />
+      <ellipse cx="50" cy="52" rx="5" ry="3.4" fill="#e07020" stroke="#8a4010" strokeWidth="0.6" />
+    </g>;
+    case "eevee": return <g>
+      <path d="M30 22 Q24 6 42 14 Q36 22 32 26 Z" fill="#fff3d6" />
+      <path d="M70 22 Q76 6 58 14 Q64 22 68 26 Z" fill="#fff3d6" />
+      <path d="M40 16 Q50 6 60 16 Q54 20 50 18 Q46 20 40 16 Z" fill="#fff3d6" />
+    </g>;
+    case "kira": return <g>
+      <path d="M36 20 Q42 8 50 16 Q46 20 40 22 Z" fill="#1a1a1a" />
+      <path d="M32 26 Q28 18 38 22" fill="#2a1a10" />
+    </g>;
+    case "spooky": return <g>
+      <ellipse cx="40" cy="42" rx="5" ry="5.4" fill="#ffd27a" />
+      <ellipse cx="60" cy="42" rx="5" ry="5.4" fill="#ffd27a" />
+      <ellipse cx="40" cy="43" rx="1.1" ry="3.2" fill="#0a0402" />
+      <ellipse cx="60" cy="43" rx="1.1" ry="3.2" fill="#0a0402" />
+      <g stroke="#fff" strokeWidth="0.8" strokeLinecap="round">
+        <path d="M36 48 l-11 -2 M36 50 l-11 1 M36 52 l-11 3 M64 48 l11 -2 M64 50 l11 1 M64 52 l11 3" />
+      </g>
+    </g>;
+    case "hada": return <g>
+      <path d="M34 16 L39 6 L46 16 L50 2 L54 16 L61 6 L66 16 Z" fill="#fff" stroke="#b06bff" strokeWidth="0.7" />
+      <circle cx="50" cy="10" r="1.6" fill="#ffd27a" />
+    </g>;
+    case "panadero": return <g>
+      <ellipse cx="50" cy="18" rx="16" ry="6" fill="#fff" stroke="#c8c0b0" strokeWidth="0.8" />
+      <rect x="36" y="4" width="28" height="16" rx="8" fill="#fff" stroke="#c8c0b0" strokeWidth="0.8" />
+      <path d="M42 54 Q50 58 58 54" stroke="#8a6a44" strokeWidth="1.4" fill="none" />
+    </g>;
+    case "croissant": return <g>
+      <path d="M28 28 Q22 16 36 18 Q32 26 30 30 Z" fill="#ffd27a" />
+      <path d="M72 28 Q78 16 64 18 Q68 26 70 30 Z" fill="#ffd27a" />
+    </g>;
     default: return null;
   }
 }
@@ -926,6 +1125,18 @@ function HeldProps({ skin }: { skin: SkinId }) {
     <g transform="translate(76 68) rotate(12)">
       <rect x="0" y="0" width="2.4" height="18" fill="#e3c79a" />
       <circle cx="1.2" cy="-1" r="2.2" fill="#7fd0ff" />
+    </g>
+  );
+  if (skin === "hada") return (
+    <g transform="translate(76 60) rotate(18)">
+      <rect x="0" y="0" width="2.2" height="16" fill="#ffd27a" />
+      <path d="M1.1 -6 l2 4 l4 0.4 l-3 2.6 l1 4 l-4 -2.2 l-4 2.2 l1 -4 l-3 -2.6 l4 -0.4 Z" fill="#fff" stroke="#b06bff" strokeWidth="0.4" />
+    </g>
+  );
+  if (skin === "freddy") return (
+    <g transform="translate(74 58) rotate(12)">
+      <rect x="0" y="0" width="2.6" height="14" fill="#3a2010" />
+      <ellipse cx="1.3" cy="-3" rx="3.4" ry="3" fill="#1a1a1a" />
     </g>
   );
   return null;

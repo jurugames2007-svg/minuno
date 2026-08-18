@@ -168,10 +168,10 @@ function HelpModal({ onClose }: { onClose: () => void }) {
           Sube la torre de la cocina, cava, salta y rescata a Javiera.
         </p>
         <ul className="mt-3 space-y-1.5 font-display text-[13px] text-amber-100/90">
-          <li><b className="text-amber-200">Mover</b> — flechas o A / D · botones táctiles</li>
-          <li><b className="text-amber-200">Saltar</b> — espacio, W o el botón verde</li>
-          <li><b className="text-amber-200">Cavar</b> — flecha abajo, S o el botón naranja</li>
-          <li><b className="text-amber-200">Pegar</b> — J, X, Shift o el puño</li>
+          <li><b className="text-amber-200">Mover</b> — deslizá a los lados (o A / D)</li>
+          <li><b className="text-amber-200">Saltar</b> — deslizá hacia arriba (o espacio)</li>
+          <li><b className="text-amber-200">Cavar</b> — deslizá hacia abajo (o S)</li>
+          <li><b className="text-amber-200">Pegar</b> — tocá la pantalla (o J)</li>
           <li><b className="text-amber-200">Pausa</b> — P o el botón de arriba</li>
         </ul>
         <p className="font-display text-[13px] text-amber-100/80 mt-3 leading-snug">

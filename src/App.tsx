@@ -49,15 +49,6 @@ export default function App() {
 
   useEffect(() => { const t = setTimeout(hideSplash, 900); return () => clearTimeout(t); }, []);
 
-  useEffect(() => {
-    if (screen !== "menu") return;
-    try {
-      const audio = new Audio("/assets/intro.mp3");
-      audio.volume = 0.25;
-      audio.play().catch(() => {});
-    } catch { /* ignore */ }
-  }, [screen]);
-
   useEffect(() => save("maxine_skin", skin), [skin]);
   useEffect(() => save("maxine_owned", owned), [owned]);
   useEffect(() => save("maxine_crumbs", crumbs), [crumbs]);
