@@ -44,7 +44,20 @@ export type SkinId =
   | "zombie"
   | "ninja"
   | "mago"
-  | "payaso";
+  | "payaso"
+  | "clawdeen"
+  | "cleo"
+  | "ghoulia"
+  | "bella"
+  | "jasmine"
+  | "tiana"
+  | "widow"
+  | "spider"
+  | "wonder"
+  | "dogday"
+  | "craftycorn"
+  | "alex"
+  | "ender";
 
 export interface Skin {
   id: SkinId;
@@ -102,7 +115,21 @@ export const SKINS: Skin[] = [
   { id: "ninja", name: "Schnauzer Ninja", tag: "Sigilo", price: 700, rarity: "Épico", blurb: "Máscara negra, espada y estrellas de masa." },
   { id: "mago", name: "Schnauzer Mago", tag: "Hechicero", price: 680, rarity: "Épico", blurb: "Sombrero puntiagudo, varita y libro de pan-conjuros." },
   { id: "payaso", name: "Schnauzer Payaso", tag: "Circo", price: 460, rarity: "Raro", blurb: "Peluca naranja, nariz roja y sonrisa pintada." },
+  { id: "clawdeen", name: "Clawdeen Wolf", tag: "Monster High", price: 640, rarity: "Épico", blurb: "Peluca morada con mechas, orejas lobo y luna." },
+  { id: "cleo", name: "Cleo de Nile", tag: "Monster High", price: 660, rarity: "Épico", blurb: "Vendajes dorados y tiara faraona." },
+  { id: "ghoulia", name: "Ghoulia Yelps", tag: "Monster High", price: 620, rarity: "Épico", blurb: "Piel pálida azulada, gafas y gorrito cerebro." },
+  { id: "bella", name: "Bella Schnauzer", tag: "Princesa", price: 560, rarity: "Épico", blurb: "Vestido amarillo satinado con rosa encantada." },
+  { id: "jasmine", name: "Jasmine Schnauzer", tag: "Princesa", price: 580, rarity: "Épico", blurb: "Top turquesa y pantalón harem con joya." },
+  { id: "tiana", name: "Tiana Schnauzer", tag: "Princesa", price: 600, rarity: "Épico", blurb: "Vestido verde con corona de lirios." },
+  { id: "widow", name: "Widow Schnauzer", tag: "Super", price: 700, rarity: "Épico", blurb: "Traje negro ajustado con reloj rojo." },
+  { id: "spider", name: "Spider-schnauzer", tag: "Super", price: 720, rarity: "Épico", blurb: "Traje rojo-azul con telaraña en pecho." },
+  { id: "wonder", name: "Wonder Schnauzer", tag: "Super", price: 740, rarity: "Épico", blurb: "Tiara dorada, lazo y brazaletes." },
+  { id: "dogday", name: "DogDay Schnauzer", tag: "Poppy", price: 860, rarity: "Épico", blurb: "Naranja radiante, collar dorado y sonrisa." },
+  { id: "craftycorn", name: "CraftyCorn Schnauzer", tag: "Poppy", price: 880, rarity: "Épico", blurb: "Azul cielo, cuerno unicornio y arcoíris." },
+  { id: "alex", name: "Alex Schnauzer", tag: "Minecraft", price: 520, rarity: "Raro", blurb: "Camisa naranja, pelo naranja y brazalete." },
+  { id: "ender", name: "Ender-schnauzer", tag: "Minecraft", price: 600, rarity: "Raro", blurb: "Negro con ojos violeta y teletransporte." },
 ];
+
 
 export const RARITY_COLOR: Record<Skin["rarity"], string> = {
   "Común": "#cfe8a8",

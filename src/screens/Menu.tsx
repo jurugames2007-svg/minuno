@@ -135,7 +135,7 @@ export default function Menu({ skin, best, crumbs, startTool, ownedTools, storyW
             <span>ARRANQUE: {TOOL_MAP[startTool].name.toUpperCase()}</span>
           </div>
           <div className="absolute left-1/2 -translate-x-1/2 -bottom-7 font-pixel text-[7px] text-amber-200/70">
-            {ownedTools.length}/20 herramientas en tu mochila
+            {ownedTools.length}/30 herramientas en tu mochila
           </div>
           <div className="absolute -right-2 bottom-2">
             <svg width="34" height="40" viewBox="0 0 34 40">

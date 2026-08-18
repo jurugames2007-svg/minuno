@@ -2,8 +2,8 @@ import sharp from "sharp";
 import fs from "fs";
 import path from "path";
 
-const tools = ["palito","sam","calcetin","pulpito","pelota","kissy","javiera","zapatitos","guyu","dixie","rodillo","batidora","sarten","cuchilla","sacabocados","delantal","guantes","gorro","mandil","tabla"];
-const names = {palito:"Palito",sam:"Sam",calcetin:"Calcetín",pulpito:"Pulpito",pelota:"Pelota",kissy:"Kissy",javiera:"Javiera",zapatitos:"Zapatitos",guyu:"Guyu",dixie:"Dixie",rodillo:"Rodillo",batidora:"Batidora",sarten:"Sartén",cuchilla:"Cuchilla",sacabocados:"Sacabocados",delantal:"Delantal",guantes:"Guantes",gorro:"Gorro",mandil:"Mandil",tabla:"Tabla"};
+const tools = ["palito","sam","calcetin","pulpito","pelota","kissy","javiera","zapatitos","guyu","dixie","rodillo","batidora","sarten","cuchilla","sacabocados","delantal","guantes","gorro","mandil","tabla","propeler","cinturon","capa","linterna","iman","bolsa","termometro","escala","botas","zapatos"];
+const names = {palito:"Palito",sam:"Sam",calcetin:"Calcetín",pulpito:"Pulpito",pelota:"Pelota",kissy:"Kissy",javiera:"Javiera",zapatitos:"Zapatitos",guyu:"Guyu",dixie:"Dixie",rodillo:"Rodillo",batidora:"Batidora",sarten:"Sartén",cuchilla:"Cuchilla",sacabocados:"Sacabocados",delantal:"Delantal",guantes:"Guantes",gorro:"Gorro",mandil:"Mandil",tabla:"Tabla",propeler:"Propeler",cinturon:"Cinturón",capa:"Capa",linterna:"Linterna",iman:"Imán",bolsa:"Bolsa",termometro:"Termómetro",escala:"Escala",botas:"Botas",zapatos:"Zapatos"};
 const size=180;
 const cols=5;
 const rows=Math.ceil(tools.length/cols);

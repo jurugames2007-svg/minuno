@@ -16,6 +16,18 @@ function palette(skin: SkinId): Pal {
   if (skin === "gojo") return { main: "#e8f1ff", light: "#ffffff", dark: "#b8c8e8", darkR: "#7a8ab0", cream: "#fff1d0", creamSh: "#e8d2b8", earIn: "#7a8ab0", outline: "#3a4a6a", nose: "#1a0e08" };
   if (skin === "sukuna") return { main: "#e3c79a", light: "#f6e4bf", dark: "#b8956a", darkR: "#8a6a44", cream: "#fff1d0", creamSh: "#ecd2a0", earIn: "#c93030", outline: "#6a4420", nose: "#1a0e08" };
   if (skin === "draculaura") return { main: "#ff8fb6", light: "#ffc0d8", dark: "#d65a88", darkR: "#a83a66", cream: "#ffd0e2", creamSh: "#f0a0c0", earIn: "#ff5fa0", outline: "#b02a66", nose: "#1a0e08" };
+  if (skin === "clawdeen") return { main: "#c9a86a", light: "#e8d2a0", dark: "#8a6a3a", darkR: "#5a3a1a", cream: "#fff1d0", creamSh: "#ecd2a0", earIn: "#8a6a3a", outline: "#5a3a1a", nose: "#1a0e08" };
+  if (skin === "cleo") return { main: "#d9c58a", light: "#f0e2b0", dark: "#b89a4a", darkR: "#7a642a", cream: "#fff8d0", creamSh: "#e8d2a0", earIn: "#7a642a", outline: "#5a4a1a", nose: "#1a0e08" };
+  if (skin === "ghoulia") return { main: "#a8c0d8", light: "#d0e8ff", dark: "#7a8ab0", darkR: "#4a5a80", cream: "#e8f4ff", creamSh: "#c9dcee", earIn: "#7a8ab0", outline: "#3a4a6a", nose: "#1a0e08" };
+  if (skin === "bella") return { main: "#ffd27a", light: "#ffe8a8", dark: "#c9a020", darkR: "#8a6a00", cream: "#fff3d6", creamSh: "#ffe0a0", earIn: "#8a6a00", outline: "#6a4a00", nose: "#1a0e08" };
+  if (skin === "jasmine") return { main: "#7fd0ff", light: "#a8e8ff", dark: "#3a8ac0", darkR: "#1a5a80", cream: "#d8f4ff", creamSh: "#a8d0e8", earIn: "#1a5a80", outline: "#1a3a5a", nose: "#1a0e08" };
+  if (skin === "tiana") return { main: "#7fc24a", light: "#a8e880", dark: "#4a7a1a", darkR: "#2a4a0a", cream: "#e0f4c0", creamSh: "#b8d8a0", earIn: "#4a7a1a", outline: "#2a4a0a", nose: "#1a0e08" };
+  if (skin === "widow") return { main: "#1a1a1a", light: "#3a3a3a", dark: "#000000", darkR: "#000000", cream: "#d7d2c4", creamSh: "#b8b0a0", earIn: "#000", outline: "#000", nose: "#1a0e08" };
+  if (skin === "spider") return { main: "#d9342b", light: "#ff7a6a", dark: "#7a1410", darkR: "#4a0a08", cream: "#d8f4ff", creamSh: "#a8d0e8", earIn: "#7a1410", outline: "#1a3a5a", nose: "#1a0e08" };
+  if (skin === "wonder") return { main: "#d9342b", light: "#ff6a5a", dark: "#7a1410", darkR: "#4a0a08", cream: "#ffd27a", creamSh: "#e8b86a", earIn: "#7a1410", outline: "#6a4420", nose: "#1a0e08" };
+  if (skin === "dogday") return { main: "#ffb347", light: "#ffd27a", dark: "#d98a20", darkR: "#8a4a10", cream: "#fff1d0", creamSh: "#ffd9a0", earIn: "#d98a20", outline: "#6a3410", nose: "#1a0e08" };
+  if (skin === "craftycorn") return { main: "#a8e4ff", light: "#d8f4ff", dark: "#7ab8d8", darkR: "#4a8ab0", cream: "#fff1d0", creamSh: "#ffd9a0", earIn: "#4a8ab0", outline: "#3a6a8a", nose: "#1a0e08" };
+  if (skin === "ender") return { main: "#1a1a2e", light: "#2a2a4a", dark: "#0a0a1a", darkR: "#000", cream: "#b06bff", creamSh: "#7a3ab0", earIn: "#b06bff", outline: "#000", nose: "#b06bff" };
   return BASE; // default, vampire, santa, lime, harness, bow, yuta, princess, jockey, catto, frankie, etc
 }
 
@@ -190,6 +202,19 @@ export default function Maxine({ skin = "default", pose = "idle", facing = 1, si
         {skin === "mago" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#1a1a5a" stroke="#0a0a3a" strokeWidth="1.2"/><circle cx="40" cy="72" r="1" fill="#ffd27a"/><circle cx="60" cy="74" r="1" fill="#ffd27a"/><path d="M50 70 l1 2 l2 0 l-1 2 l1 2 l-2 -1 l-2 1 l1 -2 l-1 -2 l2 0 Z" fill="#ffd27a"/></g>}
         {/* COSTUME: payaso — polka dots */}
         {skin === "payaso" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#fff" stroke="#d7d2c4" strokeWidth="1.2"/><circle cx="38" cy="72" r="2" fill="#ff5fa0"/><circle cx="62" cy="72" r="2" fill="#7fd0ff"/><circle cx="50" cy="76" r="2" fill="#ffd27a"/></g>}
+        {skin === "clawdeen" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#7a3ab0" stroke="#3a1a70" strokeWidth="1.2"/><path d="M30 66 Q50 60 70 66 L70 70 Q50 66 30 70 Z" fill="#000"/><circle cx="50" cy="74" r="3" fill="#ffd27a" stroke="#7a5a0a" strokeWidth="0.6"/><path d="M48 72 l2 2 l2 -2" fill="none" stroke="#7a5a0a" strokeWidth="0.6"/></g>}
+        {skin === "cleo" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#2a8ac0" stroke="#1a5a70" strokeWidth="1.2"/><rect x="36" y="70" width="28" height="3" fill="#ffd27a" stroke="#7a5a0a" strokeWidth="0.6"/><rect x="48" y="70" width="4" height="6" fill="#7a5a0a"/></g>}
+        {skin === "ghoulia" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#a8c0d8" stroke="#4a5a80" strokeWidth="1.2"/><rect x="38" y="70" width="24" height="4" rx="1" fill="#ff5fa0" stroke="#b02a66" strokeWidth="0.6"/><circle cx="50" cy="74" r="1.5" fill="#fff"/></g>}
+        {skin === "bella" && <g><path d="M26 68 Q50 58 74 68 L76 84 Q50 92 24 84 Z" fill="#ffd27a" stroke="#7a5a0a" strokeWidth="1.2"/><path d="M26 68 Q50 64 74 68 L73 72 Q50 68 27 72 Z" fill="#fff" opacity="0.5"/><circle cx="50" cy="74" r="2" fill="#ff5fa0"/></g>}
+        {skin === "jasmine" && <g><path d="M32 66 Q50 55 68 66 L68 76 Q50 62 32 76 Z" fill="#7fd0ff" stroke="#1a5a8a" strokeWidth="1.2"/><path d="M32 76 Q50 84 68 76 L68 84 Q50 91 32 84 Z" fill="#7fd0ff" stroke="#1a5a8a" strokeWidth="1.2"/><circle cx="50" cy="72" r="1.5" fill="#ffd27a" stroke="#7a5a0a" strokeWidth="0.6"/></g>}
+        {skin === "tiana" && <g><path d="M28 68 Q50 60 72 68 L74 84 Q50 92 26 84 Z" fill="#7fc24a" stroke="#2a5a10" strokeWidth="1.2"/><path d="M28 68 Q50 64 72 68 L71 72 Q50 68 29 72 Z" fill="#a8e880" opacity="0.6"/><circle cx="50" cy="74" r="1.8" fill="#fff" opacity="0.8"/></g>}
+        {skin === "widow" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#1a1a1a" stroke="#000" strokeWidth="1.2"/><path d="M44 70 Q50 66 56 70 Q54 74 50 72 Q46 74 44 70 Z" fill="#d9342b"/><circle cx="50" cy="74" r="1" fill="#fff"/></g>}
+        {skin === "spider" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#d9342b" stroke="#7a1410" strokeWidth="1.2"/><path d="M30 66 Q50 60 70 66 L70 68 Q50 64 30 68 Z" fill="#1a3a8a"/><path d="M42 72 Q50 68 58 72" stroke="#fff" strokeWidth="0.8" fill="none"/></g>}
+        {skin === "wonder" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#d9342b" stroke="#7a1410" strokeWidth="1.2"/><path d="M32 70 h36 v3 h-36 Z" fill="#ffd27a"/><circle cx="50" cy="74" r="2" fill="#ffd27a" stroke="#7a5a0a" strokeWidth="0.6"/></g>}
+        {skin === "dogday" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#ffb347" stroke="#7a4a10" strokeWidth="1.2"/><circle cx="50" cy="72" r="3" fill="#ffd27a" stroke="#7a5a0a" strokeWidth="0.6"/><circle cx="50" cy="72" r="1" fill="#fff"/></g>}
+        {skin === "craftycorn" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#a8e4ff" stroke="#4a8ab0" strokeWidth="1.2"/><path d="M50 66 L46 72 L50 76 L54 72 Z" fill="#fff" stroke="#b06bff" strokeWidth="0.7"/><circle cx="50" cy="74" r="1.2" fill="#ffd27a"/></g>}
+        {skin === "alex" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#ff8c3a" stroke="#7a3a10" strokeWidth="1.2"/><rect x="48" y="70" width="8" height="3" fill="#7a5a2c"/></g>}
+        {skin === "ender" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#1a1a2e" stroke="#000" strokeWidth="1.2"/><circle cx="50" cy="74" r="2" fill="#b06bff" stroke="#7a3ab0" strokeWidth="0.6"/><circle cx="50" cy="74" r="0.7" fill="#fff"/></g>}
 
         {/* kissy long arms — v2 thicker + fur texture */}
         {isKissy && <g>
@@ -358,6 +383,19 @@ export default function Maxine({ skin = "default", pose = "idle", facing = 1, si
           {skin === "pirata" && <g><path d="M30 26 Q50 12 70 26 L68 30 Q50 18 32 30 Z" fill="#d9342b" stroke="#7a1410" strokeWidth="1"/><circle cx="42" cy="38" r="5" fill="#1a1a1a"/><path d="M42 38 l6 6" stroke="#fff" strokeWidth="0.8"/></g>}
           {skin === "astronauta" && <g><circle cx="50" cy="32" r="16" fill="none" stroke="#fff" strokeWidth="2"/><circle cx="50" cy="32" r="14" fill="#d8f4ff" opacity="0.25"/><rect x="44" y="12" width="12" height="4" rx="1" fill="#fff" stroke="#7a8aa8" strokeWidth="0.6"/></g>}
           {skin === "ninja" && <g><rect x="30" y="28" width="40" height="10" rx="2" fill="#1a1a1a" /><ellipse cx="40" cy="33" rx="1.5" ry="1" fill="#ff3030"/><ellipse cx="60" cy="33" rx="1.5" ry="1" fill="#ff3030"/></g>}
+          {skin === "clawdeen" && <g><path d="M28 30 Q30 18 36 20 Q34 26 30 32 Z" fill="#5a3a1a"/><path d="M72 30 Q70 18 64 20 Q66 26 70 32 Z" fill="#5a3a1a"/><circle cx="36" cy="26" r="1" fill="#ffd27a"/><circle cx="64" cy="26" r="1" fill="#ffd27a"/></g>}
+          {skin === "cleo" && <g><path d="M34 18 Q50 8 66 18 Q60 12 50 14 Q40 12 34 18 Z" fill="#ffd27a" stroke="#7a5a0a" strokeWidth="0.8"/><circle cx="50" cy="14" r="1.5" fill="#7fd0ff" stroke="#1a5a8a" strokeWidth="0.6"/></g>}
+          {skin === "ghoulia" && <g><rect x="32" y="28" width="36" height="4" rx="1" fill="#ff5fa0" stroke="#b02a66" strokeWidth="0.6"/><circle cx="38" cy="30" r="1" fill="#fff"/><circle cx="62" cy="30" r="1" fill="#fff"/></g>}
+          {skin === "bella" && <g><circle cx="50" cy="14" r="2" fill="#ffd27a" stroke="#7a5a0a" strokeWidth="0.6"/><path d="M42 18 Q50 12 58 18" stroke="#7a5a0a" strokeWidth="0.7" fill="none"/></g>}
+          {skin === "jasmine" && <g><circle cx="50" cy="14" r="2.5" fill="#7fd0ff" stroke="#1a5a8a" strokeWidth="0.8"/><path d="M36 20 Q42 16 50 18 Q58 16 64 20" fill="none" stroke="#1a5a8a" strokeWidth="0.7"/></g>}
+          {skin === "tiana" && <g><path d="M36 16 Q50 8 64 16 Q60 12 50 14 Q40 12 36 16 Z" fill="#7fc24a" stroke="#2a5a10" strokeWidth="0.8"/><circle cx="50" cy="12" r="1.2" fill="#fff"/></g>}
+          {skin === "widow" && <g><path d="M30 28 Q36 22 42 24 Q40 30 34 32 Z" fill="#000"/><path d="M70 28 Q64 22 58 24 Q60 30 66 32 Z" fill="#000"/></g>}
+          {skin === "spider" && <g><rect x="32" y="26" width="36" height="8" rx="1" fill="#d9342b" stroke="#7a1410" strokeWidth="0.7"/><path d="M50 26 v8 M44 28 l12 4 M56 28 l-12 4" stroke="#fff" strokeWidth="0.6"/></g>}
+          {skin === "wonder" && <g><path d="M34 18 Q50 8 66 18 Q60 14 50 16 Q40 14 34 18 Z" fill="#ffd27a" stroke="#7a5a0a" strokeWidth="0.8"/><circle cx="50" cy="14" r="1" fill="#d9342b"/></g>}
+          {skin === "dogday" && <g><circle cx="50" cy="16" r="3" fill="#ffb347" stroke="#7a4a10" strokeWidth="0.8"/><circle cx="50" cy="16" r="1" fill="#fff"/></g>}
+          {skin === "craftycorn" && <g><path d="M50 8 L47 18 L53 18 Z" fill="#fff" stroke="#b06bff" strokeWidth="0.8"/><circle cx="50" cy="16" r="1.5" fill="#ffd27a"/></g>}
+          {skin === "alex" && <g><path d="M36 20 Q40 12 50 14 Q60 12 64 20 Q60 16 50 18 Q40 16 36 20 Z" fill="#ff8c3a"/><rect x="48" y="14" width="4" height="2" fill="#fff"/></g>}
+          {skin === "ender" && <g><ellipse cx="40" cy="42" rx="2" ry="1.5" fill="#b06bff"/><ellipse cx="60" cy="42" rx="2" ry="1.5" fill="#b06bff"/><circle cx="40" cy="42" r="0.7" fill="#fff"/><circle cx="60" cy="42" r="0.7" fill="#fff"/></g>}
         </g>
       </g>
       </g>

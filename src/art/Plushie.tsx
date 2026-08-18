@@ -1,4 +1,4 @@
-export type ToolId = "palito" | "sam" | "calcetin" | "pulpito" | "pelota" | "kissy" | "javiera" | "zapatitos" | "guyu" | "dixie" | "rodillo" | "batidora" | "sarten" | "cuchilla" | "sacabocados" | "delantal" | "guantes" | "gorro" | "mandil" | "tabla";
+export type ToolId = "palito" | "sam" | "calcetin" | "pulpito" | "pelota" | "kissy" | "javiera" | "zapatitos" | "guyu" | "dixie" | "rodillo" | "batidora" | "sarten" | "cuchilla" | "sacabocados" | "delantal" | "guantes" | "gorro" | "mandil" | "tabla" | "propeler" | "cinturon" | "capa" | "linterna" | "iman" | "bolsa" | "termometro" | "escala" | "botas" | "zapatos";
 
 export interface ToolDef {
   id: ToolId;
@@ -56,6 +56,16 @@ export const TOOLS: ToolDef[] = [
   { id: "gorro",     name: "Gorro Chef",    tag: "protector",           desc: "Protege de caídas. Bounce.",                                              priceBread: 75,  priceCrowns: 0, metaPrice: 6, speedMul: 1.1, bounce: true, color: "#fff" },
   { id: "mandil",    name: "Mandil",        tag: "anti-manchas",        desc: "Cura al quedarse quieto. HealOnDig.",                                     priceBread: 90,  priceCrowns: 0, metaPrice: 8, speedMul: 1.2, healOnDig: true, color: "#d7d2c4" },
   { id: "tabla",     name: "Tabla Flotar",  tag: "levitar",             desc: "Flotar tras salto. Yeast + 10% speed (simulado Wide).",                  priceBread: 95,  priceCrowns: 0, metaPrice: 9, speedMul: 1.25, wide: true, color: "#e8c9a0" },
+  { id: "propeler",  name: "Propeler Masa", tag: "impulso",             desc: "Impulso vertical extra. Bounce + Wide.",                                  priceBread: 90,  priceCrowns: 0, metaPrice: 8, speedMul: 1.3, bounce: true, wide: true, color: "#ff7a2a" },
+  { id: "cinturon",  name: "Cinturón Harina", tag: "seguridad",          desc: "Reduce daño de caída. Bounce.",                                           priceBread: 70,  priceCrowns: 0, metaPrice: 6, speedMul: 1.1, bounce: true, color: "#d7c9a0" },
+  { id: "capa",      name: "Capa Azúcar",   tag: "desliz",              desc: "Deslizamiento aéreo prolongado. SlowAura suave.",                          priceBread: 85,  priceCrowns: 0, metaPrice: 7, speedMul: 1.2, slowAura: true, color: "#fff" },
+  { id: "linterna",  name: "Linterna Miel", tag: "luz · fantasma",      desc: "Ilumina y repele fantasmas. Revela vulnerables.",                          priceBread: 100, priceCrowns: 0, metaPrice: 9, speedMul: 1.2, slowAura: true, color: "#ffd27a" },
+  { id: "iman",      name: "Imán Galletas", tag: "atracción",           desc: "Atrae panes cercanos. Magnet + speed.",                                    priceBread: 95,  priceCrowns: 0, metaPrice: 8, speedMul: 1.25, slowAura: true, color: "#d44a6a" },
+  { id: "bolsa",     name: "Bolsa Harina",  tag: "nube",                desc: "Nube que ciega enemigos. SlowAura amplia.",                               priceBread: 80,  priceCrowns: 0, metaPrice: 7, speedMul: 1.2, slowAura: true, color: "#fff" },
+  { id: "termometro", name: "Termómetro",   tag: "revela",              desc: "Revela tiles débiles. HealOnDig + Wide.",                                 priceBread: 75,  priceCrowns: 0, metaPrice: 6, speedMul: 1.15, wide: true, healOnDig: true, color: "#7fd0ff" },
+  { id: "escala",    name: "Escala Caramelo", tag: "trepar",            desc: "Escala pared temporal. Reach.",                                            priceBread: 85,  priceCrowns: 0, metaPrice: 7, speedMul: 1.2, reach: true, color: "#ff8fb6" },
+  { id: "botas",     name: "Botas Antides.", tag: "antidesliz",          desc: "Previene resbalón en hielo/masa. SpikeImmune.",                           priceBread: 80,  priceCrowns: 0, metaPrice: 6, speedMul: 1.1, spikeImmune: true, color: "#5a3410" },
+  { id: "zapatos",   name: "Zapatos Levadura", tag: "doble salto+",      desc: "Doble salto mejorado con levadura. Bounce + speed.",                       priceBread: 90,  priceCrowns: 0, metaPrice: 8, speedMul: 1.3, bounce: true, color: "#a8e880" },
 
 ];
 
@@ -290,5 +300,25 @@ function renderPlush(id: ToolId) {
       return (<g><path d="M12 8 Q16 6 20 8 L20 24 Q16 26 12 24 Z" fill="#d7d2c4" stroke="#7a6a5a" strokeWidth="1"/><circle cx="16" cy="12" r="1.2" fill="#ff8fa0"/></g>);
     case "tabla":
       return (<g><rect x="8" y="14" width="16" height="6" rx="3" fill="#e8c9a0" stroke="#7a5a2c" strokeWidth="1"/><path d="M12 17 q4 -2 8 0" stroke="#7a5a2c" strokeWidth="0.6" fill="none"/></g>);
+    case "propeler":
+      return (<g><circle cx="16" cy="14" r="6" fill="#ff7a2a" stroke="#7a1410" strokeWidth="1"/><path d="M16 8 v12 M10 14 h12" stroke="#fff" strokeWidth="1.2"/><circle cx="16" cy="14" r="2" fill="#fff"/></g>);
+    case "cinturon":
+      return (<g><rect x="6" y="14" width="20" height="6" rx="2" fill="#d7c9a0" stroke="#7a5a2c" strokeWidth="1"/><rect x="12" y="12" width="8" height="10" rx="1" fill="#c9a86a" stroke="#7a5a2c" strokeWidth="0.8"/><circle cx="16" cy="17" r="1" fill="#fff"/></g>);
+    case "capa":
+      return (<g><path d="M8 10 L24 10 L22 24 L10 24 Z" fill="#fff" stroke="#d7d2c4" strokeWidth="1"/><path d="M12 14 q4 -1 8 0" stroke="#d7d2c4" strokeWidth="0.6" fill="none"/></g>);
+    case "linterna":
+      return (<g><rect x="12" y="8" width="8" height="12" rx="2" fill="#ffd27a" stroke="#7a5a0a" strokeWidth="1"/><circle cx="16" cy="22" r="4" fill="#fff" stroke="#7a5a0a" strokeWidth="0.8"/><path d="M16 6 v2" stroke="#7a5a0a" strokeWidth="1.2"/></g>);
+    case "iman":
+      return (<g><path d="M8 10 v8 a8 8 0 0 0 16 0 v-8 h-4 v8 a4 4 0 0 1 -8 0 v-8 Z" fill="#d44a6a" stroke="#7a1020" strokeWidth="1"/><rect x="8" y="8" width="4" height="3" fill="#d7d2c4"/><rect x="20" y="8" width="4" height="3" fill="#d7d2c4"/></g>);
+    case "bolsa":
+      return (<g><path d="M8 14 Q8 10 12 10 H20 Q24 10 24 14 L20 22 H12 Z" fill="#fff" stroke="#7a6a5a" strokeWidth="1"/><path d="M12 10 Q16 6 20 10" stroke="#7a6a5a" strokeWidth="0.8" fill="none"/><circle cx="16" cy="16" r="1" fill="#d7c9a0"/></g>);
+    case "termometro":
+      return (<g><rect x="14" y="6" width="4" height="14" rx="2" fill="#7fd0ff" stroke="#1a5a8a" strokeWidth="1"/><circle cx="16" cy="22" r="4" fill="#ff5a5a" stroke="#7a1410" strokeWidth="0.8"/><rect x="15" y="10" width="2" height="6" fill="#fff"/></g>);
+    case "escala":
+      return (<g><rect x="10" y="8" width="3" height="16" rx="1" fill="#8a5a2c"/><rect x="19" y="8" width="3" height="16" rx="1" fill="#8a5a2c"/><rect x="10" y="12" width="12" height="2" rx="1" fill="#c9a86a"/><rect x="10" y="18" width="12" height="2" rx="1" fill="#c9a86a"/></g>);
+    case "botas":
+      return (<g><path d="M8 18 Q8 12 12 12 H20 Q22 12 22 16 V22 H8 Z" fill="#5a3410" stroke="#1a0c04" strokeWidth="1"/><path d="M8 20 H22 V22 H8 Z" fill="#0a0402"/></g>);
+    case "zapatos":
+      return (<g><path d="M8 16 Q8 12 12 12 H20 Q22 12 22 16 V20 H8 Z" fill="#a8e880" stroke="#2a5a10" strokeWidth="1"/><circle cx="14" cy="15" r="0.7" fill="#fff"/><circle cx="17" cy="15" r="0.7" fill="#fff"/></g>);
   }
 }
