@@ -26,7 +26,12 @@ export default function Shop({ skin, owned, crumbs, ownedTools, startTool, story
   const [previewTool, setPreviewTool] = useState<ToolId>(startTool);
   const [cat, setCat] = useState<SkinCategory | "Todas">("Todas");
 
-  const list = useMemo(() => SKINS.filter((s) => cat === "Todas" || s.category === cat), [cat]);
+  const list = useMemo(() => SKINS.filter((s) => {
+    if (s.unlock === "secret" && !owned.includes(s.id)) return false;
+    if (cat === "Todas") return true;
+    return s.category === cat;
+  }), [cat, owned]);
+  const cats = useMemo(() => CATEGORIES.filter((c) => c !== "Secreto" || owned.some((id) => SKINS.find((s) => s.id === id)?.category === "Secreto")), [owned]);
   const curSkin = SKINS.find((s) => s.id === previewSkin) ?? SKINS[0];
   const curTool = TOOL_MAP[previewTool];
   const rank = toolRank(curTool);
@@ -156,7 +161,7 @@ export default function Shop({ skin, owned, crumbs, ownedTools, startTool, story
         {tab === "skins" && (
           <div className="flex gap-1 overflow-x-auto scrollbar-none px-2 pt-1.5">
             <CatChip label="Todas" active={cat === "Todas"} onClick={() => setCat("Todas")} />
-            {CATEGORIES.map((c) => (
+            {cats.map((c) => (
               <CatChip key={c} label={c} active={cat === c} onClick={() => setCat(c)} ugly={c === "Feo"} />
             ))}
           </div>
@@ -207,7 +212,7 @@ export default function Shop({ skin, owned, crumbs, ownedTools, startTool, story
                 )}
               </button>
             );
-          }) : TOOLS.map((t) => {
+          }) : TOOLS.filter((t) => t.unlock !== "secret" || ownedTools.includes(t.id)).map((t) => {
             const own = ownedTools.includes(t.id);
             const isStart = t.id === startTool;
             const sel = t.id === previewTool;

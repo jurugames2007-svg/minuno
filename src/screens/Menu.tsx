@@ -17,10 +17,11 @@ interface Props {
   onPlay: () => void;
   onShop: () => void;
   onHouse: () => void;
+  onCampo: () => void;
   onStory: () => void;
 }
 
-export default function Menu({ skin, best, crumbs, startTool, ownedTools, storyWon, checkpoint, unlocked, onSelectCheckpoint, onPlay, onShop, onHouse, onStory }: Props) {
+export default function Menu({ skin, best, crumbs, startTool, ownedTools, storyWon, checkpoint, unlocked, onSelectCheckpoint, onPlay, onShop, onHouse, onCampo, onStory }: Props) {
   const [help, setHelp] = useState(false);
 
   return (
@@ -135,13 +136,20 @@ export default function Menu({ skin, best, crumbs, startTool, ownedTools, storyW
             })}
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <button
             onClick={onHouse}
             className="btn-3d font-display font-semibold text-[14px] text-amber-50 py-2.5 rounded-full border-b-4 active:border-b-0"
             style={{ background: "linear-gradient(180deg,#7fc24a,#3a7a1a)", borderColor: "#1a3a08", boxShadow: "0 6px 14px rgba(0,0,0,.35), inset 0 2px 0 rgba(255,255,255,.3)" }}
           >
             Casa
+          </button>
+          <button
+            onClick={onCampo}
+            className="btn-3d font-display font-semibold text-[14px] text-amber-50 py-2.5 rounded-full border-b-4 active:border-b-0"
+            style={{ background: "linear-gradient(180deg,#7ec8ff,#2a7a4a)", borderColor: "#145018", boxShadow: "0 6px 14px rgba(0,0,0,.35), inset 0 2px 0 rgba(255,255,255,.3)" }}
+          >
+            Campo
           </button>
           <button
             onClick={onShop}
@@ -151,7 +159,7 @@ export default function Menu({ skin, best, crumbs, startTool, ownedTools, storyW
             Tienda
           </button>
           <button
-            className="btn-3d font-display font-semibold text-[17px] text-amber-50 py-2.5 rounded-full border-b-4 active:border-b-0"
+            className="btn-3d font-display font-semibold text-[14px] text-amber-50 py-2.5 rounded-full border-b-4 active:border-b-0"
             style={{ background: "linear-gradient(180deg,#7a5a3a,#3a2410)", borderColor: "#1a0c04", boxShadow: "0 6px 14px rgba(0,0,0,.35), inset 0 2px 0 rgba(255,255,255,.15)" }}
             onClick={() => setHelp(true)}
           >
@@ -178,7 +186,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
         <ul className="mt-3 space-y-1.5 font-display text-[13px] text-amber-100/90">
           <li><b className="text-amber-200">Mover</b> — deslizá a los lados (o A / D)</li>
           <li><b className="text-amber-200">Saltar</b> — deslizá hacia arriba (o espacio)</li>
-          <li><b className="text-amber-200">Cavar</b> — botón CAVAR, deslizá abajo o S</li>
+          <li><b className="text-amber-200">Cavar</b> — huella de perrito, deslizá abajo o S</li>
           <li><b className="text-amber-200">Pegar</b> — tocá la pantalla (o J)</li>
           <li><b className="text-amber-200">Pausa</b> — P o el botón de arriba</li>
         </ul>
@@ -187,6 +195,9 @@ function HelpModal({ onClose }: { onClose: () => void }) {
         </p>
         <p className="font-display text-[13px] text-amber-100/80 mt-2 leading-snug">
           El último es <b className="text-[#c07040]">Bigotes el Feo</b>. Si lo derrotas, desbloqueas su piel en la categoría Feo.
+        </p>
+        <p className="font-display text-[13px] text-amber-100/80 mt-2 leading-snug">
+          En el <b className="text-amber-200">Campo</b> hay llantas, cuevas y secretos. Las pieles y herramientas secretas no aparecen en la tienda hasta que las encuentres.
         </p>
         <button onClick={onClose} className="btn-3d mt-4 w-full font-display font-bold text-[16px] text-white py-2.5 rounded-full border-b-4" style={{ background: "linear-gradient(180deg,#ff7a4a,#d9342b)", borderColor: "#7a1410" }}>
           Entendido

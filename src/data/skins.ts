@@ -71,7 +71,10 @@ export type SkinId =
   | "chica"
   | "hada"
   | "panadero"
-  | "croissant";
+  | "croissant"
+  | "lodo"
+  | "exploradora"
+  | "llanta";
 
 export type SkinRarity = "Común" | "Raro" | "Épico" | "Legendario" | "Feo";
 export type SkinCategory =
@@ -87,9 +90,10 @@ export type SkinCategory =
   | "FNAF"
   | "Pokémon"
   | "Familia"
-  | "Feo";
+  | "Feo"
+  | "Secreto";
 
-export type SkinUnlock = "shop" | "bigotes";
+export type SkinUnlock = "shop" | "bigotes" | "secret";
 
 export interface Skin {
   id: SkinId;
@@ -173,6 +177,12 @@ export const SKINS: Skin[] = [
   { id: "foxy", name: "Foxy", tag: "FNAF", price: 800, rarity: "Épico", category: "FNAF", unlock: "shop", blurb: "La más tierna del muelle: parche rosa, cola esponjosa y garrito de caramelo." },
   { id: "bonnie", name: "Bonnie", tag: "FNAF", price: 760, rarity: "Épico", category: "FNAF", unlock: "shop", blurb: "Conejo violeta, guitarra roja y orejas enormes." },
   { id: "chica", name: "Chica", tag: "FNAF", price: 760, rarity: "Épico", category: "FNAF", unlock: "shop", blurb: "Babero LET'S EAT y cupcake. Pico de pollito, corazón de hojaldre." },
+  { id: "hada", name: "Hada del trigal", tag: "Secreta", price: 0, rarity: "Legendario", category: "Secreto", unlock: "secret", blurb: "Alas de harina. Solo aparece si husmeás el claro del campo." },
+  { id: "panadero", name: "Panadero", tag: "Oficio", price: 440, rarity: "Raro", category: "Clásico", unlock: "shop", blurb: "Gorro alto, delantal y bigote de harina. A hornear." },
+  { id: "croissant", name: "Croissant", tag: "Hojaldre", price: 520, rarity: "Épico", category: "Disfraz", unlock: "shop", blurb: "Capas de mantequilla. Se deshace si la abrazás." },
+  { id: "lodo", name: "Maxine Lodosa", tag: "Secreta", price: 0, rarity: "Raro", category: "Secreto", unlock: "secret", blurb: "Barro hasta las cejas. El campo la adoptó." },
+  { id: "exploradora", name: "Exploradora", tag: "Secreta", price: 0, rarity: "Épico", category: "Secreto", unlock: "secret", blurb: "Sombrero de paja y mochila de migas. Lista para el mapa." },
+  { id: "llanta", name: "Neumático", tag: "Secreta", price: 0, rarity: "Épico", category: "Secreto", unlock: "secret", blurb: "Una llanta le queda de collar. Corre como kart de patio." },
 ];
 
 export const RARITY_COLOR: Record<SkinRarity, string> = {
@@ -197,6 +207,7 @@ export const CATEGORIES: SkinCategory[] = [
   "Minecraft",
   "Disfraz",
   "Feo",
+  "Secreto",
 ];
 
 export const SKIN_MAP: Record<SkinId, Skin> = Object.fromEntries(SKINS.map((s) => [s.id, s])) as Record<SkinId, Skin>;

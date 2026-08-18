@@ -3,7 +3,8 @@ import Maxine, { type Pose } from "../art/Maxine";
 import { Flour } from "../art/Decor";
 import { type Boss, type Bullet, spawnBoss, stepBoss, BossView, BulletView, BOSS_NAME, type BossType } from "../art/Bosses";
 import type { SkinId } from "../data/skins";
-import { maxineIntroKind, stageFor, type Plat } from "../data/cinematics";
+import { maxineIntroKind, moodPose, stageFor, type Plat } from "../data/cinematics";
+import PawButton from "../ui/PawButton";
 
 type Phase = "black" | "build" | "name" | "bossIn" | "heroIn" | "bar" | "talk" | "fight" | "ko" | "outro";
 
@@ -173,9 +174,25 @@ export default function BossStage({ type, level, skin, hearts, onHurt, onWin }: 
   }, [onHurt, type]);
 
   const talk = phase === "talk" || phase === "outro";
-  const lines = phase === "outro" ? def.outro : def.intro;
+  const talkBeats = phase === "outro"
+    ? def.outro.flatMap((text, i) => {
+        const beats: { who: "jefe" | "maxine"; text: string }[] = [{ who: "jefe", text }];
+        if (i === def.outro.length - 1) beats.push({ who: "maxine", text: def.outroReact });
+        return beats;
+      })
+    : def.intro.flatMap((text, i) => {
+        const beats: { who: "jefe" | "maxine"; text: string }[] = [{ who: "jefe", text }];
+        if (def.react[i]) beats.push({ who: "maxine", text: def.react[i] });
+        return beats;
+      });
+  const beat = talkBeats[Math.min(line, Math.max(0, talkBeats.length - 1))];
   const kind = maxineIntroKind(skin);
-  const pose: Pose = p.current.atk > 0 ? "dig" : !p.current.on && p.current.vy > 40 ? "fall" : "idle";
+  const reactPose = talk && beat?.who === "maxine" ? moodPose(def.moods[Math.min(Math.floor(line / 2), def.moods.length - 1)] ?? "curious") : null;
+  const pose: Pose = phase === "ko" || phase === "outro"
+    ? "win"
+    : reactPose
+      ? reactPose
+      : p.current.atk > 0 ? "dig" : !p.current.on && p.current.vy > 40 ? "fall" : "idle";
   const b = boss.current;
   const showWorld = phase !== "black";
   const showBoss = ["bossIn", "heroIn", "bar", "talk", "fight", "ko", "outro"].includes(phase);
@@ -237,7 +254,21 @@ export default function BossStage({ type, level, skin, hearts, onHurt, onWin }: 
 
       {showHero && (
         <div className={`absolute mm-hero-${kind}`} style={{ left: p.current.x - 6, top: p.current.y - 10, opacity: p.current.inv > 0 && Math.floor(p.current.inv * 16) % 2 === 0 ? 0.35 : 1 }}>
-          <Maxine skin={skin} pose={phase === "ko" || phase === "outro" ? "win" : pose} facing={p.current.face} size={PW + 18} />
+          <Maxine skin={skin} pose={pose} facing={p.current.face} size={PW + 18} />
+          {talk && beat?.who === "maxine" && (
+            <div className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none">
+              <div className="bg-[#fff3d6] text-[#3a1808] font-display font-bold text-[11px] px-2 py-0.5 rounded-full border-2 border-[#7a4410] pop">
+                {beat.text.length > 28 ? `${beat.text.slice(0, 26)}…` : beat.text}
+              </div>
+            </div>
+          )}
+          {phase === "fight" && b && b.telegraph > 0 && (
+            <div className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none">
+              <div className="bg-[#3a1808] text-amber-100 font-display font-bold text-[11px] px-2 py-0.5 rounded-full border border-amber-300/50">
+                {def.fightReact}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -262,8 +293,10 @@ export default function BossStage({ type, level, skin, hearts, onHurt, onWin }: 
       {talk && (
         <button onClick={advanceTalk} className="absolute inset-x-4 z-[80] text-left" style={{ bottom: 28 }}>
           <div className="rounded-xl border-2 border-amber-300/40 bg-black/75 px-3 py-2.5 slide-up">
-            <div className="font-pixel text-[8px] text-amber-200/60 mb-1">{phase === "outro" ? "VICTORIA" : "AVISO"}</div>
-            <p className="font-display text-[14px] text-amber-50 leading-snug">{lines[Math.min(line, lines.length - 1)]}</p>
+            <div className="font-pixel text-[8px] mb-1" style={{ color: beat?.who === "maxine" ? "#ffd27a" : "#ff8fa0" }}>
+              {phase === "outro" ? (beat?.who === "maxine" ? "MAXINE" : "VICTORIA") : beat?.who === "maxine" ? "MAXINE" : BOSS_NAME[type]}
+            </div>
+            <p className="font-display text-[14px] text-amber-50 leading-snug">{beat?.text ?? ""}</p>
             <div className="text-right font-display text-[11px] text-amber-200/60 mt-1">tocá</div>
           </div>
         </button>
@@ -273,11 +306,7 @@ export default function BossStage({ type, level, skin, hearts, onHurt, onWin }: 
         <>
           <div className="absolute inset-0 z-[65]" style={{ touchAction: "none" }}
             onPointerDown={onPadDown} onPointerMove={onPadMove} onPointerUp={onPadUp} onPointerCancel={onPadUp} />
-          <button
-            className="absolute z-[80] btn-3d font-display font-bold text-[12px] text-[#3a1808] px-3 py-2 rounded-lg border-2 border-b-4"
-            style={{ right: 10, bottom: 56, background: "linear-gradient(180deg,#ffd27a,#d99243)", borderColor: "#7a4410" }}
-            onPointerDown={(e) => { e.stopPropagation(); input.current.atk = true; }}
-          >CAVAR</button>
+          <PawButton className="!z-[80]" onPress={() => { input.current.atk = true; }} />
         </>
       )}
 

@@ -7,6 +7,7 @@ import type { SkinId } from "../data/skins";
 import * as Audio from "./AudioEngine";
 import BossStage from "./BossStage";
 import { COLS, TILE, LEVEL_LEN, GATE_H, REST_H, CYCLE } from "../data/world";
+import PawButton from "../ui/PawButton";
 
 const STAGE_W = COLS * TILE;
 const STAGE_H = 640;
@@ -18,7 +19,7 @@ const MAX_FALL = 540;
 const MOVE = 175;
 const ARENA_H = GATE_H;
 
-type Cell = 0 | 1 | 2 | 3 | 4 | 5 | 6; // 6=PLATFORM flotante
+type Cell = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7; // 6=PLATFORM flotante, 7=mena de migas
 type EnemyType = "spoon" | "mouse" | "whisk" | "bubble" | "spatula";
 interface Enemy { id: number; x: number; y: number; vx: number; vy: number; minX: number; maxX: number; type: EnemyType; hp: number; hitCd: number; homeY: number; stateT: number; active: boolean; }
 interface BreadItem { id: number; x: number; y: number; type: BreadType; taken: boolean; phase: number; }
@@ -176,6 +177,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       else if (!nearVein && x < (easy ? 0.20 : 0.29)) cells[c] = 3;
       else if (x < 0.34) cells[c] = R() < 0.5 ? 4 : 5;
       if (cells[c] === 2) { stoneRun++; if (stoneRun > 2) { cells[c] = 1; stoneRun = 0; } } else stoneRun = 0; // no stone slab wider than 2
+      if (cells[c] === 1 && R() < 0.045) cells[c] = 7;
     }
     // hard guarantee: the vein and its shoulders are never spike/stone -> a soft-lock is impossible
     for (const c of [v - 1, v, v + 1, v + 2]) if (c > 0 && c < COLS - 1 && (cells[c] === 2 || cells[c] === 3)) cells[c] = 1;
@@ -220,7 +222,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
     return false;
   }
 
-  const solid = (c: Cell) => c === 1 || c === 2 || c === 3;
+  const solid = (c: Cell) => c === 1 || c === 2 || c === 3 || c === 7;
   const isPlat = (c: Cell) => c === 6;
   const PLAT_TOP = 18;
 
@@ -257,7 +259,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       const cyc = cycleOf(rr); const lockedDoor = world.current.doorRow[cyc] === rr && !bossDefeated.current[cyc + 1];
       if (lockedDoor || world.current.isBoss[rr]) { spawnDust(cc * TILE + TILE / 2, rr * TILE + TILE / 2, "#9aa0a8", 4); continue; }
       const cell = getCell(rr, cc);
-      if (cell === 1 || cell === 4 || cell === 5 || cell === 6) { setCell(rr, cc, 0); broke = true; const col = cell===6? "#d7c9a0": cell === 1 ? "#caa06a" : "#e3a35a"; spawnDust(cc * TILE + TILE / 2, rr * TILE + TILE / 2, col, 10); score.current += 2; if (t.healOnDig && Math.random() < 0.14 && hearts.current < 5) { hearts.current++; spawnDust(p.x + PW / 2, p.y, "#ff8fa0", 10); } }
+      if (cell === 1 || cell === 4 || cell === 5 || cell === 6 || cell === 7) { setCell(rr, cc, 0); broke = true; const col = cell===7? "#ffd27a": cell===6? "#d7c9a0": cell === 1 ? "#caa06a" : "#e3a35a"; spawnDust(cc * TILE + TILE / 2, rr * TILE + TILE / 2, col, cell===7? 16:10); score.current += cell===7? 14:2; if (cell===7) { breadRun.current += 2; crownsRun.current += 1; } if (t.healOnDig && Math.random() < 0.14 && hearts.current < 5) { hearts.current++; spawnDust(p.x + PW / 2, p.y, "#ff8fa0", 10); } }
       else if (cell === 2) { const key = `${rr},${cc}`; const need = t.speedMul >= 1.3 ? 1 : 2; const have = (stoneHits.current.get(key) ?? 0) + 1; if (have >= need) { setCell(rr, cc, 0); stoneHits.current.delete(key); broke = true; spawnDust(cc * TILE + TILE / 2, rr * TILE + TILE / 2, "#d7d2c4", 12); score.current += 3; } else { stoneHits.current.set(key, have); spawnDust(cc * TILE + TILE / 2, rr * TILE + TILE / 2, "#ffffff", 5); } }
     }
     if (broke) { p.digTimer = 0.18 / t.speedMul; Audio.playDig(); if (ax !== 0 && ay === 0) { const targetX = (pc + ax) * TILE + (ax > 0 ? 2 : TILE - PW - 2); p.x += (targetX - p.x) * 0.6; p.facing = ax as 1 | -1; } if (ay === 1) p.onGround = false; }
@@ -472,10 +474,10 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
 
       // boss trigger
       const pRow = Math.floor(p.y / TILE);
-      if (world.current.isBoss[pRow] && !bossActive.current && !bossDefeated.current[level.current]) {
-        const cyc = cycleOf(pRow); const arenaTop = 3 + cyc * CYCLE + LEVEL_LEN;
-        boss.current = spawnBoss(bossForLevel(level.current), level.current, TILE, (COLS - 1) * TILE, arenaTop * TILE);
-        bossActive.current = true; lastBossLevel.current = level.current;
+      if (world.current.isBoss[pRow] && !bossDefeated.current[level.current] && !gateRef.current) {
+        lastBossLevel.current = level.current;
+        p.vy = 0; p.vx = 0;
+        setGate(true); gateRef.current = true;
       }
       // rest trigger
       if (world.current.isRest[pRow] && level.current > lastRestLevel.current && !bossActive.current) {
@@ -794,11 +796,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
           onDig={() => { input.current.digEdge = true; }}
           onAttack={() => { input.current.attackEdge = true; }}
         />
-        <button
-          className="absolute z-40 btn-3d font-display font-bold text-[12px] text-[#3a1808] px-3 py-2 rounded-lg border-2 border-b-4"
-          style={{ right: 10, bottom: 52, background: "linear-gradient(180deg,#ffd27a,#d99243)", borderColor: "#7a4410" }}
-          onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); input.current.digEdge = true; }}
-        >CAVAR</button>
+        <PawButton onPress={() => { input.current.digEdge = true; }} />
         {gate && (
           <BossStage
             type={bossForLevel(level.current)}
@@ -887,6 +885,11 @@ function Tile({ c, r, cell, zone, arena, door }: { c: number; r: number; cell: C
   if (cell === 3) return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE }}><svg width={TILE} height={TILE} viewBox="0 0 45 45"><rect x="0" y="34" width="45" height="11" fill={P.wallDk} />{Array.from({ length: 5 }).map((_, i) => <path key={i} d={`M${3 + i * 9} 34 L${7.5 + i * 9} 8 L${12 + i * 9} 34 Z`} fill="#d7d2c4" stroke="#5a5545" strokeWidth="1" />)}</svg></div>);
   if (cell === 4) return <div className="absolute rounded-md" style={{ left: x + 3, top: y + 3, width: TILE - 6, height: TILE - 6, background: "radial-gradient(circle at 40% 30%, #ffe08a99, #c9842a99)", border: "2px solid #7a441066" }} />;
   if (cell === 5) return <div className="absolute rounded-md" style={{ left: x + 2, top: y + 6, width: TILE - 4, height: TILE - 10, background: "linear-gradient(180deg,#5a4010aa,#2a1c08cc)", border: "1px solid #ffe06655" }} />;
+  if (cell === 7) return (
+    <div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: P.dirt, boxShadow: `inset 0 -4px 0 ${P.dirtDk}` }}>
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rotate-45" style={{ background: "linear-gradient(135deg,#ffe066,#c9842a)", boxShadow: "0 0 8px #ffd27a" }} />
+    </div>
+  );
   if (cell === 6) return (
     <div className="absolute pointer-events-none" style={{ left: x, top: y + 14, width: TILE, height: 16 }}>
       <div className="absolute inset-x-0 top-0 h-[5px]" style={{ background: "linear-gradient(180deg,#c9a06a,#8a5a2c)", borderRadius: 2, boxShadow: "0 2px 0 #3a2010, inset 0 1px 0 #ffe0b0" }} />
@@ -990,7 +993,7 @@ function RestStop({ level, bread, crowns, hearts, tool, owned, ownedMeta, onBuyP
           <div className="grid grid-cols-2 gap-2">{POWERS.map((pw) => { const can = bread >= pw.cost; return (<button key={pw.kind} disabled={!can} onClick={() => onBuyPower(pw.kind, pw.cost)} className="btn-3d text-left rounded-lg border-2 p-2 flex items-center gap-2 disabled:opacity-50" style={{ background: "#3a2010", borderColor: can ? "#ffd27a" : "#1a0c04", boxShadow: "0 3px 0 #1a0c04" }}><span className="text-xl">{pw.icon}</span><div className="flex-1"><div className="font-display font-bold text-amber-100 text-sm leading-tight">{pw.name}</div><div className="font-pixel text-[8px] text-amber-200/80">PAN {pw.cost}</div></div></button>); })}</div>
         </Section>
         <Section title="Herramientas de cavado">
-          <div className="grid grid-cols-2 gap-2">{TOOLS.filter((t2) => t2.id !== "palito").map((t2) => { const have = owned.includes(t2.id) || ownedMeta.includes(t2.id); const equipped = tool === t2.id; const price = t2.priceCrowns > 0 ? t2.priceCrowns : t2.priceBread; const curr = t2.priceCrowns > 0 ? crowns : bread; const can = have || curr >= price; return (<button key={t2.id} disabled={!can} onClick={() => onBuyTool(t2.id)} className="btn-3d text-left rounded-lg border-2 p-2 flex items-center gap-2 disabled:opacity-50" style={{ background: equipped ? "#5a3216" : "#3a2010", borderColor: equipped ? t2.color : can ? "#ffd27a88" : "#1a0c04", boxShadow: "0 3px 0 #1a0c04" }}><div className="w-10 h-10 rounded bg-black/40 flex items-center justify-center shrink-0"><Plushie id={t2.id} size={30} /></div><div className="flex-1 min-w-0"><div className="font-display font-bold text-amber-100 text-sm leading-tight truncate">{t2.name}</div><div className="font-pixel text-[7px] text-amber-200/70 leading-tight">{t2.tag}</div><div className="font-pixel text-[8px] mt-0.5" style={{ color: t2.color }}>{equipped ? "EN MANO" : have ? "EQUIPAR" : t2.priceCrowns > 0 ? `CRO ${price}` : `PAN ${price}`}</div></div></button>); })}</div>
+          <div className="grid grid-cols-2 gap-2">{TOOLS.filter((t2) => t2.id !== "palito" && (t2.unlock !== "secret" || owned.includes(t2.id) || ownedMeta.includes(t2.id))).map((t2) => { const have = owned.includes(t2.id) || ownedMeta.includes(t2.id); const equipped = tool === t2.id; const price = t2.priceCrowns > 0 ? t2.priceCrowns : t2.priceBread; const curr = t2.priceCrowns > 0 ? crowns : bread; const can = have || curr >= price; return (<button key={t2.id} disabled={!can} onClick={() => onBuyTool(t2.id)} className="btn-3d text-left rounded-lg border-2 p-2 flex items-center gap-2 disabled:opacity-50" style={{ background: equipped ? "#5a3216" : "#3a2010", borderColor: equipped ? t2.color : can ? "#ffd27a88" : "#1a0c04", boxShadow: "0 3px 0 #1a0c04" }}><div className="w-10 h-10 rounded bg-black/40 flex items-center justify-center shrink-0"><Plushie id={t2.id} size={30} /></div><div className="flex-1 min-w-0"><div className="font-display font-bold text-amber-100 text-sm leading-tight truncate">{t2.name}</div><div className="font-pixel text-[7px] text-amber-200/70 leading-tight">{t2.tag}</div><div className="font-pixel text-[8px] mt-0.5" style={{ color: t2.color }}>{equipped ? "EN MANO" : have ? "EQUIPAR" : t2.priceCrowns > 0 ? `CRO ${price}` : `PAN ${price}`}</div></div></button>); })}</div>
         </Section>
       </div>
       <div className="absolute bottom-2 inset-x-0 px-6 z-10"><button onClick={onContinue} className="btn-3d w-full font-display font-bold text-xl text-white py-2.5 rounded-full border-b-4 active:border-b-0" style={{ background: "linear-gradient(180deg,#7fc24a,#3a7a1a)", borderColor: "#1a3a08", boxShadow: "0 6px 14px rgba(58,122,26,.45), inset 0 2px 0 rgba(255,255,255,.35)" }}>SEGUIR CAVANDO ▶</button></div>

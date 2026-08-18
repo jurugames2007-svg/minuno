@@ -6,12 +6,13 @@ import Shop from "./screens/Shop";
 import GameOver from "./screens/GameOver";
 import Game from "./game/Game";
 import House from "./screens/House";
+import Campo from "./screens/Campo";
 import { Flour } from "./art/Decor";
 import { SKINS, type SkinId } from "./data/skins";
 import type { ToolId } from "./art/Plushie";
 import { CYCLE } from "./data/world";
 
-type Screen = "intro" | "menu" | "shop" | "game" | "over" | "victory" | "house";
+type Screen = "intro" | "menu" | "shop" | "game" | "over" | "victory" | "house" | "campo";
 
 interface OverStats { depth: number; score: number; bread: number; crowns: number; isNewBest: boolean; }
 
@@ -68,9 +69,18 @@ export default function App() {
     if (merged.length !== unlocked.length) setUnlocked(merged);
   };
 
+  const grantSkin = (id: SkinId) => {
+    setOwned((o) => o.includes(id) ? o : [...o, id]);
+    setSkin(id);
+  };
+  const grantTool = (id: ToolId) => {
+    setOwnedTools((o) => o.includes(id) ? o : [...o, id]);
+    setStartTool(id);
+  };
+
   const buySkin = (id: SkinId, price: number) => {
     const found = SKINS.find((s) => s.id === id);
-    if (!found || found.unlock === "bigotes") return;
+    if (!found || found.unlock === "bigotes" || found.unlock === "secret") return;
     if (owned.includes(id) || crumbs < price) return;
     setCrumbs((c) => c - price);
     setOwned((o) => [...o, id]);
@@ -122,6 +132,7 @@ export default function App() {
             onPlay={() => { setRunId((n) => n + 1); setScreen("game"); }}
             onShop={() => setScreen("shop")}
             onHouse={() => setScreen("house")}
+            onCampo={() => setScreen("campo")}
             onStory={() => setScreen("intro")}
           />
         )}
@@ -145,6 +156,18 @@ export default function App() {
             skin={skin}
             crumbs={crumbs}
             onSpend={(n) => setCrumbs((c) => Math.max(0, c - n))}
+            onEarn={(n) => setCrumbs((c) => c + n)}
+            onBack={() => setScreen("menu")}
+          />
+        )}
+        {screen === "campo" && (
+          <Campo
+            skin={skin}
+            owned={owned}
+            ownedTools={ownedTools}
+            crumbs={crumbs}
+            onFindSkin={grantSkin}
+            onFindTool={grantTool}
             onEarn={(n) => setCrumbs((c) => c + n)}
             onBack={() => setScreen("menu")}
           />

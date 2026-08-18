@@ -660,6 +660,24 @@ function BodyCostume({ skin }: { skin: SkinId }) {
       <path d="M30 68 Q50 76 70 68" stroke="#ffd27a" strokeWidth="2" fill="none" />
       <path d="M32 74 Q50 80 68 74" stroke="#c9842a" strokeWidth="1.6" fill="none" />
     </g>;
+    case "lodo": return <g>
+      <ellipse cx="38" cy="70" rx="5" ry="3.2" fill="#5a3410" opacity="0.75" />
+      <ellipse cx="58" cy="76" rx="6" ry="3.6" fill="#3a2010" opacity="0.7" />
+      <ellipse cx="48" cy="64" rx="4" ry="2.4" fill="#6a4420" opacity="0.65" />
+      <circle cx="34" cy="80" r="2.2" fill="#4a2a10" />
+      <circle cx="66" cy="82" r="2.4" fill="#4a2a10" />
+    </g>;
+    case "exploradora": return <g>
+      <path d="M32 58 Q50 66 68 58 L64 78 Q50 84 36 78 Z" fill="#6a7a3a" stroke="#3a4a18" strokeWidth="1" />
+      <path d="M38 62 h24 v8 h-24 Z" fill="#8a6a2a" />
+      <path d="M70 56 Q82 62 78 78 L70 76 Z" fill="#8a5a2c" stroke="#3a2010" strokeWidth="0.8" />
+      <circle cx="74" cy="68" r="2" fill="#c9842a" />
+    </g>;
+    case "llanta": return <g>
+      <ellipse cx="50" cy="74" rx="22" ry="14" fill="none" stroke="#1a1a1a" strokeWidth="7" />
+      <ellipse cx="50" cy="74" rx="22" ry="14" fill="none" stroke="#3a3a3a" strokeWidth="2.2" />
+      <ellipse cx="50" cy="74" rx="10" ry="6" fill="none" stroke="#6a6a6a" strokeWidth="1.4" />
+    </g>;
     default: return null;
   }
 }
@@ -1106,6 +1124,19 @@ function HeadGear({ skin }: { skin: SkinId }) {
     case "croissant": return <g>
       <path d="M28 28 Q22 16 36 18 Q32 26 30 30 Z" fill="#ffd27a" />
       <path d="M72 28 Q78 16 64 18 Q68 26 70 30 Z" fill="#ffd27a" />
+    </g>;
+    case "lodo": return <g>
+      <ellipse cx="36" cy="28" rx="4" ry="2.6" fill="#5a3410" opacity="0.7" />
+      <ellipse cx="62" cy="26" rx="3.4" ry="2.2" fill="#3a2010" opacity="0.65" />
+      <circle cx="50" cy="20" r="2" fill="#4a2a10" />
+    </g>;
+    case "exploradora": return <g>
+      <ellipse cx="50" cy="22" rx="22" ry="5" fill="#c9a06a" stroke="#6a4a20" strokeWidth="0.8" />
+      <path d="M34 20 Q50 6 66 20 Q60 16 50 16 Q40 16 34 20 Z" fill="#8a6a2a" stroke="#5a4418" strokeWidth="0.8" />
+      <ellipse cx="50" cy="12" rx="6" ry="3" fill="#6a7a3a" />
+    </g>;
+    case "llanta": return <g>
+      <ellipse cx="50" cy="18" rx="8" ry="3" fill="#2a2a2a" />
     </g>;
     default: return null;
   }
