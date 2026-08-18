@@ -2,8 +2,8 @@ import { useEffect, useRef, useState, type PointerEvent } from "react";
 import Maxine, { type Pose } from "../art/Maxine";
 import { type Boss, type Bullet, spawnBoss, stepBoss, BossView, BulletView, BOSS_NAME, type BossType } from "../art/Bosses";
 import type { SkinId } from "../data/skins";
-import { FLOOR, maxineIntroKind, moodPose, stageFor, type Plat } from "../data/cinematics";
-import PawButton from "../ui/PawButton";
+import { CEIL, FLOOR, WALL, maxineIntroKind, moodPose, stageFor } from "../data/cinematics";
+import { PawIcon } from "../ui/PawButton";
 import ArenaArt from "./ArenaArt";
 import * as Audio from "./AudioEngine";
 
@@ -19,13 +19,15 @@ interface Props {
 }
 
 const W = 360;
-const H = 640;
-const PW = 26;
-const PH = 34;
-const G = 1680;
-const JUMP = 430;
-const MOVE = 195;
-const STAND_Y = FLOOR - PH - 0.6;
+const PW = 32;
+const PH = 40;
+const G = 1750;
+const JUMP = 400;
+const MOVE = 200;
+const LEFT = WALL + 4;
+const RIGHT = W - WALL - PW - 4;
+const TOP = CEIL + 4;
+const STAND_Y = FLOOR - PH - 1;
 
 const SHOT_KIND: Partial<Record<BossType, Bullet["kind"]>> = {
   escoba: "dust", gato: "hairball", antisam: "button", caballo: "wood",
@@ -33,21 +35,27 @@ const SHOT_KIND: Partial<Record<BossType, Bullet["kind"]>> = {
   alacena: "can", bigotesGrande: "bark", bigotes: "bark",
 };
 
+function clampPlayer(pl: { x: number; y: number; vy: number; on: boolean; used: boolean }) {
+  pl.x = Math.max(LEFT, Math.min(RIGHT, pl.x));
+  if (pl.y < TOP) { pl.y = TOP; if (pl.vy < 0) pl.vy = 0; }
+  if (pl.y > STAND_Y) { pl.y = STAND_Y; pl.vy = 0; pl.on = true; pl.used = false; }
+}
+
 export default function BossStage({ type, level, skin, hearts, onHurt, onWin }: Props) {
   const def = stageFor(type);
   const [phase, setPhase] = useState<Phase>("black");
   const [line, setLine] = useState(0);
   const [barOn, setBarOn] = useState(false);
-  const [shake, setShake] = useState(0);
   const [, setTick] = useState(0);
   const phaseRef = useRef<Phase>("black");
-  const p = useRef({ x: 36, y: STAND_Y, vx: 0, vy: 0, on: true, face: 1 as 1 | -1, inv: 0, atk: 0, atkCd: 0, coy: 0.12, buf: 0, used: false, prevY: STAND_Y });
+  const p = useRef({ x: LEFT + 10, y: STAND_Y, vx: 0, vy: 0, on: true, face: 1 as 1 | -1, inv: 0, atk: 0, atkCd: 0, coy: 0.14, buf: 0, used: false, prevY: STAND_Y });
   const boss = useRef<Boss | null>(null);
   const bullets = useRef<Bullet[]>([]);
   const ids = useRef(1);
   const input = useRef({ l: false, r: false, jump: false, atk: false });
   const done = useRef(false);
   const pressure = useRef(0);
+  const shake = useRef(0);
 
   useEffect(() => { phaseRef.current = phase; }, [phase]);
 
@@ -58,12 +66,12 @@ export default function BossStage({ type, level, skin, hearts, onHurt, onWin }: 
 
   useEffect(() => {
     const seq: { ph: Phase; t: number }[] = [
-      { ph: "black", t: 350 },
-      { ph: "build", t: 1400 },
-      { ph: "name", t: 800 },
-      { ph: "bossIn", t: 950 },
-      { ph: "heroIn", t: 850 },
-      { ph: "bar", t: 650 },
+      { ph: "black", t: 280 },
+      { ph: "build", t: 900 },
+      { ph: "name", t: 700 },
+      { ph: "bossIn", t: 800 },
+      { ph: "heroIn", t: 700 },
+      { ph: "bar", t: 500 },
       { ph: "talk", t: 0 },
     ];
     let i = 0;
@@ -81,79 +89,78 @@ export default function BossStage({ type, level, skin, hearts, onHurt, onWin }: 
   }, []);
 
   useEffect(() => {
-    boss.current = spawnBoss(type, level, 70, W - 70, 240);
+    boss.current = spawnBoss(type, level, 90, W - 90, FLOOR - 80);
     const b = boss.current;
-    b.homeY = 268;
-    b.y = 268;
-    b.minX = 70;
-    b.maxX = W - 70;
+    b.homeY = FLOOR - 78;
+    b.y = FLOOR - 78;
+    b.minX = 150;
+    b.maxX = W - WALL - 50;
   }, [type, level]);
 
   useEffect(() => {
     let raf = 0;
     let last = performance.now();
     const ctx = {
-      playerX: 0, playerY: 0, left: 16, right: W - 16, top: 80, bottom: FLOOR,
+      playerX: 0, playerY: 0, left: LEFT, right: W - WALL - 8, top: TOP, bottom: FLOOR,
       spawnBullet: (bl: Omit<Bullet, "id">) => { bullets.current.push({ id: ids.current++, ...bl }); },
-      spawnMouse: () => { /* no minions */ },
-      shake: (n: number) => { setShake((s) => Math.max(s, n)); },
-    };
-    const land = (pl: typeof p.current, plats: Plat[]) => {
-      pl.on = false;
-      if (pl.vy < 0) return;
-      const feet = pl.y + PH;
-      for (const s of plats) {
-        const onX = pl.x + PW > s.x + 2 && pl.x < s.x + s.w - 2;
-        if (!onX) continue;
-        if (pl.prevY + PH <= s.y + 8 && feet >= s.y) {
-          pl.y = s.y - PH - 0.4; pl.vy = 0; pl.on = true; pl.used = false; return;
-        }
-      }
-      if (feet >= FLOOR) {
-        pl.y = STAND_Y; pl.vy = 0; pl.on = true; pl.used = false;
-      }
+      spawnMouse: () => { /* */ },
+      shake: (n: number) => { shake.current = Math.max(shake.current, n); },
     };
     const step = (now: number) => {
       raf = requestAnimationFrame(step);
       let dt = (now - last) / 1000; last = now; if (dt > 0.05) dt = 0.05;
-      setShake((s) => Math.max(0, s - dt * 28));
+      shake.current = Math.max(0, shake.current - dt * 30);
       const ph = phaseRef.current;
-      const live = ph === "fight" || ph === "heroIn" || ph === "bar" || ph === "talk";
       const fighting = ph === "fight";
       const pl = p.current;
       pl.prevY = pl.y;
       pl.inv = Math.max(0, pl.inv - dt);
-      pl.atk = Math.max(0, pl.atk - dt); pl.atkCd = Math.max(0, pl.atkCd - dt);
+      pl.atk = Math.max(0, pl.atk - dt);
+      pl.atkCd = Math.max(0, pl.atkCd - dt);
 
-      if (live) {
-        const dir = fighting ? ((input.current.r ? 1 : 0) - (input.current.l ? 1 : 0)) : 0;
-        if (dir) pl.face = dir as 1 | -1;
-        pl.vx = dir * MOVE;
-        pl.x += pl.vx * dt;
-        pl.x = Math.max(14, Math.min(W - 14 - PW, pl.x));
-        pl.coy = pl.on ? 0.14 : Math.max(0, pl.coy - dt);
-        if (fighting && input.current.jump) { input.current.jump = false; pl.buf = 0.12; }
-        pl.buf = Math.max(0, pl.buf - dt);
-        if (fighting && pl.buf > 0 && (pl.coy > 0 || !pl.used)) {
-          const dbl = pl.coy <= 0;
-          if (dbl) pl.used = true;
-          pl.vy = dbl ? -JUMP * 0.86 : -JUMP;
-          pl.buf = 0; pl.coy = 0; pl.on = false;
-        }
-        pl.vy += G * dt; if (pl.vy > 620) pl.vy = 620;
-        pl.y += pl.vy * dt;
-        land(pl, stageFor(type).plats);
-        if (pl.y > FLOOR + 8) { pl.y = STAND_Y; pl.vy = 0; pl.on = true; }
+      const dir = fighting ? ((input.current.r ? 1 : 0) - (input.current.l ? 1 : 0)) : 0;
+      if (dir) pl.face = dir as 1 | -1;
+      pl.vx = dir * MOVE;
+      pl.x += pl.vx * dt;
+
+      pl.coy = pl.on ? 0.14 : Math.max(0, pl.coy - dt);
+      if (fighting && input.current.jump) { input.current.jump = false; pl.buf = 0.12; }
+      pl.buf = Math.max(0, pl.buf - dt);
+      if (fighting && pl.buf > 0 && (pl.coy > 0 || !pl.used)) {
+        const dbl = pl.coy <= 0;
+        if (dbl) pl.used = true;
+        pl.vy = dbl ? -JUMP * 0.82 : -JUMP;
+        pl.buf = 0; pl.coy = 0; pl.on = false;
       }
+      pl.vy += G * dt;
+      if (pl.vy > 580) pl.vy = 580;
+      pl.y += pl.vy * dt;
+
+      pl.on = false;
+      if (pl.vy >= 0) {
+        const feet = pl.y + PH;
+        for (const s of stageFor(type).plats) {
+          if (pl.x + PW > s.x + 3 && pl.x < s.x + s.w - 3 && pl.prevY + PH <= s.y + 7 && feet >= s.y) {
+            pl.y = s.y - PH - 0.5; pl.vy = 0; pl.on = true; pl.used = false; break;
+          }
+        }
+        if (!pl.on && feet >= FLOOR) {
+          pl.y = STAND_Y; pl.vy = 0; pl.on = true; pl.used = false;
+        }
+      }
+      clampPlayer(pl);
 
       if (fighting) {
-        if (input.current.atk) { input.current.atk = false; if (pl.atkCd <= 0) { pl.atkCd = 0.3; pl.atk = 0.18; Audio.playAttack(); } }
+        if (input.current.atk) {
+          input.current.atk = false;
+          if (pl.atkCd <= 0) { pl.atkCd = 0.28; pl.atk = 0.18; Audio.playAttack(); }
+        }
         const b = boss.current;
         if (b && pl.atk > 0) {
-          const ax = pl.x + PW / 2 + pl.face * 24, ay = pl.y + PH / 2;
-          if (Math.abs(ax - b.x) < 52 && Math.abs(ay - b.y) < 52) {
+          const ax = pl.x + PW / 2 + pl.face * 26, ay = pl.y + PH / 2;
+          if (Math.abs(ax - b.x) < 56 && Math.abs(ay - b.y) < 56) {
             if (b.vulnerable || b.stun > 0) {
-              b.hp -= 1; b.flash = 0.16; setShake((s) => Math.max(s, 5));
+              b.hp -= 1; b.flash = 0.16; shake.current = Math.max(shake.current, 5);
               if (b.hp <= 0 && !done.current) {
                 done.current = true;
                 setPhase("ko");
@@ -165,32 +172,35 @@ export default function BossStage({ type, level, skin, hearts, onHurt, onWin }: 
         if (b && !done.current) {
           ctx.playerX = pl.x + PW / 2; ctx.playerY = pl.y + PH / 2;
           stepBoss(b, dt, ctx);
-          b.y = Math.min(Math.max(b.y, 160), FLOOR - 70);
+          b.x = Math.max(150, Math.min(W - WALL - 48, b.x));
+          b.y = Math.max(CEIL + 50, Math.min(FLOOR - 70, b.y));
           pressure.current += dt;
-          if (pressure.current > 1.35) {
+          if (pressure.current > 1.15) {
             pressure.current = 0;
             const dx = ctx.playerX - b.x, dy = ctx.playerY - b.y;
             const d = Math.hypot(dx, dy) || 1;
             const kind = SHOT_KIND[type] ?? "dust";
-            ctx.spawnBullet({ x: b.x, y: b.y + 8, vx: (dx / d) * 210, vy: (dy / d) * 210, life: 2.6, kind });
-            ctx.spawnBullet({ x: b.x, y: b.y + 8, vx: (dx / d) * 170 - 40, vy: (dy / d) * 170, life: 2.2, kind });
-            ctx.spawnBullet({ x: b.x, y: b.y + 8, vx: (dx / d) * 170 + 40, vy: (dy / d) * 170, life: 2.2, kind });
-            b.telegraph = 0.55; b.atkX = pl.x - 10; b.atkY = pl.y - 6; b.atkW = PW + 20; b.atkH = PH + 16;
+            ctx.spawnBullet({ x: b.x - 20, y: b.y, vx: (dx / d) * 220, vy: (dy / d) * 180, life: 2.4, kind });
+            ctx.spawnBullet({ x: b.x - 20, y: b.y - 12, vx: (dx / d) * 180, vy: (dy / d) * 140 - 40, life: 2.1, kind });
+            b.telegraph = 0.4;
+            b.atkX = pl.x - 8; b.atkY = pl.y - 4; b.atkW = PW + 16; b.atkH = PH + 12;
           }
-          if (Math.abs(pl.x + PW / 2 - b.x) < 38 && Math.abs(pl.y + PH / 2 - b.y) < 40 && pl.inv <= 0) {
-            pl.inv = 1.05; pl.vy = -220; pl.x += pl.x < b.x ? -18 : 18; onHurt(); setShake(8);
+          if (Math.abs(pl.x + PW / 2 - b.x) < 40 && Math.abs(pl.y + PH / 2 - b.y) < 42 && pl.inv <= 0) {
+            pl.inv = 1; pl.vy = -200; pl.x = Math.max(LEFT, pl.x - 22); onHurt(); shake.current = 8;
           }
         }
         for (let i = bullets.current.length - 1; i >= 0; i--) {
           const bl = bullets.current[i];
           bl.life -= dt; if (bl.grav) bl.vy += bl.grav * dt;
           bl.x += bl.vx * dt; bl.y += bl.vy * dt;
-          if (bl.life <= 0 || bl.y > H + 20 || bl.x < -20 || bl.x > W + 20) { bullets.current.splice(i, 1); continue; }
+          if (bl.x < WALL || bl.x > W - WALL || bl.y < CEIL || bl.y > FLOOR) { bullets.current.splice(i, 1); continue; }
+          if (bl.life <= 0) { bullets.current.splice(i, 1); continue; }
           if (Math.abs(bl.x - (pl.x + PW / 2)) < 20 && Math.abs(bl.y - (pl.y + PH / 2)) < 22 && pl.inv <= 0) {
-            pl.inv = 1.05; onHurt(); bullets.current.splice(i, 1); setShake(6);
+            pl.inv = 1; onHurt(); bullets.current.splice(i, 1); shake.current = 6;
           }
         }
       }
+      clampPlayer(pl);
       setTick((n) => (n + 1) & 0xffff);
     };
     raf = requestAnimationFrame(step);
@@ -229,11 +239,11 @@ export default function BossStage({ type, level, skin, hearts, onHurt, onWin }: 
     ? "win"
     : reactPose
       ? reactPose
-      : p.current.atk > 0 ? "dig" : !p.current.on && p.current.vy > 40 ? "fall" : "idle";
+      : p.current.atk > 0 ? "dig" : !p.current.on && p.current.vy > 50 ? "fall" : "idle";
   const b = boss.current;
   const showWorld = phase !== "black";
   const showBoss = ["bossIn", "heroIn", "bar", "talk", "fight", "ko", "outro"].includes(phase);
-  const showHero = ["heroIn", "bar", "talk", "fight", "ko", "outro"].includes(phase);
+  const showHero = phase !== "black";
   const heroAnim = phase === "heroIn" ? `mm-hero-${kind}` : "";
 
   const advanceTalk = () => {
@@ -264,60 +274,43 @@ export default function BossStage({ type, level, skin, hearts, onHurt, onWin }: 
     input.current.l = false; input.current.r = false; pad.current.id = -1;
   };
 
-  const sx = shake > 0 ? (Math.random() - 0.5) * shake : 0;
-  const sy = shake > 0 ? (Math.random() - 0.5) * shake : 0;
+  const sx = shake.current > 0 ? (Math.random() - 0.5) * shake.current : 0;
+  const sy = shake.current > 0 ? (Math.random() - 0.5) * shake.current : 0;
+  const hx = Math.max(LEFT, Math.min(RIGHT, p.current.x));
+  const hy = Math.max(TOP, Math.min(STAND_Y, p.current.y));
 
   return (
-    <div className="absolute inset-0 z-[60] overflow-hidden select-none" style={{ background: def.sky }}>
+    <div className="absolute inset-0 z-[60] overflow-hidden select-none" style={{ background: "#0a0402" }}>
       {showWorld && <ArenaArt type={type} />}
-      <div className="absolute inset-0" style={{ background: `radial-gradient(90% 50% at 50% 18%, ${def.glow}28, transparent 70%)` }} />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-5 bg-black z-[70]" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-black z-[70]" />
+      <div className="absolute inset-0" style={{ background: `radial-gradient(80% 50% at 50% 30%, ${def.glow}22, transparent 70%)` }} />
 
       <div className="absolute inset-0" style={{ transform: `translate(${sx}px, ${sy}px)` }}>
-        {showWorld && def.plats.map((s, i) => (
-          <div key={i} className="absolute mm-plat" style={{
-            left: s.x, top: s.y, width: s.w, height: i === 0 ? 24 : s.h,
-            animationDelay: `${i * 90}ms`,
-            background: i === 0
-              ? "linear-gradient(180deg,#8a5420,#4a2810 40%,#2a1408)"
-              : "linear-gradient(180deg,#e8c48a,#a06a34)",
-            borderRadius: i === 0 ? 0 : 5,
-            boxShadow: i === 0 ? "inset 0 4px 0 #c9842a66" : "0 4px 0 #3a2010, inset 0 2px 0 #fff3d655",
-          }}>
-            {i === 0 && <div className="absolute inset-x-0 top-0 h-1.5" style={{ background: "repeating-linear-gradient(90deg,#c9842a 0 18px,#8a5420 18px 20px)" }} />}
-          </div>
+        {showWorld && def.plats.filter((_, i) => i > 0).map((s, i) => (
+          <div key={i} className="absolute" style={{
+            left: s.x, top: s.y, width: s.w, height: s.h,
+            background: "linear-gradient(180deg,#e8c48a,#8a5420)",
+            borderRadius: 4,
+            boxShadow: "0 4px 0 #2a1408, inset 0 2px 0 #fff3d688",
+          }} />
         ))}
 
-        {phase === "fight" && b && b.telegraph > 0 && b.atkW > 0 && (
-          <div className="absolute pointer-events-none" style={{
-            left: b.atkX, top: b.atkY, width: b.atkW, height: b.atkH,
-            border: "2px dashed #ff3060", background: "rgba(255,48,96,0.22)", borderRadius: 8,
-          }}>
-            <div className="absolute left-1/2 -translate-x-1/2 -top-6 font-display font-bold text-[22px] text-amber-200">!</div>
-          </div>
-        )}
-
         {showBoss && b && (
-          <div className={`absolute ${phase === "bossIn" ? "mm-boss-bossIn" : phase === "ko" ? "mm-boss-ko" : ""}`} style={{ left: b.x - 55, top: b.y - 55 }}>
-            <BossView boss={b} size={110} />
+          <div className={`absolute ${phase === "bossIn" ? "mm-boss-bossIn" : phase === "ko" ? "mm-boss-ko" : ""}`}
+            style={{ left: b.x - 64, top: b.y - 64, zIndex: 5 }}>
+            <BossView boss={b} size={128} />
           </div>
         )}
 
         {showHero && (
-          <div className={`absolute ${heroAnim}`} style={{ left: p.current.x - 6, top: p.current.y - 10, opacity: p.current.inv > 0 && Math.floor(p.current.inv * 16) % 2 === 0 ? 0.35 : 1 }}>
-            <Maxine skin={skin} pose={pose} facing={p.current.face} size={PW + 18} />
+          <div className={`absolute ${heroAnim}`} style={{
+            left: hx - 10, top: hy - 14, zIndex: 8,
+            opacity: p.current.inv > 0 && Math.floor(p.current.inv * 12) % 2 === 0 ? 0.55 : 1,
+          }}>
+            <Maxine skin={skin} pose={pose} facing={p.current.face} size={72} />
             {talk && beat?.who === "maxine" && (
-              <div className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none">
-                <div className="bg-[#fff3d6] text-[#3a1808] font-display font-bold text-[11px] px-2 py-0.5 rounded-full border-2 border-[#7a4410] pop">
-                  {beat.text.length > 28 ? `${beat.text.slice(0, 26)}…` : beat.text}
-                </div>
-              </div>
-            )}
-            {phase === "fight" && b && b.telegraph > 0 && (
               <div className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none">
-                <div className="bg-[#3a1808] text-amber-100 font-display font-bold text-[11px] px-2 py-0.5 rounded-full border border-amber-300/50">
-                  {def.fightReact}
+                <div className="bg-[#fff3d6] text-[#3a1808] font-display font-bold text-[11px] px-2 py-0.5 rounded-full border-2 border-[#7a4410]">
+                  {beat.text.length > 26 ? `${beat.text.slice(0, 24)}…` : beat.text}
                 </div>
               </div>
             )}
@@ -327,25 +320,36 @@ export default function BossStage({ type, level, skin, hearts, onHurt, onWin }: 
         {phase === "fight" && bullets.current.map((bl) => <BulletView key={bl.id} b={bl} />)}
       </div>
 
+      {/* Room cage — Mega Man box */}
+      <div className="pointer-events-none absolute inset-0 z-[20]">
+        <div className="absolute top-0 inset-x-0" style={{ height: CEIL, background: "linear-gradient(180deg,#1a0c04,#3a2010)", boxShadow: "inset 0 -4px 0 #1a0c04" }} />
+        <div className="absolute left-0 top-0 bottom-0" style={{ width: WALL, background: "repeating-linear-gradient(180deg,#4a2a12 0 16px,#2a1408 16px 18px)" }} />
+        <div className="absolute right-0 top-0 bottom-0" style={{ width: WALL, background: "repeating-linear-gradient(180deg,#4a2a12 0 16px,#2a1408 16px 18px)" }} />
+        <div className="absolute bottom-0 inset-x-0" style={{ top: FLOOR, background: "linear-gradient(180deg,#c9842a 0 10px,#8a5420 10px 28px,#5a3010 28px 100%)", boxShadow: "inset 0 4px 0 #ffe0b055" }} />
+        <div className="absolute inset-0" style={{ boxShadow: "inset 0 0 0 3px #1a0c04" }} />
+      </div>
+
       {(phase === "name" || barOn) && (
-        <div className="absolute left-4 right-4 z-[72] pointer-events-none" style={{ top: 28 }}>
+        <div className="absolute left-8 right-8 z-[72] pointer-events-none" style={{ top: 18 }}>
           <div className="text-center font-display font-bold text-[11px] text-amber-200/80 tracking-[0.2em]">{def.place}</div>
-          <div className="text-center font-display font-bold text-[18px] text-rose-200" style={{ textShadow: "0 0 10px #ff3060" }}>{BOSS_NAME[type]}</div>
+          <div className="text-center font-display font-bold text-[17px] text-rose-200" style={{ textShadow: "0 0 10px #ff3060" }}>{BOSS_NAME[type]}</div>
           {barOn && b && (
-            <div className="mt-1 h-2.5 rounded-full border border-rose-300/50 bg-black/50 overflow-hidden mm-bar">
-              <div className="h-full origin-left" style={{ width: `${Math.max(0, (b.hp / b.maxHp) * 100)}%`, background: "linear-gradient(90deg,#ff3060,#ffd27a)", transformOrigin: "left" }} />
+            <div className="mt-1 h-3 rounded-sm border border-rose-300/50 bg-black/60 overflow-hidden mm-bar">
+              <div className="h-full" style={{ width: `${Math.max(0, (b.hp / b.maxHp) * 100)}%`, background: "linear-gradient(90deg,#ff3060,#ffd27a)" }} />
             </div>
           )}
         </div>
       )}
 
-      <div className="absolute top-2 left-2 z-[72] flex gap-1">{Array.from({ length: Math.max(3, hearts) }).map((_, i) => (
-        <div key={i} className="w-4 h-4 rounded-full border border-rose-200" style={{ background: i < hearts ? "#ff5a6a" : "#3a2010" }} />
-      ))}</div>
+      <div className="absolute z-[72] flex gap-1" style={{ top: 10, left: WALL + 6 }}>
+        {Array.from({ length: Math.max(3, hearts) }).map((_, i) => (
+          <div key={i} className="w-4 h-4 rounded-full border border-rose-200" style={{ background: i < hearts ? "#ff5a6a" : "#3a2010" }} />
+        ))}
+      </div>
 
       {talk && (
-        <button onClick={advanceTalk} className="absolute inset-x-4 z-[80] text-left" style={{ bottom: 28 }}>
-          <div className="rounded-xl border-2 border-amber-300/40 bg-black/75 px-3 py-2.5 slide-up">
+        <button onClick={advanceTalk} className="absolute inset-x-8 z-[80] text-left" style={{ bottom: 36 }}>
+          <div className="rounded-xl border-2 border-amber-300/40 bg-black/80 px-3 py-2.5">
             <div className="font-pixel text-[8px] mb-1" style={{ color: beat?.who === "maxine" ? "#ffd27a" : "#ff8fa0" }}>
               {phase === "outro" ? (beat?.who === "maxine" ? "MAXINE" : "VICTORIA") : beat?.who === "maxine" ? "MAXINE" : BOSS_NAME[type]}
             </div>
@@ -356,11 +360,30 @@ export default function BossStage({ type, level, skin, hearts, onHurt, onWin }: 
       )}
 
       {phase === "fight" && (
-        <>
-          <div className="absolute inset-0 z-[65]" style={{ touchAction: "none" }}
-            onPointerDown={onPadDown} onPointerMove={onPadMove} onPointerUp={onPadUp} onPointerCancel={onPadUp} />
-          <PawButton className="!z-[80]" onPress={() => { input.current.atk = true; }} />
-        </>
+        <div className="absolute inset-0 z-[65]" style={{ touchAction: "none" }}
+          onPointerDown={onPadDown} onPointerMove={onPadMove} onPointerUp={onPadUp} onPointerCancel={onPadUp} />
+      )}
+
+      {(phase === "fight" || phase === "talk") && (
+        <button
+          type="button"
+          aria-label="Cavar"
+          className="btn-3d rounded-full border-2 border-b-4 flex items-center justify-center"
+          style={{
+            position: "absolute",
+            zIndex: 90,
+            width: 64,
+            height: 64,
+            right: 14,
+            bottom: 78,
+            background: "linear-gradient(180deg,#ffd27a,#d99243)",
+            borderColor: "#7a4410",
+            boxShadow: "0 6px 0 #5a2a08, 0 8px 16px #0008",
+          }}
+          onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); input.current.atk = true; }}
+        >
+          <PawIcon size={40} />
+        </button>
       )}
 
       {phase === "ko" && (

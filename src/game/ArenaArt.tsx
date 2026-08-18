@@ -21,16 +21,11 @@ export default function ArenaArt({ type }: { type: BossType }) {
 function Closet() {
   return (
     <div className="absolute inset-0 pointer-events-none">
-      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#3a1c0c 0%,#1a0c06 55%,#120804 100%)" }} />
-      <div className="absolute inset-y-0 left-0 w-10" style={{ background: "repeating-linear-gradient(90deg,#4a2810 0 8px,#3a1c08 8px 16px)" }} />
-      <div className="absolute inset-y-0 right-0 w-10" style={{ background: "repeating-linear-gradient(90deg,#4a2810 0 8px,#3a1c08 8px 16px)" }} />
-      {[40, 90, 140, 200, 260].map((y, i) => (
-        <div key={y} className="absolute left-12 right-12 h-2" style={{ top: y, background: "#5a3216", boxShadow: "0 3px 0 #1a0c04" }}>
-          <div className="absolute left-4 -top-10 w-1.5 h-10" style={{ background: i % 2 ? "#8a5a2c" : "#6a4020" }} />
-          <div className="absolute right-8 -top-12 w-1.5 h-12" style={{ background: "#7a4a1a" }} />
-        </div>
-      ))}
-      <div className="absolute left-1/2 -translate-x-1/2 top-16 font-display font-bold text-[13px] tracking-[0.3em] text-amber-200/30">ESCOBAS</div>
+      <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#4a2410 0%,#2a1408 70%,#1a0c04 100%)" }} />
+      <div className="absolute left-8 right-8 top-24 bottom-40 opacity-35" style={{
+        backgroundImage: "repeating-linear-gradient(180deg,#5a3216 0 10px,#0000 10px 46px)",
+      }} />
+      <div className="absolute left-1/2 -translate-x-1/2 top-28 font-display font-bold text-[12px] tracking-[0.35em] text-amber-200/25">ESCOBAS</div>
     </div>
   );
 }
