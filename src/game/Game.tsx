@@ -107,16 +107,17 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
     const w = world.current; if (w.rows[r]) return;
     const R = rng.current; const off = offOf(r);
     if (r < 3) { w.rows[r] = new Array(COLS).fill(0); return; }
-    // ARENA
+    // ARENA — torre de estantes (irrompibles, un sentido) para subir y bajar fácil
     if (off >= LEVEL_LEN && off < LEVEL_LEN + ARENA_H) {
       const row = new Array(COLS).fill(0) as Cell[]; row[0] = 2; row[COLS - 1] = 2;
       const local = off - LEVEL_LEN;
-      // suelo de pelea + plataformas para esquivar
-      if (local === ARENA_H - 1) { for (let c = 1; c < COLS - 1; c++) row[c] = 6; }
-      else if (local === 1) { row[1] = 6; row[COLS - 2] = 6; }
-      else if (local === 3) { row[1] = 6; row[2] = 6; row[COLS - 3] = 6; row[COLS - 2] = 6; }
-      else if (local === 5) { row[3] = 6; row[4] = 6; }
-      else if (local === 7) { row[2] = 6; row[COLS - 3] = 6; }
+      if (local === ARENA_H - 1) { for (let c = 1; c < COLS - 1; c++) row[c] = 2; }
+      else if (local === 7) { row[1] = 6; row[2] = 6; }
+      else if (local === 6) { row[3] = 6; row[4] = 6; }
+      else if (local === 5) { row[4] = 6; row[5] = 6; row[6] = 6; }
+      else if (local === 3) { row[1] = 6; row[2] = 6; row[3] = 6; }
+      else if (local === 2) { row[3] = 6; }
+      else if (local === 1) { row[4] = 6; row[5] = 6; row[6] = 6; }
       w.rows[r] = row; w.isBoss[r] = true; return;
     }
     // DOOR
@@ -220,7 +221,9 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
     return false;
   }
 
-  const solid = (c: Cell) => c === 1 || c === 2 || c === 3 || c === 6;
+  const solid = (c: Cell) => c === 1 || c === 2 || c === 3;
+  const isPlat = (c: Cell) => c === 6;
+  const PLAT_TOP = 18;
 
   const particles = useRef<Particle[]>([]);
   function spawnDust(x: number, y: number, color: string, n = 8) { for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2; const sp = 30 + Math.random() * 110; particles.current.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 40, life: 0.5, max: 0.5, color, size: 2 + Math.random() * 3 }); } }
@@ -253,7 +256,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
     for (const [rr, cc] of targets) {
       if (cc < 1 || cc > COLS - 2) continue; // border walls are indestructible — you can never dig out of the kitchen
       const cyc = cycleOf(rr); const lockedDoor = world.current.doorRow[cyc] === rr && !bossDefeated.current[cyc + 1];
-      if (lockedDoor) { spawnDust(cc * TILE + TILE / 2, rr * TILE + TILE / 2, "#9aa0a8", 4); continue; } // the gate won't budge until the boss falls
+      if (lockedDoor || world.current.isBoss[rr]) { spawnDust(cc * TILE + TILE / 2, rr * TILE + TILE / 2, "#9aa0a8", 4); continue; }
       const cell = getCell(rr, cc);
       if (cell === 1 || cell === 4 || cell === 5 || cell === 6) { setCell(rr, cc, 0); broke = true; const col = cell===6? "#d7c9a0": cell === 1 ? "#caa06a" : "#e3a35a"; spawnDust(cc * TILE + TILE / 2, rr * TILE + TILE / 2, col, 10); score.current += 2; if (t.healOnDig && Math.random() < 0.14 && hearts.current < 5) { hearts.current++; spawnDust(p.x + PW / 2, p.y, "#ff8fa0", 10); } }
       else if (cell === 2) { const key = `${rr},${cc}`; const need = t.speedMul >= 1.3 ? 1 : 2; const have = (stoneHits.current.get(key) ?? 0) + 1; if (have >= need) { setCell(rr, cc, 0); stoneHits.current.delete(key); broke = true; spawnDust(cc * TILE + TILE / 2, rr * TILE + TILE / 2, "#d7d2c4", 12); score.current += 3; } else { stoneHits.current.set(key, have); spawnDust(cc * TILE + TILE / 2, rr * TILE + TILE / 2, "#ffffff", 5); } }
@@ -421,10 +424,27 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       p.y += p.vy * dt; p.onGround = false;
       {
         const left = Math.floor(p.x / TILE); const right = Math.floor((p.x + PW - 1) / TILE);
-        // techo estricto
+        // techo: solo bloques macizos (las estanterías se atraviesan hacia arriba)
         if (p.vy < 0) { const hrow = Math.floor(p.y / TILE); for (let c = left; c <= right; c++) if (solid(getCell(hrow, c))) { p.y = (hrow + 1) * TILE + 0.5; p.vy = 0; break; } }
-        // suelo estricto + plataforma
-        if (p.vy >= 0) { const row = Math.floor((p.y + PH) / TILE); for (let c = left; c <= right; c++) { const cell = getCell(row, c); if (solid(cell)) { p.y = row * TILE - PH - 0.5; p.vy = 0; p.onGround = true; p.usedDouble = false; p.wallSlide=0; if (cell === 3) { if (TOOL_MAP[tool.current].spikeImmune) { setCell(row, c, 0); spawnDust(c * TILE + TILE / 2, row * TILE + TILE / 2, "#d7d2c4", 8); score.current += 1; } else hurt(); } break; } } }
+        // suelo + estantes de un sentido
+        if (p.vy >= 0) {
+          const row = Math.floor((p.y + PH) / TILE);
+          for (let c = left; c <= right; c++) {
+            const cell = getCell(row, c);
+            if (solid(cell)) {
+              p.y = row * TILE - PH - 0.5; p.vy = 0; p.onGround = true; p.usedDouble = false; p.wallSlide = 0;
+              if (cell === 3) { if (TOOL_MAP[tool.current].spikeImmune) { setCell(row, c, 0); spawnDust(c * TILE + TILE / 2, row * TILE + TILE / 2, "#d7d2c4", 8); score.current += 1; } else hurt(); }
+              break;
+            }
+            if (isPlat(cell)) {
+              const platTop = row * TILE + PLAT_TOP;
+              if (p.prevY + PH <= platTop + 3) {
+                p.y = platTop - PH - 0.5; p.vy = 0; p.onGround = true; p.usedDouble = false; p.wallSlide = 0;
+                break;
+              }
+            }
+          }
+        }
         // re-resolve horizontal post-caída para bordes sólidos
         { const t2 = Math.floor(p.y / TILE); const b2 = Math.floor((p.y + PH - 1) / TILE);
           if (p.vx >= 0) { const col = Math.floor((p.x + PW) / TILE); for (let r = t2; r <= b2; r++) if (solid(getCell(r, col))) { p.x = col * TILE - PW -0.1; p.vx = 0; if(p.vy>0) {p.wallSlide=0.3; p.wallDir=1;} break; } }
@@ -435,11 +455,11 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
         if (solid(getCell(eR, eC))) { let er = eR; while (er >= 0 && solid(getCell(er, eC))) er--; p.y = er * TILE - PH -1; p.vy = 0; p.onGround = true; p.usedDouble = false; p.wallSlide=0; p.invuln=Math.max(p.invuln,0.6); spawnDust(p.x+PW/2,p.y+PH/2,"#ffd27a",6); }
       }
 
-      // Garantía anti-soft-lock: asegurar camino descendente
-      if (!verifySafePath()) {
+      // Garantía anti-soft-lock: asegurar camino descendente (nunca en la arena)
+      if (!world.current.isBoss[Math.floor((p.y + PH / 2) / TILE)] && !verifySafePath()) {
         const safeRow = Math.floor((player.current.y + PH) / TILE) + 1;
         const safeCol = Math.floor((player.current.x + PW / 2) / TILE);
-        if (safeCol > 0 && safeCol < COLS - 1) {
+        if (safeCol > 0 && safeCol < COLS - 1 && !world.current.isBoss[safeRow]) {
           setCell(safeRow, safeCol, 0);
           setCell(safeRow, safeCol + 1, 0);
         }
@@ -463,7 +483,16 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
         level.current = Math.max(level.current, lastRestLevel.current + 1); lastRestLevel.current = level.current; p.vy = 0; setResting(true); Audio.playRest();
       }
 
-      const target = p.y - STAGE_H * 0.45; cameraY.current += (target - cameraY.current) * Math.min(1, dt * 6);
+      let target = p.y - STAGE_H * 0.45;
+      if (bossActive.current) {
+        const cyc = cycleOf(Math.floor(p.y / TILE));
+        const arenaTop = 3 + cyc * CYCLE + LEVEL_LEN;
+        const arenaBot = arenaTop + ARENA_H;
+        const maxCam = arenaBot * TILE - STAGE_H + TILE * 0.2;
+        const minCam = arenaTop * TILE - TILE * 1.2;
+        target = Math.max(minCam, Math.min(maxCam, target));
+      }
+      cameraY.current += (target - cameraY.current) * Math.min(1, dt * 8);
 
       // enemies AI
       for (const e of world.current.enemies) {
@@ -600,11 +629,19 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
   for (let r = r0; r <= r1; r++) {
     ensureRow(r); const row = world.current.rows[r]; if (!row) continue;
     const z = zoneOf(Math.max(0, r - 3)); const isRest = world.current.isRest[r]; const isArena = world.current.isBoss[r];
+    const cyc = cycleOf(r);
+    const isDoor = world.current.doorRow[cyc] === r;
+    const doorLocked = isDoor && !bossDefeated.current[cyc + 1];
+    const restSealed = isRest && !bossDefeated.current[cyc + 1];
     for (let c = 0; c < COLS; c++) {
       const cell = row[c];
-      if (cell === 0) { if (isRest) tiles.push(<RestTile key={`r${r}-${c}`} c={c} r={r} level={level.current} />); else if (isArena) tiles.push(<ArenaTile key={`a${r}-${c}`} c={c} r={r} />); continue; }
-      tiles.push(<Tile key={`${r}-${c}`} c={c} r={r} cell={cell} zone={z} />);
-      if (isArena && (c === 0 || c === COLS - 1) && r % 3 === 0) tiles.push(<Torch key={`t${r}-${c}`} c={c} r={r} />);
+      if (cell === 0) {
+        if (isRest) tiles.push(<RestTile key={`r${r}-${c}`} c={c} r={r} level={level.current} sealed={restSealed} />);
+        else if (isArena) tiles.push(<ArenaTile key={`a${r}-${c}`} c={c} r={r} local={offOf(r) - LEVEL_LEN} />);
+        continue;
+      }
+      tiles.push(<Tile key={`${r}-${c}`} c={c} r={r} cell={cell} zone={z} arena={isArena} door={doorLocked} />);
+      if (isArena && (c === 0 || c === COLS - 1) && r % 2 === 0) tiles.push(<Torch key={`t${r}-${c}`} c={c} r={r} />);
     }
   }
 
@@ -721,11 +758,13 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
           <div className="font-display font-bold text-amber-50 text-base leading-none" style={{ textShadow: "0 2px 0 #7a3410" }}>{depth} m</div>
         </div>
         <div className="absolute top-[58px] left-1/2 -translate-x-1/2 z-30 pointer-events-none flex items-center gap-1 bg-black/35 rounded-full px-2 py-0.5 border border-amber-300/20"><Plushie id={tool.current} size={14} /><span className="font-display font-semibold text-[11px] text-amber-100">{TOOL_MAP[tool.current].name}</span></div>
-        <div className="absolute top-[86px] left-1/2 -translate-x-1/2 z-30 pointer-events-none text-center">
-          <div className="font-display text-[11px] text-amber-100/70 bg-black/30 rounded-full px-2 py-0.5">
-            {bossActive.current ? "Esquivá la zona roja · pegá cuando esté vulnerable" : !p.onGround ? "Deslizá arriba para saltar" : "Deslizá para moverte · toca para pegar"}
+        {!bossActive.current && (
+          <div className="absolute top-[86px] left-1/2 -translate-x-1/2 z-30 pointer-events-none text-center">
+            <div className="font-display text-[11px] text-amber-100/70 bg-black/30 rounded-full px-2 py-0.5">
+              {!p.onGround ? "Deslizá arriba para saltar" : "Deslizá para moverte · toca para pegar"}
+            </div>
           </div>
-        </div>
+        )}
 
         {bossActive.current && boss.current && (
           <div className="absolute left-4 right-4 z-30 pointer-events-none" style={{ top: 86 }}>
@@ -817,7 +856,7 @@ function EnemyView({ type, active }: { type: EnemyType; active: boolean }) {
   return (<svg width="40" height="40" viewBox="0 0 40 40" style={{ opacity: active ? 1 : 0.3 }}><rect x="17" y="20" width="6" height="18" rx="2" fill="#5a3a1a" /><rect x="10" y="6" width="20" height="16" rx="3" fill="#d7d2c4" stroke="#5a5545" strokeWidth="1.2" /><rect x="14" y="10" width="2" height="8" fill="#5a5545" /><rect x="19" y="10" width="2" height="8" fill="#5a5545" /><rect x="24" y="10" width="2" height="8" fill="#5a5545" /></svg>);
 }
 
-function Tile({ c, r, cell, zone }: { c: number; r: number; cell: Cell; zone: string }) {
+function Tile({ c, r, cell, zone, arena, door }: { c: number; r: number; cell: Cell; zone: string; arena?: boolean; door?: boolean }) {
   const pal: Record<string, { dirt: string; dirtDk: string; wall: string; wallDk: string }> = {
     mesa: { dirt: "#b07a3c", dirtDk: "#7a4a1c", wall: "#e4d2ac", wallDk: "#a89068" },
     horno: { dirt: "#6a2e14", dirtDk: "#3a1608", wall: "#8a3a22", wallDk: "#4a1808" },
@@ -829,19 +868,40 @@ function Tile({ c, r, cell, zone }: { c: number; r: number; cell: Cell; zone: st
   if (cell === 3) return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE }}><svg width={TILE} height={TILE} viewBox="0 0 45 45"><rect x="0" y="34" width="45" height="11" fill={P.wallDk} />{Array.from({ length: 5 }).map((_, i) => <path key={i} d={`M${3 + i * 9} 34 L${7.5 + i * 9} 8 L${12 + i * 9} 34 Z`} fill="#d7d2c4" stroke="#5a5545" strokeWidth="1" />)}</svg></div>);
   if (cell === 4) return <div className="absolute rounded-md" style={{ left: x + 3, top: y + 3, width: TILE - 6, height: TILE - 6, background: "radial-gradient(circle at 40% 30%, #ffe08a99, #c9842a99)", border: "2px solid #7a441066" }} />;
   if (cell === 5) return <div className="absolute rounded-md" style={{ left: x + 2, top: y + 6, width: TILE - 4, height: TILE - 10, background: "linear-gradient(180deg,#5a4010aa,#2a1c08cc)", border: "1px solid #ffe06655" }} />;
-  if (cell === 6) return (<div className="absolute" style={{ left: x, top: y + 18, width: TILE, height: TILE - 18, background: `linear-gradient(180deg, ${P.wall} 0%, ${P.wallDk} 100%)`, boxShadow: `inset 0 -3px 0 rgba(0,0,0,0.25), inset 0 2px 0 rgba(255,255,255,0.2)`, borderRadius: "8px 8px 3px 3px", border: `1px solid ${P.wallDk}` }}><div className="absolute" style={{ left: 6, top: 6, right: 6, height: 3, background: "#fff3d655", borderRadius: 2 }} /></div>);
-  if (cell === 2) return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: P.wall, boxShadow: `inset 0 -4px 0 ${P.wallDk}, inset 0 3px 0 rgba(255,255,255,.18)` }}><div className="absolute inset-0" style={{ backgroundImage: `linear-gradient(to right, ${P.wallDk}66 0 2px, transparent 2px ${TILE / 2}px), linear-gradient(to bottom, ${P.wallDk}66 0 2px, transparent 2px ${TILE / 2}px)`, backgroundSize: `${TILE / 2}px ${TILE / 2}px` }} /></div>);
+  if (cell === 6) return (
+    <div className="absolute pointer-events-none" style={{ left: x, top: y + 14, width: TILE, height: 16 }}>
+      <div className="absolute inset-x-0 top-0 h-[5px]" style={{ background: "linear-gradient(180deg,#c9a06a,#8a5a2c)", borderRadius: 2, boxShadow: "0 2px 0 #3a2010, inset 0 1px 0 #ffe0b0" }} />
+      <div className="absolute left-1 right-1 top-[5px] h-[7px]" style={{ background: arena ? "linear-gradient(180deg,#6a3a18,#3a1c0a)" : `linear-gradient(180deg, ${P.wall}, ${P.wallDk})`, borderRadius: "0 0 4px 4px", boxShadow: "inset 0 -2px 0 #1a0c04" }} />
+      <div className="absolute left-1 top-0 w-[3px] h-4" style={{ background: "#8a8a8a", borderRadius: 1 }} />
+      <div className="absolute right-1 top-0 w-[3px] h-4" style={{ background: "#8a8a8a", borderRadius: 1 }} />
+    </div>
+  );
+  if (cell === 2 && door && c > 0 && c < COLS - 1) return (
+    <div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: "linear-gradient(180deg,#3a3a42,#1a1a22)", boxShadow: "inset 0 0 0 2px #6a6a74" }}>
+      <div className="absolute inset-y-1 left-2 w-1" style={{ background: "#9aa0a8" }} />
+      <div className="absolute inset-y-1 right-2 w-1" style={{ background: "#9aa0a8" }} />
+      <div className="absolute left-3 right-3 top-1/2 h-1 -translate-y-1/2" style={{ background: "#c9a86a" }} />
+    </div>
+  );
+  if (cell === 2 && arena && c > 0 && c < COLS - 1) return (
+    <div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: "linear-gradient(180deg,#5a2810,#2a1008)", boxShadow: "inset 0 3px 0 #c9842a55, inset 0 -4px 0 #1a0804" }}>
+      <div className="absolute left-2 right-2 bottom-2 h-2 rounded-full" style={{ background: "radial-gradient(circle,#ff7a2a,#7a1410)", boxShadow: "0 0 10px #ff5a2a88" }} />
+    </div>
+  );
+  if (cell === 2) return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: arena ? "#4a2010" : P.wall, boxShadow: `inset 0 -4px 0 ${P.wallDk}, inset 0 3px 0 rgba(255,255,255,.18)` }}><div className="absolute inset-0" style={{ backgroundImage: `linear-gradient(to right, ${P.wallDk}66 0 2px, transparent 2px ${TILE / 2}px), linear-gradient(to bottom, ${P.wallDk}66 0 2px, transparent 2px ${TILE / 2}px)`, backgroundSize: `${TILE / 2}px ${TILE / 2}px` }} /></div>);
   return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: P.dirt, boxShadow: `inset 0 -4px 0 ${P.dirtDk}, inset 0 3px 0 rgba(255,255,255,.12)` }}><div className="absolute rounded-sm" style={{ left: 6, top: 8, width: 7, height: 6, background: P.dirtDk, opacity: 0.6 }} /><div className="absolute rounded-sm" style={{ left: 26, top: 20, width: 9, height: 7, background: P.dirtDk, opacity: 0.5 }} />{zone === "horno" && <div className="absolute rounded-full" style={{ left: 30, top: 8, width: 4, height: 4, background: "#ff7a2a", boxShadow: "0 0 6px #ff7a2a", animation: "flicker 1s infinite" }} />}</div>);
 }
 
-function ArenaTile({ c, r }: { c: number; r: number }) {
+function ArenaTile({ c, r, local }: { c: number; r: number; local: number }) {
   const x = c * TILE, y = r * TILE;
-  const check = (c + r) % 2 === 0;
-  return <div className="absolute" style={{
-    left: x, top: y, width: TILE, height: TILE,
-    background: check ? "linear-gradient(180deg,#4a2414,#2a140c)" : "linear-gradient(180deg,#3a1c10,#1c0e08)",
-    boxShadow: "inset 0 0 0 1px #ff7a2a18",
-  }} />;
+  const glow = local > 5 ? 0.18 : 0.06;
+  return (
+    <div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: `radial-gradient(circle at 50% 100%, rgba(255,90,42,${glow}), transparent 70%)` }}>
+      {c > 0 && c < COLS - 1 && local % 2 === 0 && (
+        <div className="absolute left-3 right-3 bottom-0 h-px" style={{ background: "#ff7a2a22" }} />
+      )}
+    </div>
+  );
 }
 function Torch({ c, r }: { c: number; r: number }) {
   const x = c * TILE + (c === 0 ? TILE - 8 : 2);
@@ -852,9 +912,12 @@ function Torch({ c, r }: { c: number; r: number }) {
     </div>
   );
 }
-function RestTile({ c, r, level }: { c: number; r: number; level: number }) {
+function RestTile({ c, r, level, sealed }: { c: number; r: number; level: number; sealed?: boolean }) {
   const x = c * TILE, y = r * TILE;
-  const isBanner = c === 3 && offOf(r) === LEVEL_LEN + ARENA_H + 1;
+  const isBanner = !sealed && c === 3 && offOf(r) === LEVEL_LEN + ARENA_H + 1;
+  if (sealed) {
+    return <div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: "linear-gradient(180deg,#140808,#070303)" }} />;
+  }
   return (
     <div className="absolute" style={{
       left: x, top: y, width: TILE, height: TILE,
