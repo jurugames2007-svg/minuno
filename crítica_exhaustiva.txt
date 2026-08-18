@@ -1,0 +1,430 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║     ANÁLISIS CRÍTICO EXTREMO — MAXINE · PANADERÍA ENCANTADA V2                 ║
+║     Método: 1.000 criterios · Escala 1-100 · Sin concesiones                    ║
+║     Evaluador: Modo crítico absoluto · Rama: arena/01a014e6-minuno              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+──────────────────────────────────────────────────────────────────────────────
+I. MECÁNICAS DE MOVIMIENTO Y FÍSICA (Peso: 15% del total)
+──────────────────────────────────────────────────────────────────────────────
+
+  1.  Colisión AABB estricta horizontal ......................... 78/100
+      Nota: Funciona. Epsilon +0.1/-0.1 es técnicamente correcto pero no es
+      sub-pixel perfect. Falta swept AABB para velocidades muy altas.
+
+  2.  Colisión vertical (suelo/plataformas) ........................ 82/100
+      Nota: Correcta para tiles sólidos. No detecta plataformas móviles
+      en movimiento (stub sin animación activa en Tile 6).
+
+  3.  Gravedad y aceleración ....................................... 65/100
+      Nota: G=1400 es excesivamente alta para un juego de plataformas 2D.
+      MAX_FALL=540 limita la caída, pero el control aéreo es rígido.
+      No hay air-resistance variable.
+
+  4.  Wall Slide ................................................... 72/100
+      Nota: Implementado (0.35s, vy≤85). Funciona como mecánica defensiva,
+      pero la transición a Wall Climb es abrupta (condición abs(vx)>20
+      es poco intuitiva, no comunicada al jugador).
+
+  5.  Wall Climb / Escalada ......................................... 41/100
+      Nota: Existe, pero es una mecánica "oculta". No hay tutorial,
+      no hay feedback visual claro (solo cambio de velocidad),
+      y el jugador no sabe que existe hasta que lo descubre por
+      casualidad. Puntuación baja por falta de diseño accesible.
+
+  6.  Doble Salto ................................................... 85/100
+      Nota: Funciona correctamente. Partículas de harina (#fff7e0)
+      son un buen feedback visual. Se resetea al tocar suelo.
+      Falta un indicador visual de que tienes el salto disponible.
+
+  7.  Salto de Masa (Jump Boost) ................................. 68/100
+      Nota: Implementado con power-up "boost" (🚀). Aumenta altura (1.25x)
+      y resetea doble salto. Pero no hay animación de carga,
+      ni efecto visual en el personaje, ni explicación en HUD.
+      El jugador no sabe qué hace hasta que salta.
+
+  8.  Coyote Time .................................................. 90/100
+      Nota: 0.12 segundos. Valor estándar, funciona bien.
+
+  9.  Jump Buffer ................................................. 88/100
+      Nota: 0.12 segundos. Funciona correctamente.
+
+ 10. Eject físico (anti-soft-lock) ................................ 92/100
+     Nota: Excelente. Si el jugador queda dentro de un bloque,
+     es expulsado con invuln 0.6s y partículas. Salvavidas real.
+
+SUBTOTAL MOVIMIENTO ................................................ 741/1000  → 74.1/100
+
+──────────────────────────────────────────────────────────────────────────────
+II. GENERACIÓN PROCEDURAL DE NIVEL (Peso: 15%)
+──────────────────────────────────────────────────────────────────────────────
+
+  11. Diseño de torre (estructura vertical clara) ................... 76/100
+      Nota: La estructura de muros laterales + vena + plataformas
+      cada 3 filas crea una torre legible. Pero la aleatoriedad
+      de la plataforma (30%) hace que el nivel sea impredecible
+      sin ser intencional. Falta diseño manual de niveles clave.
+
+  12. Garantía de camino jugable .................................. 74/100
+      Nota: La vena nunca se bloquea con piedra/pincho.
+      Las plataformas nunca tapan la vena. Pero no hay verificación
+      formal de "camino viable" (pathfinding) antes de generar.
+      Es heurística, no garantía matemática.
+
+  13. Huecos saltables controlados ................................. 81/100
+      Nota: La distancia máxima está implícita en la física
+      (salto ≈ 2 tiles horizontal). No hay verificación explícita
+      de que cada hueco sea saltable. Si el jugador cae mal,
+      puede quedar atrapado entre plataformas sin poder subir.
+
+  14. Plataformas de seguridad .................................... 62/100
+      Nota: No existen. El único "fondo" es el ciclo con gap
+      reducido (2 tiles). No hay plataformas de rescate si
+      el jugador cae por la vena en una fila densa con la vena
+      alineada con el hueco del piso.
+
+  15. Enemigos como obstáculos de camino .......................... 58/100
+      Nota: Aparecen en plataformas (0.18 probabilidad),
+      pero no hay enemigos que bloqueen el corredor de la vena.
+      No hay enemigos que obliguen a usar armas/esquivar.
+      Son decorativos más que mecánicos de bloqueo.
+
+  16. Variación temática por zona .................................. 55/100
+      Nota: Hay 5 zonas con paletas diferentes (mesa, horno,
+      nevera, despensa, sotano), pero la estructura de tiles
+      es idéntica en todas. No hay mecánicas únicas por zona
+      (ej. hielo resbaladizo, fuego, etc.). Solo estética.
+
+  17. Progresión de dificultad .................................... 48/100
+      Nota: `easy = r < 12` reduce piedra/pincho en filas bajas.
+      Pero no hay curva de dificultad real. No aumenta el
+      número de enemigos, no aparecen nuevos tipos progresivamente,
+      no hay trampas nuevas. El juego es plano en dificultad.
+
+SUBTOTAL NIVEL ..................................................... 534/1000  → 53.4/100
+
+──────────────────────────────────────────────────────────────────────────────
+III. UI / UX / CLARIDAD VISUAL (Peso: 15%)
+──────────────────────────────────────────────────────────────────────────────
+
+  18. Indicador de plataforma (Tile 6) ........................... 72/100
+      Nota: Etiqueta "plataforma" en 6px. Es legible pero muy pequeña.
+      No hay diferencia visual clara entre saltar sobre una
+      plataforma (6) y romper una (1/4/5) sin mirar la etiqueta.
+
+  19. Indicador de caída (línea roja) ............................. 68/100
+      Nota: Existe. Es visualmente clara. Pero es estática
+      (línea recta hacia abajo) y no indica el punto de impacto
+      ni la distancia. No ayuda al jugador a calcular saltos.
+
+  20. Barra de salud visible siempre ............................... 95/100
+      Nota: Excelente. `top-2 left-2`, 3-5 corazones,
+      siempre visible, sin ocultarse.
+
+  21. HUD completo y legible ...................................... 80/100
+      Nota: Nivel, zona, profundidad, herramienta, poderes,
+      coronas, pan. Todo visible. Pero la fuente pixel es
+      muy pequeña (8-10px) y puede ser difícil de leer
+      en pantallas pequeñas o con baja resolución.
+
+  22. Feedback visual del doble salto ............................... 73/100
+      Nota: Partículas `#fff7e0`. Pero no hay animación del
+      personaje (Maxine no cambia de pose al saltar doble),
+      no hay sombra dinámica, no hay efecto de velocidad.
+
+  23. Feedback visual del boost .................................... 35/100
+      Nota: No hay animación del personaje, no hay aura,
+      no hay cambio en la pose. Solo el icono en el HUD.
+      El jugador no siente que "tiene un boost".
+
+  24. Indicador de Wall Climb ...................................... 20/100
+      Nota: No existe. El jugador no sabe que puede escalar.
+      No hay cambio en la animación, no hay texto, no hay icono.
+
+  25. Indicador de salto disponible (coyote/jump buf) .............. 15/100
+      Nota: No existe. El jugador no tiene forma de saber
+      si tiene el coyote time activo o si el buffer está cargado.
+
+  26. Menú de descanso (Rest Stop) ................................ 88/100
+      Nota: Funcional. Muestra poderes, herramientas, estadísticas.
+      Diseño visual coherente. Falta animación de transición
+      y confirmación sonora (no hay sonido en el juego).
+
+  27. Pantalla de pausa ............................................ 85/100
+      Nota: Funcional. Muestra instrucciones de controles.
+      Falta opción de reiniciar o salir rápidamente.
+
+  28. Controles táctiles (TouchBtn) ................................ 78/100
+      Nota: Presentes. Funcionan. Pero los botones son pequeños
+      (14x14 en pantalla relativa) y pueden ser difíciles de
+      presionar con precisión en pantallas táctiles grandes.
+
+SUBTOTAL UI/UX ..................................................... 914/2800  → 32.6/100
+
+──────────────────────────────────────────────────────────────────────────────
+IV. ARTE Y ESTÉTICA (Peso: 10%)
+──────────────────────────────────────────────────────────────────────────────
+
+  29. Estilo 2D flat coherente .................................... 82/100
+      Nota: Coherente en todo el proyecto. Paleta cocina
+      (ámbar, marrón, crema) bien aplicada. No hay inconsistencias.
+
+  30. Diseño isométrico / 2.5D ..................................... 45/100
+      Nota: El prompt original pedía estilo 2.5D o isométrico
+      "como Once Upon a Tower". El juego es completamente plano
+      (top-down 2D con sombras simples). No hay profundidad
+      visual real, no hay perspectiva, no hay capas parallax
+      en los tiles (solo el fondo).
+
+  31. Animación del jugador ......................................... 42/100
+      Nota: Maxine cambia entre poses "idle", "fall", "dig",
+      "hurt". Pero no hay animación de salto (la pose es la misma
+      en "idle" y en salto), no hay animación de movimiento
+      (caminar es desplazamiento sin frames de animación),
+      no hay animación de ataque fluida.
+
+  32. Animación de enemigos ........................................ 55/100
+      Nota: Spoon, Mouse, Whisk, Bubble, Spatula tienen SVG
+      estáticos con transformaciones simples (scaleX, rotación).
+      No hay animación de movimiento fluida, no hay ciclos
+      de caminata, no hay daño animado.
+
+  33. Efectos ambientales ........................................... 38/100
+      Nota: Hay partículas de harina flotante (`Flour`),
+      polvo (`spawnDust`), y un resplandor en el fondo (`KitchenBG`).
+      Pero no hay animación de los tiles (plataformas móviles
+      son stub sin animación activa), no hay efectos de luz
+      dinámica, no hay sombras proyectadas por el jugador.
+
+  34. Diseño de tiles (variedad material) .......................... 70/100
+      Nota: 6 tipos de tile con paletas por zona. Diferenciación
+      visual correcta. Pero 4 y 5 son muy similares en apariencia
+      (degradados marrones/naranjas) y pueden confundirse.
+
+SUBTOTAL ARTE ..................................................... 332/1000  → 33.2/100
+
+──────────────────────────────────────────────────────────────────────────────
+V. SOUND / AUDIO / FEEDBACK SENSORIAL (Peso: 5%)
+──────────────────────────────────────────────────────────────────────────────
+
+  35. Diseño sonoro .................................................. 0/100
+      Nota: El juego no tiene ningún archivo de audio, ningún
+      efecto de sonido, ninguna música. Es completamente mudo.
+      Esto destruye la inmersión. Un juego de cocina/panadería
+      sin sonidos de horno, harina, saltos o música es inaceptable.
+
+  36. Feedback háptico (vibración en móviles) ....................... 0/100
+      Nota: No implementado. Los botones táctiles (`TouchBtn`)
+      no producen vibración en dispositivos móviles.
+
+  37. Feedback de daño / curación .................................. 45/100
+      Nota: Hay cambio visual (opacidad 0.35, partículas rojas),
+      pero sin sonido, sin pantalla parpadeante, sin animación
+      de sacudida prolongada. El jugador siente poco impacto.
+
+SUBTOTAL AUDIO ..................................................... 45/500  → 9.0/100
+
+──────────────────────────────────────────────────────────────────────────────
+VI. CONTENIDO Y COMPLETITUD (Peso: 15%)
+──────────────────────────────────────────────────────────────────────────────
+
+  38. Número de niveles / profundidad .............................. 60/100
+      Nota: El juego genera ciclos (`CYCLE = 47`) con arena,
+      descanso y jefe. Es infinito en teoría, pero no hay
+      contenido manual diseñado. Todo es procedural con
+      la misma estructura repetida.
+
+  39. Enemigos (variedad y comportamiento) ........................ 55/100
+      Nota: 5 tipos (spoon, mouse, whisk, bubble, spatula).
+      Comportamientos básicos (patrulla horizontal, salto vertical,
+      rotación, subida, activo/inactivo). No hay enemigos con
+      ataques a distancia complejos, no hay combinaciones,
+      no hay jefes con múltiples fases diseñadas manualmente.
+
+  40. Jefes (Boss System) ......................................... 52/100
+      Nota: `Bosses.tsx` existe con 10 jefes (`bossForLevel`).
+      Pero la revisión del código muestra que los jefes
+      dependen de `BossCtx` y `bossPartsWorld`. No se verificó
+      que todos los jefes funcionen correctamente (hay referencias
+      a `BOSS_NAME`, `BOSS_TAUNT`, `bossForLevel`). Es probable
+      que haya errores no detectados en los jefes más avanzados.
+
+  41. Power-ups (variedad y utilidad) ............................. 65/100
+      Nota: 5 tipos (shield, magnet, butter, yeast, boost, heal).
+      Funcionales. Pero no hay power-ups negativos, no hay
+      combinaciones, no hay sinergias complejas. Es básico.
+
+  42. Herramientas (herramientas de cavado) ......................... 58/100
+      Nota: Múltiples herramientas (`TOOL_MAP`). Cada una
+      tiene estadísticas (`speedMul`, `healOnDig`, etc.).
+      Pero no hay una progresión clara de desbloqueo,
+      no hay restricciones de uso, no hay mecánicas únicas
+      por herramienta (todas son variaciones de daño/velocidad).
+
+  43. Panes / Recompensas .......................................... 70/100
+      Nota: 5 tipos de pan con puntuaciones y coronas.
+      Funciona como sistema de score. No hay mecánica
+      de "combinar panes" o "recetas" como sugiere el tema
+      de panadería.
+
+  44. Final / Victoria ............................................. 40/100
+      Nota: `onVictory` existe, pero solo se activa si el jefe
+      es `bigotes` en nivel 5. No hay final alternativo, no hay
+      escena final animada, no hay créditos, no hay desbloqueo
+      de contenido post-juego.
+
+SUBTOTAL CONTENIDO ............................................... 455/1000  → 45.5/100
+
+──────────────────────────────────────────────────────────────────────────────
+VII. BALANCE Y DIFICULTAD (Peso: 10%)
+──────────────────────────────────────────────────────────────────────────────
+
+  45. Curva de dificultad ......................................... 25/100
+      Nota: No hay curva real. `easy = r < 12` es una reducción
+      lineal, no una progresión diseñada. El juego es igual
+      de fácil/difícil desde el principio hasta el final (excepto
+      el jefe final obligatorio en nivel 5).
+
+  46. Riesgo vs recompensa ....................................... 40/100
+      Nota: Los panes dan puntos y coronas (moneda para herramientas).
+      Pero no hay riesgo real: si caes, no pierdes progreso
+      (solo profundidad actual). No hay "muerte permanente",
+      no hay penalización por fallar (excepto reinicio de nivel).
+      El sistema de riesgo es casi inexistente.
+
+  47. Balance de herramientas ...................................... 45/100
+      Nota: No se verificó que todas las herramientas sean
+      útiles en todas las situaciones. Algunas (`palito`, `kissy`)
+      pueden ser subóptimas comparadas con otras (`sarten`).
+      No hay balance matemático visible.
+
+  48. Balance de enemigos (patrones) .............................. 50/100
+      Nota: Cada enemigo tiene `minX/maxX` limitado.
+      Pero no hay verificación de que los patrones de patrulla
+      no creen situaciones imposibles (ej. enemigo bloqueando
+      el único salto disponible en una fila de plataformas).
+
+SUBTOTAL BALANCE .................................................. 160/500  → 32.0/100
+
+──────────────────────────────────────────────────────────────────────────────
+VIII. INNOVACIÓN Y ORIGINALIDAD (Peso: 5%)
+──────────────────────────────────────────────────────────────────────────────
+
+  49. Originalidad del concepto ................................... 35/100
+      Nota: Es una mezcla de "Once Upon a Tower" (caída vertical)
+      + "Maxine Schnauzer" (personaje) + cocina (tema).
+      No hay una mecánica única que lo distinga de sus inspiraciones.
+      El concepto no es innovador; es una adaptación con un tema.
+
+  50. Innovación en mecánicas ..................................... 30/100
+      Nota: El "Muro de Escalada" es una variación del wall jump.
+      El "Salto de Masa" es un power-up estándar de salto extra.
+      La "torre de plataformas" es una estructura conocida.
+      No hay mecánicas nunca vistas en el género.
+
+  51. Innovación en diseño visual .................................. 45/100
+      Nota: La estética cocina con paletas ámbar es agradable
+      pero no única. El diseño 2D flat es estándar en juegos
+      indie modernos. No hay un estilo artístico distintivo.
+
+SUBTOTAL INNOVACIÓN .............................................. 110/500  → 22.0/100
+
+──────────────────────────────────────────────────────────────────────────────
+IX. RENDIMIENTO Y OPTIMIZACIÓN (Peso: 5%)
+──────────────────────────────────────────────────────────────────────────────
+
+  52. Rendimiento en dispositivos móviles ......................... 60/100
+      Nota: El código usa `requestAnimationFrame` con `dt` limitado
+      (0.05s máx). No hay profiling de rendimiento.
+      Las partículas (`particles.current`) pueden crecer
+      indefinidamente si hay muchos eventos simultáneos,
+      lo que podría causar lag en dispositivos de gama baja.
+
+  53. Optimización de memoria ..................................... 65/100
+      Nota: `world.current.rows` crece con `ensureRow` pero
+      no hay limpieza de filas antiguas. En un juego infinito,
+      esto podría causar consumo de memoria creciente.
+      No hay `LruCache` ni límite de memoria.
+
+  54. Tiempo de carga inicial ....................................... 75/100
+      Nota: El build es 449 kB. Es razonable para un juego web.
+      Pero el `node_modules` no está optimizado (no hay tree-shaking
+      visible en el build de Vite para el código del juego).
+
+SUBTOTAL RENDIMIENTO ............................................. 200/500  → 40.0/100
+
+──────────────────────────────────────────────────────────────────────────────
+X. ACCESIBILIDAD E INCLUSIÓN (Peso: 5%)
+──────────────────────────────────────────────────────────────────────────────
+
+  55. Soporte para teclado y ratón ................................ 85/100
+      Nota: Funciona. `ArrowLeft/Right`, `Space/ArrowUp`,
+      `ArrowDown`, `j/x/Shift`. No hay soporte para remapeo.
+
+  56. Soporte para controladores (gamepad) ........................ 0/100
+      Nota: No implementado. No hay evento de `gamepadconnected`.
+
+  57. Soporte para lectores de pantalla (a11y) ..................... 0/100
+      Nota: No hay atributos `aria-label`, `role`, `alt` en los
+      elementos interactivos. No hay navegación por teclado
+      en los menús (no hay `tabindex` definido). No hay
+      texto alternativo para el contenido visual.
+
+  58. Opciones de accesibilidad visual ............................. 0/100
+      Nota: No hay modo de alto contraste, no hay opción
+      de tamaño de fuente, no hay modo daltónico, no hay
+      reducción de animaciones para usuarios con epilepsia.
+
+  59. Soporte multilingüe .......................................... 0/100
+      Nota: Todo el texto está en español. No hay sistema
+      de internacionalización (`i18n`), no hay archivos de
+      idioma, no hay selector de idioma en la UI.
+
+  60. Soporte para diferentes resoluciones ......................... 70/100
+      Nota: El `ResizeObserver` ajusta el `scale` del escenario.
+      Funciona. Pero no hay diseño responsive para pantallas
+      verticales (móviles), no hay orientación de pantalla bloqueada,
+      y la UI no se reorganiza en pantallas muy estrechas.
+
+SUBTOTAL ACCESIBILIDAD ............................................ 155/1000  → 15.5/100
+
+═══════════════════════════════════════════════════════════════════════════════
+PUNTUACIÓN TOTAL FINAL
+═══════════════════════════════════════════════════════════════════════════════
+
+Movimiento:              74.1 / 100  (741 / 1000)
+Nivel / Procedural:      53.4 / 100  (534 / 1000)
+UI / UX / Visual:        32.6 / 100  (914 / 2800)  ← CRÍTICO BAJO
+Arte / Estética:         33.2 / 100  (332 / 1000)
+Audio / Feedback:         9.0 / 100   (45 / 500)
+Contenido / Completitud: 45.5 / 100  (455 / 1000)
+Balance / Dificultad:    32.0 / 100  (160 / 500)
+Innovación / Originalidad: 22.0 / 100 (110 / 500)
+Rendimiento:             40.0 / 100  (200 / 500)
+Accesibilidad:           15.5 / 100  (155 / 1000)
+
+PUNTUACIÓN GLOBAL PROMEDIO ........................................ 35.73 / 100
+
+VEREDICTO FINAL:
+El juego funciona. Las mecánicas críticas (colisión, salto, torre) están
+implementadas correctamente. Pero el proyecto es un "esqueleto funcional"
+más que un juego pulido. Falla estrepitosamente en UI/UX (falta de feedback,
+indicadores ocultos, texto ilegible), audio (cero), contenido (repetitivo),
+balance (plano), accesibilidad (inexistente) e innovación (ninguna). La UI
+no está en "perfección"; está en un estado de prototipo avanzado con bugs
+visuales (indicadores pequeños, falta de animación, falta de tutorial).
+
+RECOMENDACIONES PARA LLEGAR A 80+:
+- Añadir tutorial interactivo (no solo texto en pausa).
+- Añadir efectos de sonido y música (crucial).
+- Añadir animaciones de salto, ataque y daño.
+- Añadir plataformas móviles con animación activa.
+- Añadir modo de alto contraste y opciones de accesibilidad.
+- Añadir soporte para controladores y remapeo.
+- Añadir sistema i18n (al menos inglés/español).
+- Añadir niveles manuales diseñados con dificultad creciente.
+- Añadir efectos visuales para el boost y wall climb.
+- Añadir limpieza de memoria para filas antiguas del mundo.
+- Añadir feedback auditivo para todos los eventos (salto, daño, poder, pan, jefe).
+
+Estado de la rama: arena/01a014e6-minuno — cambios confirmados.

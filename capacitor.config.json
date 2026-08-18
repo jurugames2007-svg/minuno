@@ -1,0 +1,13 @@
+{
+  "appId": "com.minuno.panaderia",
+  "appName": "Maxine",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1500,
+      "backgroundColor": "#140804",
+      "androidScaleType": "CENTER_CROP"
+    }
+  }
+}

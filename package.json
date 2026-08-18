@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cap:sync": "npx cap sync",
+    "cap:open": "npx cap open android",
+    "cap:build": "npm run build && npx cap sync && npx cap open android"
   },
   "dependencies": {
     "clsx": "2.1.1",
@@ -18,7 +21,10 @@
     "tsx": "^4.23.12"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "4.1.17",
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/core": "^8.5.0",
+    "@tailwindcss/vite": "^4.1.17",
     "@types/node": "22.19.17",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",

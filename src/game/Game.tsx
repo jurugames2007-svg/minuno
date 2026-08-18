@@ -4,6 +4,7 @@ import { Plushie, TOOL_MAP, TOOLS, type ToolId } from "../art/Plushie";
 import { Bread, type BreadType, Heart, Crown, PowerIcon, Flour, zoneOf, ZONE_NAME } from "../art/Decor";
 import { type Boss, type Bullet, type BossCtx, spawnBoss, stepBoss, bossForLevel, BossView, BulletView, BOSS_NAME, BOSS_TAUNT, bossPartsWorld } from "../art/Bosses";
 import type { SkinId } from "../data/skins";
+import * as Audio from "./AudioEngine";
 
 const COLS = 8;
 const TILE = 45;
@@ -30,7 +31,7 @@ interface Particle { x: number; y: number; vx: number; vy: number; life: number;
 
 interface World { rows: Record<number, Cell[]>; enemies: Enemy[]; breads: BreadItem[]; powers: PowerItem[]; bullets: Bullet[]; isRest: Record<number, boolean>; isBoss: Record<number, boolean>; doorRow: Record<number, number>; }
 interface Player { x: number; y: number; prevY: number; vx: number; vy: number; onGround: boolean; facing: 1 | -1; invuln: number; hurtTimer: number; digTimer: number; attackTimer: number; attackCd: number; coyote: number; jumpBuf: number; usedDouble: boolean; wallSlide: number; wallDir: 0|1|-1; }
-interface Active { shield: number; magnet: number; speed: number; yeast: number; frozen: number; bounceUsed: boolean; }
+interface Active { shield: number; magnet: number; speed: number; yeast: number; frozen: number; bounceUsed: boolean; boost: number; }
 
 function mulberry32(seed: number) {
   let a = seed >>> 0;
@@ -74,7 +75,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
 
   const world = useRef<World>({ rows: {}, enemies: [], breads: [], powers: [], bullets: [], isRest: {}, isBoss: {}, doorRow: {} });
   const player = useRef<Player>({ x: 3 * TILE + TILE / 2 - PW / 2, y: startRow * TILE, prevY: startRow * TILE, vx: 0, vy: 0, onGround: false, facing: 1, invuln: 0, hurtTimer: 0, digTimer: 0, attackTimer: 0, attackCd: 0, coyote: 0, jumpBuf: 0, usedDouble: false, wallSlide: 0, wallDir: 0 });
-  const active = useRef<Active>({ shield: 0, magnet: 0, speed: 0, yeast: 0, frozen: 0, bounceUsed: false });
+  const active = useRef<Active>({ shield: 0, magnet: 0, speed: 0, yeast: 0, frozen: 0, bounceUsed: false, boost: 0 });
   const cameraY = useRef(0);
   const hearts = useRef(3);
   const score = useRef(0);
@@ -123,9 +124,10 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       const row = new Array(COLS).fill(0) as Cell[]; row[0] = 2; row[COLS - 1] = 2;
       w.rows[r] = row; w.isRest[r] = true; return;
     }
-    // FLOOR with wide gap
+    // FLOOR with safe 2-tile gap (matches vein width, prevents infinite fall)
     if (off === CYCLE - 1) {
-      const row = new Array(COLS).fill(2) as Cell[]; row[2] = 0; row[3] = 0; row[4] = 0; row[5] = 0;
+      const row = new Array(COLS).fill(2) as Cell[]; row[0] = 2; row[COLS - 1] = 2;
+      row[3] = 0; row[4] = 0;
       w.rows[r] = row; return;
     }
     // LEVEL rows (dense) — V2 torre de plataformas Once Upon a Tower
@@ -176,7 +178,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
     for (let c = 1; c < COLS - 1; c++) if (cells[c] === 0 && R() < 0.22) w.breads.push({ id: ids.current++, x: c * TILE + TILE / 2, y: r * TILE + TILE / 2, type: pickBread(R), taken: false, phase: R() * 6 });
     if (R() < 0.07) {
       const empt = []; for (let c = 1; c < COLS - 1; c++) if (cells[c] === 0) empt.push(c);
-      if (empt.length) { const c = empt[(R() * empt.length) | 0]; const kinds = ["milk", "magnet", "butter", "yeast"]; w.powers.push({ id: ids.current++, x: c * TILE + TILE / 2, y: r * TILE + TILE / 2, kind: kinds[(R() * kinds.length) | 0], taken: false }); }
+      if (empt.length) { const c = empt[(R() * empt.length) | 0]; const kinds = ["milk", "magnet", "butter", "yeast", "boost"]; w.powers.push({ id: ids.current++, x: c * TILE + TILE / 2, y: r * TILE + TILE / 2, kind: kinds[(R() * kinds.length) | 0], taken: false }); }
     }
     if (!easy && R() < 0.22) {
       const cands = []; for (let c = 1; c < COLS - 1; c++) if ((cells[c] === 1 || cells[c] === 2) && w.rows[r - 1] && w.rows[r - 1][c] === 0) cands.push(c);
@@ -194,6 +196,25 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
 
   function getCell(r: number, c: number): Cell { if (c < 0 || c >= COLS) return 2; ensureRow(r); return world.current.rows[r]?.[c] ?? 1; }
   function setCell(r: number, c: number, v: Cell) { ensureRow(r); if (world.current.rows[r]) world.current.rows[r][c] = v; }
+  function verifySafePath() {
+    const pc = Math.floor((player.current.x + PW / 2) / TILE);
+    const pr = Math.floor((player.current.y + PH / 2) / TILE);
+    // Asegurar que siempre haya un camino descendente en la columna del jugador
+    for (let rr = pr + 1; rr <= Math.min(pr + 5, Math.floor((player.current.y + STAGE_H) / TILE) + 2); rr++) {
+      const c = getCell(rr, pc);
+      if (c === 0 || c === 6) return true;
+      // Si encuentra un sólido, intentar encontrar un hueco cercano
+      for (let delta = -1; delta <= 1; delta += 2) {
+        const cc = pc + delta;
+        if (cc >= 1 && cc < COLS - 1) {
+          const cellSide = getCell(rr, cc);
+          if (cellSide === 0 || cellSide === 6) return true;
+        }
+      }
+    }
+    return false;
+  }
+
   const solid = (c: Cell) => c === 1 || c === 2 || c === 3 || c === 6;
 
   const particles = useRef<Particle[]>([]);
@@ -203,7 +224,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
     const p = player.current; if (p.invuln > 0 || over.current) return;
     if (active.current.shield > 0) { active.current.shield = 0; p.invuln = 0.6; p.hurtTimer = 0.2; spawnDust(p.x + PW / 2, p.y + PH / 2, "#7fd0ff", 14); return; }
     if (TOOL_MAP[tool.current].bounce && !active.current.bounceUsed) { active.current.bounceUsed = true; p.invuln = 1.2; p.hurtTimer = 0.3; spawnDust(p.x + PW / 2, p.y + PH / 2, "#d4e84a", 18); return; }
-    hearts.current -= 1; p.invuln = 1.2; p.hurtTimer = 0.4; shake.current = Math.max(shake.current, 6); spawnDust(p.x + PW / 2, p.y + PH / 2, "#ff5a5a", 12);
+    hearts.current -= 1; p.invuln = 1.2; p.hurtTimer = 0.4; shake.current = Math.max(shake.current, 6); spawnDust(p.x + PW / 2, p.y + PH / 2, "#ff5a5a", 12); Audio.playHurt();
     if (hearts.current <= 0) endGame();
   }
   function endGame() { if (over.current) return; over.current = true; const depth = maxDepth.current; const isNewBest = depth > best; setTimeout(() => onExit({ depth, score: score.current, bread: breadCount.current, crowns: crownsRun.current, isNewBest }), 650); }
@@ -214,6 +235,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
     if (b.type === "croissant" && hearts.current < 5) hearts.current++;
     if (b.type === "pretzel") { active.current.speed = Math.max(active.current.speed, 8); if (hearts.current < 5) hearts.current++; }
     if (b.type === "divine") { hearts.current = 5; player.current.invuln = Math.max(player.current.invuln, 3); }
+    Audio.playBread();
   }
 
   function tryDig() {
@@ -231,7 +253,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       if (cell === 1 || cell === 4 || cell === 5 || cell === 6) { setCell(rr, cc, 0); broke = true; const col = cell===6? "#d7c9a0": cell === 1 ? "#caa06a" : "#e3a35a"; spawnDust(cc * TILE + TILE / 2, rr * TILE + TILE / 2, col, 10); score.current += 2; if (t.healOnDig && Math.random() < 0.14 && hearts.current < 5) { hearts.current++; spawnDust(p.x + PW / 2, p.y, "#ff8fa0", 10); } }
       else if (cell === 2) { const key = `${rr},${cc}`; const need = t.speedMul >= 1.3 ? 1 : 2; const have = (stoneHits.current.get(key) ?? 0) + 1; if (have >= need) { setCell(rr, cc, 0); stoneHits.current.delete(key); broke = true; spawnDust(cc * TILE + TILE / 2, rr * TILE + TILE / 2, "#d7d2c4", 12); score.current += 3; } else { stoneHits.current.set(key, have); spawnDust(cc * TILE + TILE / 2, rr * TILE + TILE / 2, "#ffffff", 5); } }
     }
-    if (broke) { p.digTimer = 0.18 / t.speedMul; if (ax !== 0 && ay === 0) { const targetX = (pc + ax) * TILE + (ax > 0 ? 2 : TILE - PW - 2); p.x += (targetX - p.x) * 0.6; p.facing = ax as 1 | -1; } if (ay === 1) p.onGround = false; }
+    if (broke) { p.digTimer = 0.18 / t.speedMul; Audio.playDig(); if (ax !== 0 && ay === 0) { const targetX = (pc + ax) * TILE + (ax > 0 ? 2 : TILE - PW - 2); p.x += (targetX - p.x) * 0.6; p.facing = ax as 1 | -1; } if (ay === 1) p.onGround = false; }
   }
 
   function attackArc() {
@@ -247,7 +269,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
     p.attackCd = 0.32; p.attackTimer = 0.18;
     const t = TOOL_MAP[tool.current]; const dmg = 1 + (t.speedMul >= 1.45 ? 1 : 0) + (t.healOnDig ? 1 : 0);
     const arc = attackArc();
-    spawnDust(arc.x + arc.w / 2, arc.y + arc.h / 2, "#fff3d6", 6);
+    spawnDust(arc.x + arc.w / 2, arc.y + arc.h / 2, "#fff3d6", 6); Audio.playAttack();
     for (const e of world.current.enemies) {
       if (e.hp >= 999) continue;
       if (e.x > arc.x && e.x < arc.x + arc.w && e.y > arc.y && e.y < arc.y + arc.h) {
@@ -288,7 +310,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
   function onBossDefeated() {
     const b = boss.current; if (!b) return;
     const L = level.current; bossDefeated.current[L] = true; bossActive.current = false;
-    spawnDust(b.x, b.y, "#ffd27a", 40); shake.current = 14; score.current += 200; crownsRun.current += 3;
+    spawnDust(b.x, b.y, "#ffd27a", 40); shake.current = 14; score.current += 200; crownsRun.current += 3; Audio.playBossDefeat();
     if (b.type === "bigotes" && L === 5) { boss.current = null; setTimeout(() => onVictory({ depth: maxDepth.current, score: score.current, bread: breadCount.current, crowns: crownsRun.current }), 750); return; }
     const cyc = cycleOf(Math.floor(player.current.y / TILE));
     let dr = world.current.doorRow[cyc];
@@ -302,6 +324,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
     for (let r = Math.max(0,startRow-5); r < startRow+60; r++) ensureRow(r);
     for (let r = 0; r < 60; r++) ensureRow(r);
     let raf = 0; let last = performance.now();
+    Audio.startAmbientMusic();
     const ctx: BossCtx = {
       playerX: 0, playerY: 0, left: TILE, right: (COLS - 1) * TILE, top: 0, bottom: 0,
       spawnBullet: (b) => { world.current.bullets.push({ id: ids.current++, ...b }); },
@@ -315,7 +338,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       if (pausedRef.current || over.current || restingRef.current) { setTick((t) => (t + 1) & 0xffff); return; }
       elapsed.current += dt;
       const p = player.current; const a = active.current; const t = TOOL_MAP[tool.current];
-      a.shield = Math.max(0, a.shield - dt); a.magnet = Math.max(0, a.magnet - dt); a.speed = Math.max(0, a.speed - dt); a.yeast = Math.max(0, a.yeast - dt); a.frozen = Math.max(0, a.frozen - dt);
+      a.shield = Math.max(0, a.shield - dt); a.magnet = Math.max(0, a.magnet - dt); a.speed = Math.max(0, a.speed - dt); a.yeast = Math.max(0, a.yeast - dt); a.frozen = Math.max(0, a.frozen - dt); a.boost = Math.max(0, a.boost - dt);
       p.invuln = Math.max(0, p.invuln - dt); p.hurtTimer = Math.max(0, p.hurtTimer - dt); p.digTimer = Math.max(0, p.digTimer - dt); p.attackTimer = Math.max(0, p.attackTimer - dt); p.attackCd = Math.max(0, p.attackCd - dt);
       p.prevY = p.y;
 
@@ -361,21 +384,27 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       p.jumpBuf = Math.max(0, p.jumpBuf - dt);
       // wall jump priority
       if (p.jumpBuf > 0 && p.wallSlide > 0 && !p.onGround) {
-        p.vy = -JUMP_V * 0.95; p.vx = -p.wallDir * 150; p.jumpBuf = 0; p.coyote = 0; p.onGround = false; p.wallSlide = 0; p.usedDouble = false;
+        // Muro de Escalada: si hay velocidad horizontal suficiente, sube lentamente
+        const climbing = Math.abs(p.vx) > 20;
+        p.vy = climbing ? -250 : -JUMP_V * 0.95;
+        p.vx = climbing ? (-p.wallDir * 45) : (-p.wallDir * 150);
+        p.jumpBuf = 0; p.coyote = 0; p.onGround = false; p.wallSlide = climbing ? 0.35 : 0; p.usedDouble = false;
         spawnDust(p.x + PW/2, p.y + PH/2, "#fff3d6", 8); p.facing = (-p.wallDir as 1|-1);
+        if (climbing) Audio.playWallClimb();
       } else if (p.jumpBuf > 0 && (p.coyote > 0 || !p.usedDouble)) {
         // double jump general (1 extra), yeast da igual pero resetea en suelo
         const isDouble = p.coyote <= 0;
-        if (isDouble) p.usedDouble = true;
-        else p.usedDouble = false;
-        p.vy = isDouble ? -JUMP_V*0.92 : -JUMP_V;
+        const boostMul = a.boost > 0 ? 1.25 : 1;
+        if (isDouble) { p.usedDouble = true; Audio.playJumpBoost(); }
+        else { p.usedDouble = false; Audio.playJump(); }
+        p.vy = (isDouble ? -JUMP_V*0.92 : -JUMP_V) * boostMul;
         p.jumpBuf = 0; p.coyote = 0; p.onGround = false; p.wallSlide = 0;
         spawnDust(p.x + PW / 2, p.y + PH, "#fff3d6", isDouble? 8:6);
         // salto doble deja rastro de harina extra
         if(isDouble) for(let i=0;i<3;i++) particles.current.push({x:p.x+PW/2, y:p.y+PH, vx:(Math.random()-0.5)*40, vy:20, life:0.4, max:0.4, color:"#fff7e0", size:2});
       }
-      // yeast extra ya no es necesario pero mantiene compatibilidad: si tiene levadura permite otro doble
-      if(a.yeast>0) p.usedDouble = false;
+      // boost: salto de masa permite otro salto extra y aumenta altura
+      if(a.boost>0) p.usedDouble = false;
 
       p.vy += G * dt; if (p.vy > MAX_FALL) p.vy = MAX_FALL;
       // wall slide ralentiza caída si sigue presionando
@@ -397,6 +426,16 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
         if (solid(getCell(eR, eC))) { let er = eR; while (er >= 0 && solid(getCell(er, eC))) er--; p.y = er * TILE - PH -1; p.vy = 0; p.onGround = true; p.usedDouble = false; p.wallSlide=0; p.invuln=Math.max(p.invuln,0.6); spawnDust(p.x+PW/2,p.y+PH/2,"#ffd27a",6); }
       }
 
+      // Garantía anti-soft-lock: asegurar camino descendente
+      if (!verifySafePath()) {
+        const safeRow = Math.floor((player.current.y + PH) / TILE) + 1;
+        const safeCol = Math.floor((player.current.x + PW / 2) / TILE);
+        if (safeCol > 0 && safeCol < COLS - 1) {
+          setCell(safeRow, safeCol, 0);
+          setCell(safeRow, safeCol + 1, 0);
+        }
+      }
+
       const frontRow = Math.floor((p.y + STAGE_H) / TILE) + 4;
       for (let r = 0; r <= frontRow; r++) ensureRow(r);
 
@@ -412,7 +451,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       }
       // rest trigger
       if (world.current.isRest[pRow] && level.current > lastRestLevel.current && !bossActive.current) {
-        level.current = Math.max(level.current, lastRestLevel.current + 1); lastRestLevel.current = level.current; p.vy = 0; setResting(true);
+        level.current = Math.max(level.current, lastRestLevel.current + 1); lastRestLevel.current = level.current; p.vy = 0; setResting(true); Audio.playRest();
       }
 
       const target = p.y - STAGE_H * 0.45; cameraY.current += (target - cameraY.current) * Math.min(1, dt * 6);
@@ -494,7 +533,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       }
       for (const pw of world.current.powers) {
         if (pw.taken) continue; if (pw.y < cameraY.current - 60 || pw.y > cameraY.current + STAGE_H + 60) continue;
-        if (Math.abs(pw.x - (p.x + PW / 2)) < PW && Math.abs(pw.y - (p.y + PH / 2)) < PH) { pw.taken = true; spawnDust(pw.x, pw.y, "#7fd0ff", 12); if (pw.kind === "milk") a.shield = 999; if (pw.kind === "magnet") a.magnet = 18; if (pw.kind === "butter") a.speed = 12; if (pw.kind === "yeast") a.yeast = 30; }
+        if (Math.abs(pw.x - (p.x + PW / 2)) < PW && Math.abs(pw.y - (p.y + PH / 2)) < PH) { pw.taken = true; spawnDust(pw.x, pw.y, "#7fd0ff", 12); if (pw.kind === "milk") a.shield = 999; if (pw.kind === "magnet") a.magnet = 18; if (pw.kind === "butter") a.speed = 12; if (pw.kind === "yeast") a.yeast = 30; if (pw.kind === "boost") { a.boost = 18; Audio.playPowerBoost(); } }
       }
 
       // particles
@@ -503,6 +542,25 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       setTick((t2) => (t2 + 1) & 0xffff);
     };
     raf = requestAnimationFrame(step);
+
+    // Gamepad support
+    const gamepadPoll = setInterval(() => {
+      const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+      for (const gp of pads) {
+        if (!gp) continue;
+        const deadZone = 0.15;
+        const left = gp.axes[0] < -deadZone ? true : false;
+        const right = gp.axes[0] > deadZone ? true : false;
+        input.current.left = left;
+        input.current.right = right;
+        // Jump on button A (index 0)
+        if (gp.buttons[0] && gp.buttons[0].pressed) { input.current.jumpEdge = true; }
+        // Attack on button X (index 2)
+        if (gp.buttons[2] && gp.buttons[2].pressed) { input.current.attackEdge = true; }
+        // Dig on button B (index 1)
+        if (gp.buttons[1] && gp.buttons[1].pressed) { input.current.digEdge = true; }
+      }
+    }, 50);
 
     const kd = (e: KeyboardEvent) => {
       if (e.repeat) return;
@@ -518,7 +576,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") input.current.right = false;
     };
     window.addEventListener("keydown", kd); window.addEventListener("keyup", ku);
-    return () => { cancelAnimationFrame(raf); window.removeEventListener("keydown", kd); window.removeEventListener("keyup", ku); };
+    return () => { cancelAnimationFrame(raf); clearInterval(gamepadPoll); Audio.stopAmbientMusic(); window.removeEventListener("keydown", kd); window.removeEventListener("keyup", ku); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -548,8 +606,9 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
   if (active.current.magnet > 0) activeList.push({ kind: "magnet", t: active.current.magnet });
   if (active.current.speed > 0) activeList.push({ kind: "butter", t: active.current.speed });
   if (active.current.yeast > 0) activeList.push({ kind: "yeast", t: active.current.yeast });
+  if (active.current.boost > 0) activeList.push({ kind: "boost", t: active.current.boost });
 
-  const buyPower = (kind: string, cost: number) => { if (breadRun.current < cost) return; breadRun.current -= cost; if (kind === "shield") active.current.shield = 999; if (kind === "magnet") active.current.magnet = 22; if (kind === "butter") active.current.speed = 14; if (kind === "heal") hearts.current = Math.min(5, hearts.current + 1); if (kind === "yeast") active.current.yeast = 30; setTick((t) => t + 1); };
+  const buyPower = (kind: string, cost: number) => { if (breadRun.current < cost) return; breadRun.current -= cost; if (kind === "shield") active.current.shield = 999; if (kind === "magnet") active.current.magnet = 22; if (kind === "butter") active.current.speed = 14; if (kind === "heal") hearts.current = Math.min(5, hearts.current + 1); if (kind === "yeast") active.current.yeast = 30; if (kind === "boost") active.current.boost = 18; setTick((t) => t + 1); };
   const buyTool = (id: ToolId) => {
     const def = TOOL_MAP[id]; const have = ownedTools.current.includes(id) || ownedMeta.includes(id);
     if (have) { tool.current = id; setTick((t) => t + 1); return; }
@@ -565,7 +624,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
 
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-black overflow-hidden">
-      <div ref={stageRef} className="relative overflow-hidden" style={{ width: STAGE_W, height: STAGE_H, transform: `scale(${scale})`, transformOrigin: "center center", borderRadius: 18, boxShadow: "0 0 0 4px #1a0c04, 0 20px 60px rgba(0,0,0,.7)" }}>
+      <div ref={stageRef} className="relative overflow-hidden" style={{ width: STAGE_W, height: STAGE_H, transform: `scale(${scale})`, transformOrigin: "center center", borderRadius: 18, boxShadow: "0 0 0 4px #1a0c04, 0 20px 60px rgba(0,0,0,.7)", touchAction: "none", userSelect: "none" }}>
         <KitchenBG depth={depth} />
         <Flour count={10} />
 
@@ -576,6 +635,15 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
             <div className="absolute pointer-events-none" style={{ left: aimC * TILE, top: aimR * TILE, width: TILE, height: TILE }}>
               <div className="absolute inset-1 rounded-md border-2 border-dashed" style={{ borderColor: "#ffe06688", animation: "glow-pulse 1s infinite" }} />
               <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-amber-200 font-display text-lg" style={{ textShadow: "0 1px 2px #000" }}>{aim.current.y === 1 ? "↓" : aim.current.x === -1 ? "←" : "→"}</div>
+            </div>
+          )}
+          {/* Indicador de Caída — línea de caída segura */}
+          {!bossActive.current && !p.onGround && (
+            <div className="absolute pointer-events-none" style={{ left: p.x + PW / 2 - 1, top: p.y + PH, width: 2, height: STAGE_H - (p.y + PH - cam), zIndex: 5 }}>
+              <svg width="2" height={STAGE_H} viewBox="0 0 2 640" preserveAspectRatio="none" style={{ overflow: "visible" }}>
+                <line x1="1" y1="0" x2="1" y2="640" stroke="#ff3060" strokeWidth="1.5" strokeDasharray="4 3" opacity="0.7" />
+                <circle cx="1" cy="8" r="2" fill="#ff3060" opacity="0.9" />
+              </svg>
             </div>
           )}
 
@@ -618,6 +686,8 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
             )}
             {!isFoot && tool.current !== "guyu" && tool.current !== "dixie" && <div className="absolute" style={{ left: p.facing === 1 ? PW - 2 + (p.attackTimer > 0 ? 6 : 0) : -12 - (p.attackTimer > 0 ? 6 : 0), top: PH * 0.48, zIndex: 2, transform: p.attackTimer > 0 ? `rotate(${p.facing * -25}deg)` : undefined, transition: "transform .08s" }}><Plushie id={tool.current} size={tool.current === "kissy" ? 26 : 22} flip={p.facing} /></div>}
             <Maxine skin={skin} pose={pose} facing={p.facing} size={PW + 18} />
+            {/* Aura de escalada y boost */}
+            {(p.wallSlide > 0 || a.boost > 0) && <div className="absolute inset-0 rounded-full border-2 opacity-60" style={{ borderColor: p.wallSlide > 0 ? "#7fc24a" : "#ffd27a", boxShadow: p.wallSlide > 0 ? "0 0 12px #7fc24a" : "0 0 14px #ffd27a", animation: "glow-pulse 1.2s infinite" }} />}
             {isFoot && <div className="absolute pointer-events-none" style={{ left: -2, top: PH * 0.82, width: PW + 12, height: 14, zIndex: 3 }}><Plushie id="zapatitos" size={PW + 12} /></div>}
           </div>
         </div>
@@ -626,13 +696,19 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
         <div className="absolute top-2 left-2 flex gap-1 z-30">{Array.from({ length: Math.max(3, hearts.current) }).map((_, i) => <Heart key={i} filled={i < hearts.current} size={20} />)}</div>
         <div className="absolute top-2 right-2 flex flex-col items-end gap-1 z-30">
           <div className="flex items-center gap-1 bg-black/45 rounded-full px-2 py-0.5 border border-amber-300/30"><Crown size={12} /><span className="font-pixel text-[10px] text-amber-200">{crownsRun.current}</span></div>
-          <div className="flex items-center gap-1 bg-black/45 rounded-full px-2 py-0.5 border border-amber-300/30"><span className="text-[12px]">🍞</span><span className="font-pixel text-[10px] text-amber-100">{breadRun.current}</span></div>
+          <div className="flex items-center gap-1 bg-black/45 rounded-full px-2 py-0.5 border border-amber-300/30"><span className="text-[12px]">PAN</span><span className="font-pixel text-[10px] text-amber-100">{breadRun.current}</span></div>
         </div>
         <div className="absolute top-2 left-1/2 -translate-x-1/2 text-center z-30 pointer-events-none">
           <div className="font-pixel text-[8px] text-amber-200/80">NIVEL {level.current} · {ZONE_NAME[zone]}</div>
           <div className="font-display font-bold text-amber-50 text-base leading-none" style={{ textShadow: "0 2px 0 #7a3410" }}>{depth} m</div>
         </div>
         <div className="absolute top-[58px] left-1/2 -translate-x-1/2 z-30 pointer-events-none flex items-center gap-1 bg-black/35 rounded-full px-2 py-0.5 border border-amber-300/20"><Plushie id={tool.current} size={14} /><span className="font-pixel text-[8px] text-amber-100">{TOOL_MAP[tool.current].name}</span></div>
+        {/* Tutorial contextual breve */}
+        <div className="absolute top-[86px] left-1/2 -translate-x-1/2 z-30 pointer-events-none text-center">
+          <div className="font-pixel text-[7px] text-amber-100/50 bg-black/30 rounded px-2 py-0.5">
+            {!p.onGround ? "ESPACIO = SALTO · SHIFT = ATAQUE" : p.vy > 0 ? "CAYENDO... · SALTA PARA SUBIR" : "← → MOVER · ↓ CAVAR"}
+          </div>
+        </div>
 
         {bossActive.current && boss.current && (
           <div className="absolute left-4 right-4 z-30 pointer-events-none" style={{ top: 86 }}>
@@ -649,7 +725,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
           </div>
         )}
 
-        <button onClick={() => setPaused((v) => !v)} className="absolute top-10 right-2 z-40 bg-black/45 rounded-md px-2 py-1 font-pixel text-[9px] text-amber-100 border border-amber-300/30">{paused ? "▶" : "❚❚"}</button>
+        <button aria-label="Pausar juego" onClick={() => setPaused((v) => !v)} className="absolute top-10 right-2 z-40 bg-black/45 rounded-md px-2 py-1 font-pixel text-[9px] text-amber-100 border border-amber-300/30">{paused ? "▶" : "❚❚"}</button>
 
         {activeList.length > 0 && (
           <div className="absolute bottom-32 left-1/2 -translate-x-1/2 flex gap-2 z-30">
@@ -659,14 +735,14 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
 
         {/* controls */}
         <div className="absolute bottom-3 left-3 flex gap-2 z-30">
-          <TouchBtn label="◀" onDown={() => (input.current.left = true)} onUp={() => (input.current.left = false)} />
-          <TouchBtn label="▶" onDown={() => (input.current.right = true)} onUp={() => (input.current.right = false)} />
+          <TouchBtn aria-label="Mover izquierda" label="◀" onDown={() => (input.current.left = true)} onUp={() => (input.current.left = false)} />
+          <TouchBtn aria-label="Mover derecha" label="▶" onDown={() => (input.current.right = true)} onUp={() => (input.current.right = false)} />
         </div>
         <div className="absolute bottom-3 right-3 flex flex-col items-end gap-2 z-30">
-          <TouchBtn label="SALTO" color="jump" onDown={() => (input.current.jumpEdge = true)} onUp={() => {}} />
+          <TouchBtn aria-label="Saltar" label="SALTO" color="jump" onDown={() => (input.current.jumpEdge = true)} onUp={() => {}} />
           <div className="flex gap-2">
-            <TouchBtn label="👊" color="attack" onDown={() => (input.current.attackEdge = true)} onUp={() => {}} />
-            <TouchBtn label="CAVAR" color="dig" big onDown={() => (input.current.digEdge = true)} onUp={() => {}} />
+            <TouchBtn aria-label="Atacar" label="👊" color="attack" onDown={() => (input.current.attackEdge = true)} onUp={() => {}} />
+            <TouchBtn aria-label="Cavar" label="CAVAR" color="dig" big onDown={() => (input.current.digEdge = true)} onUp={() => {}} />
           </div>
         </div>
 
@@ -687,11 +763,12 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
   );
 }
 
-function TouchBtn({ label, onDown, onUp, big, color }: { label: string; onDown: () => void; onUp: () => void; big?: boolean; color?: "jump" | "attack" | "dig" }) {
+function TouchBtn({ label, onDown, onUp, big, color, "aria-label": ariaLabel }: { label: string; onDown: () => void; onUp: () => void; big?: boolean; color?: "jump" | "attack" | "dig"; "aria-label"?: string }) {
   const palette = color === "jump" ? ["#7fc24a", "#3a7a1a", "#1a3a08"] : color === "attack" ? ["#d96bff", "#7a1aa8", "#3a0858"] : color === "dig" ? ["#ff7a4a", "#d9342b", "#7a1410"] : ["#7a5a3a", "#3a2410", "#1a0c04"];
   return (
     <button onPointerDown={(e) => { e.preventDefault(); onDown(); }} onPointerUp={onUp} onPointerLeave={onUp} onPointerCancel={onUp}
       className={`btn-3d select-none font-display font-bold text-amber-50 rounded-full border-b-4 active:border-b-0 ${big ? "px-5 py-3 text-base" : "w-14 h-14 text-lg"}`}
+      aria-label={ariaLabel || label}
       style={{ background: `linear-gradient(180deg,${palette[0]},${palette[1]})`, borderColor: palette[2], boxShadow: "0 4px 10px rgba(0,0,0,.4), inset 0 2px 0 rgba(255,255,255,.25)" }}>{label}</button>
   );
 }
@@ -717,7 +794,7 @@ function Tile({ c, r, cell, zone }: { c: number; r: number; cell: Cell; zone: st
   if (cell === 3) return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE }}><svg width={TILE} height={TILE} viewBox="0 0 45 45"><rect x="0" y="34" width="45" height="11" fill={P.wallDk} />{Array.from({ length: 5 }).map((_, i) => <path key={i} d={`M${3 + i * 9} 34 L${7.5 + i * 9} 8 L${12 + i * 9} 34 Z`} fill="#d7d2c4" stroke="#5a5545" strokeWidth="1" />)}</svg></div>);
   if (cell === 4) return <div className="absolute rounded-md" style={{ left: x + 3, top: y + 3, width: TILE - 6, height: TILE - 6, background: "radial-gradient(circle at 40% 30%, #ffe08a99, #c9842a99)", border: "2px solid #7a441066" }} />;
   if (cell === 5) return <div className="absolute rounded-md" style={{ left: x + 2, top: y + 6, width: TILE - 4, height: TILE - 10, background: "linear-gradient(180deg,#5a4010aa,#2a1c08cc)", border: "1px solid #ffe06655" }} />;
-  if (cell === 6) return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: `linear-gradient(180deg, ${P.wall} 0%, ${P.wallDk} 100%)`, boxShadow: `inset 0 -3px 0 rgba(0,0,0,0.25), inset 0 2px 0 rgba(255,255,255,0.2)`, border: `1px solid ${P.wallDk}` }}><div className="absolute" style={{ left: 4, top: 8, right: 4, height: 2, background: P.wallDk, opacity: 0.5, borderRadius: 1 }} /><div className="absolute" style={{ left: 6, top: 16, width: 6, height: 6, background: "#5a2a0a", borderRadius: 1, opacity: 0.3 }} /><div className="absolute" style={{ left: TILE-12, top: 16, width: 6, height: 6, background: "#5a2a0a", borderRadius: 1, opacity: 0.3 }} /></div>); // PLATFORM flotante - sólida y saltable
+  if (cell === 6) return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: `linear-gradient(180deg, ${P.wall} 0%, ${P.wallDk} 100%)`, boxShadow: `inset 0 -3px 0 rgba(0,0,0,0.25), inset 0 2px 0 rgba(255,255,255,0.2)`, border: `1px solid ${P.wallDk}`, animation: "bob 2.2s ease-in-out infinite" }}><div className="absolute" style={{ left: 4, top: 8, right: 4, height: 2, background: P.wallDk, opacity: 0.5, borderRadius: 1 }} /><div className="absolute" style={{ left: 6, top: 16, width: 6, height: 6, background: "#5a2a0a", borderRadius: 1, opacity: 0.3 }} /><div className="absolute" style={{ left: TILE-12, top: 16, width: 6, height: 6, background: "#5a2a0a", borderRadius: 1, opacity: 0.3 }} /><div className="absolute left-1/2 -translate-x-1/2 top-2 text-[6px] font-pixel text-amber-200/60 uppercase tracking-wide">plataforma</div></div>); // PLATFORM flotante - sólida y saltable
   if (cell === 2) return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: P.wall, boxShadow: `inset 0 -4px 0 ${P.wallDk}, inset 0 3px 0 rgba(255,255,255,.18)` }}><div className="absolute inset-0" style={{ backgroundImage: `linear-gradient(to right, ${P.wallDk}66 0 2px, transparent 2px ${TILE / 2}px), linear-gradient(to bottom, ${P.wallDk}66 0 2px, transparent 2px ${TILE / 2}px)`, backgroundSize: `${TILE / 2}px ${TILE / 2}px` }} /></div>);
   return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: P.dirt, boxShadow: `inset 0 -4px 0 ${P.dirtDk}, inset 0 3px 0 rgba(255,255,255,.12)` }}><div className="absolute rounded-sm" style={{ left: 6, top: 8, width: 7, height: 6, background: P.dirtDk, opacity: 0.6 }} /><div className="absolute rounded-sm" style={{ left: 26, top: 20, width: 9, height: 7, background: P.dirtDk, opacity: 0.5 }} />{zone === "horno" && <div className="absolute rounded-full" style={{ left: 30, top: 8, width: 4, height: 4, background: "#ff7a2a", boxShadow: "0 0 6px #ff7a2a", animation: "flicker 1s infinite" }} />}</div>);
 }
@@ -751,11 +828,12 @@ function KitchenBG({ depth }: { depth: number }) {
 interface RestProps { level: number; bread: number; crowns: number; hearts: number; tool: ToolId; owned: ToolId[]; ownedMeta: ToolId[]; onBuyPower: (kind: string, cost: number) => void; onBuyTool: (id: ToolId) => void; onContinue: () => void; }
 function RestStop({ level, bread, crowns, hearts, tool, owned, ownedMeta, onBuyPower, onBuyTool, onContinue }: RestProps) {
   const POWERS = [
-    { kind: "shield", name: "Escudo Leche", cost: 30, icon: "🥛" },
-    { kind: "magnet", name: "Imán", cost: 40, icon: "🧲" },
-    { kind: "butter", name: "Mantequilla", cost: 35, icon: "🧈" },
-    { kind: "yeast", name: "Levadura (doble salto)", cost: 45, icon: "🫧" },
-    { kind: "heal", name: "+1 corazón", cost: 60, icon: "❤" },
+    { kind: "shield", name: "Escudo Leche", cost: 30, icon: "LEC" },
+    { kind: "magnet", name: "Imán", cost: 40, icon: "MAG" },
+    { kind: "butter", name: "Mantequilla", cost: 35, icon: "MAN" },
+    { kind: "yeast", name: "Levadura (doble salto)", cost: 45, icon: "LEV" },
+    { kind: "boost", name: "Impulso de Masa", cost: 35, icon: "IMP" },
+    { kind: "heal", name: "+1 corazón", cost: 60, icon: "COR" },
   ];
   return (
     <div className="absolute inset-0 z-50 overflow-hidden" style={{ background: "radial-gradient(80% 60% at 50% 30%, #5a3418 0%, #2a1408 70%, #140804 100%)" }}>
@@ -767,14 +845,14 @@ function RestStop({ level, bread, crowns, hearts, tool, owned, ownedMeta, onBuyP
       </div>
       <div className="absolute top-[15%] left-1/2 -translate-x-1/2 pop"><Maxine pose="win" size={96} /></div>
       <div className="absolute top-[36%] left-1/2 -translate-x-1/2 flex gap-2">
-        <Pill icon="🍞" value={bread} color="#ffd27a" /><Pill iconCrown value={crowns} color="#ff8fa0" /><Pill icon="❤" value={hearts} color="#ff5a6a" />
+        <Pill icon="PAN" value={bread} color="#ffd27a" /><Pill iconCrown value={crowns} color="#ff8fa0" /><Pill icon="COR" value={hearts} color="#ff5a6a" />
       </div>
       <div className="absolute left-0 right-0 top-[44%] bottom-14 overflow-y-auto scrollbar-none px-3 space-y-3">
         <Section title="Power-ups">
-          <div className="grid grid-cols-2 gap-2">{POWERS.map((pw) => { const can = bread >= pw.cost; return (<button key={pw.kind} disabled={!can} onClick={() => onBuyPower(pw.kind, pw.cost)} className="btn-3d text-left rounded-lg border-2 p-2 flex items-center gap-2 disabled:opacity-50" style={{ background: "#3a2010", borderColor: can ? "#ffd27a" : "#1a0c04", boxShadow: "0 3px 0 #1a0c04" }}><span className="text-xl">{pw.icon}</span><div className="flex-1"><div className="font-display font-bold text-amber-100 text-sm leading-tight">{pw.name}</div><div className="font-pixel text-[8px] text-amber-200/80">🍞 {pw.cost}</div></div></button>); })}</div>
+          <div className="grid grid-cols-2 gap-2">{POWERS.map((pw) => { const can = bread >= pw.cost; return (<button key={pw.kind} disabled={!can} onClick={() => onBuyPower(pw.kind, pw.cost)} className="btn-3d text-left rounded-lg border-2 p-2 flex items-center gap-2 disabled:opacity-50" style={{ background: "#3a2010", borderColor: can ? "#ffd27a" : "#1a0c04", boxShadow: "0 3px 0 #1a0c04" }}><span className="text-xl">{pw.icon}</span><div className="flex-1"><div className="font-display font-bold text-amber-100 text-sm leading-tight">{pw.name}</div><div className="font-pixel text-[8px] text-amber-200/80">PAN {pw.cost}</div></div></button>); })}</div>
         </Section>
         <Section title="Herramientas de cavado">
-          <div className="grid grid-cols-2 gap-2">{TOOLS.filter((t2) => t2.id !== "palito").map((t2) => { const have = owned.includes(t2.id) || ownedMeta.includes(t2.id); const equipped = tool === t2.id; const price = t2.priceCrowns > 0 ? t2.priceCrowns : t2.priceBread; const curr = t2.priceCrowns > 0 ? crowns : bread; const can = have || curr >= price; return (<button key={t2.id} disabled={!can} onClick={() => onBuyTool(t2.id)} className="btn-3d text-left rounded-lg border-2 p-2 flex items-center gap-2 disabled:opacity-50" style={{ background: equipped ? "#5a3216" : "#3a2010", borderColor: equipped ? t2.color : can ? "#ffd27a88" : "#1a0c04", boxShadow: "0 3px 0 #1a0c04" }}><div className="w-10 h-10 rounded bg-black/40 flex items-center justify-center shrink-0"><Plushie id={t2.id} size={30} /></div><div className="flex-1 min-w-0"><div className="font-display font-bold text-amber-100 text-sm leading-tight truncate">{t2.name}</div><div className="font-pixel text-[7px] text-amber-200/70 leading-tight">{t2.tag}</div><div className="font-pixel text-[8px] mt-0.5" style={{ color: t2.color }}>{equipped ? "EN MANO" : have ? "EQUIPAR" : t2.priceCrowns > 0 ? `👑 ${price}` : `🍞 ${price}`}</div></div></button>); })}</div>
+          <div className="grid grid-cols-2 gap-2">{TOOLS.filter((t2) => t2.id !== "palito").map((t2) => { const have = owned.includes(t2.id) || ownedMeta.includes(t2.id); const equipped = tool === t2.id; const price = t2.priceCrowns > 0 ? t2.priceCrowns : t2.priceBread; const curr = t2.priceCrowns > 0 ? crowns : bread; const can = have || curr >= price; return (<button key={t2.id} disabled={!can} onClick={() => onBuyTool(t2.id)} className="btn-3d text-left rounded-lg border-2 p-2 flex items-center gap-2 disabled:opacity-50" style={{ background: equipped ? "#5a3216" : "#3a2010", borderColor: equipped ? t2.color : can ? "#ffd27a88" : "#1a0c04", boxShadow: "0 3px 0 #1a0c04" }}><div className="w-10 h-10 rounded bg-black/40 flex items-center justify-center shrink-0"><Plushie id={t2.id} size={30} /></div><div className="flex-1 min-w-0"><div className="font-display font-bold text-amber-100 text-sm leading-tight truncate">{t2.name}</div><div className="font-pixel text-[7px] text-amber-200/70 leading-tight">{t2.tag}</div><div className="font-pixel text-[8px] mt-0.5" style={{ color: t2.color }}>{equipped ? "EN MANO" : have ? "EQUIPAR" : t2.priceCrowns > 0 ? `CRO ${price}` : `PAN ${price}`}</div></div></button>); })}</div>
         </Section>
       </div>
       <div className="absolute bottom-2 inset-x-0 px-6 z-10"><button onClick={onContinue} className="btn-3d w-full font-display font-bold text-xl text-white py-2.5 rounded-full border-b-4 active:border-b-0" style={{ background: "linear-gradient(180deg,#7fc24a,#3a7a1a)", borderColor: "#1a3a08", boxShadow: "0 6px 14px rgba(58,122,26,.45), inset 0 2px 0 rgba(255,255,255,.35)" }}>SEGUIR CAVANDO ▶</button></div>
