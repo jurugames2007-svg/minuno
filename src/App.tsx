@@ -5,11 +5,13 @@ import Victory from "./screens/Victory";
 import Shop from "./screens/Shop";
 import GameOver from "./screens/GameOver";
 import Game from "./game/Game";
+import House from "./screens/House";
 import { Flour } from "./art/Decor";
 import { SKINS, type SkinId } from "./data/skins";
 import type { ToolId } from "./art/Plushie";
+import { CYCLE } from "./data/world";
 
-type Screen = "intro" | "menu" | "shop" | "game" | "over" | "victory";
+type Screen = "intro" | "menu" | "shop" | "game" | "over" | "victory" | "house";
 
 interface OverStats { depth: number; score: number; bread: number; crowns: number; isNewBest: boolean; }
 
@@ -60,9 +62,8 @@ export default function App() {
   useEffect(() => save("maxine_story_won", storyWon), [storyWon]);
 
   const unlockForDepth = (depth: number) => {
-    const CYCLE_TILES = 47;
     const newUnlock = [1];
-    for (const lv of [5, 10, 15, 20, 25]) { if (depth >= (lv - 1) * CYCLE_TILES) newUnlock.push(lv); }
+    for (const lv of [5, 10, 15, 20, 25]) { if (depth >= (lv - 1) * CYCLE) newUnlock.push(lv); }
     const merged = Array.from(new Set([...unlocked, ...newUnlock])).sort((a, b) => a - b);
     if (merged.length !== unlocked.length) setUnlocked(merged);
   };
@@ -120,6 +121,7 @@ export default function App() {
             onSelectCheckpoint={setCheckpoint}
             onPlay={() => { setRunId((n) => n + 1); setScreen("game"); }}
             onShop={() => setScreen("shop")}
+            onHouse={() => setScreen("house")}
             onStory={() => setScreen("intro")}
           />
         )}
@@ -135,6 +137,15 @@ export default function App() {
             onBuySkin={(id: SkinId) => { const found = SKINS.find((s) => s.id === id); buySkin(id, found ? found.price : 0); }}
             onBuyTool={buyToolMeta}
             onEquipTool={(id: ToolId) => setStartTool(id)}
+            onBack={() => setScreen("menu")}
+          />
+        )}
+        {screen === "house" && (
+          <House
+            skin={skin}
+            crumbs={crumbs}
+            onSpend={(n) => setCrumbs((c) => Math.max(0, c - n))}
+            onEarn={(n) => setCrumbs((c) => c + n)}
             onBack={() => setScreen("menu")}
           />
         )}

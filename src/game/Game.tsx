@@ -5,9 +5,9 @@ import { Bread, type BreadType, Heart, Crown, PowerIcon, Flour, zoneOf, ZONE_NAM
 import { type Boss, type Bullet, type BossCtx, spawnBoss, stepBoss, bossForLevel, BossView, BulletView, BOSS_NAME, BOSS_TAUNT, bossPartsWorld } from "../art/Bosses";
 import type { SkinId } from "../data/skins";
 import * as Audio from "./AudioEngine";
+import BossStage from "./BossStage";
+import { COLS, TILE, LEVEL_LEN, GATE_H, REST_H, CYCLE } from "../data/world";
 
-const COLS = 8;
-const TILE = 45;
 const STAGE_W = COLS * TILE;
 const STAGE_H = 640;
 const PW = TILE * 0.6;
@@ -16,11 +16,7 @@ const G = 1400;
 const JUMP_V = 470;
 const MAX_FALL = 540;
 const MOVE = 175;
-
-const LEVEL_LEN = 32;
-const ARENA_H = 9;
-const REST_H = 4;
-const CYCLE = LEVEL_LEN + ARENA_H + REST_H + 2; // +door +floor
+const ARENA_H = GATE_H;
 
 type Cell = 0 | 1 | 2 | 3 | 4 | 5 | 6; // 6=PLATFORM flotante
 type EnemyType = "spoon" | "mouse" | "whisk" | "bubble" | "spatula";
@@ -57,7 +53,7 @@ interface Props {
 }
 
 export default function Game({ skin, onExit, onVictory, best, startTool, ownedMeta, startLevel=1, storyWon=false }: Props) {
-  const startRow = 3 + ((startLevel||1)-1)*47;
+  const startRow = 3 + ((startLevel||1)-1)*CYCLE;
   const stageRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const [, setTick] = useState(0);
@@ -67,6 +63,9 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
   const [resting, setResting] = useState(false);
   const restingRef = useRef(false);
   useEffect(() => { restingRef.current = resting; }, [resting]);
+  const [gate, setGate] = useState(false);
+  const gateRef = useRef(false);
+  useEffect(() => { gateRef.current = gate; }, [gate]);
 
   useLayoutEffect(() => {
     const el = stageRef.current?.parentElement; if (!el) return;
@@ -84,7 +83,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
   const crownsRun = useRef(0);
   const breadCount = useRef(0);
   const startY = useRef(startRow * TILE);
-  const maxDepth = useRef((startLevel||1)>1? (startLevel-1)*47:0);
+  const maxDepth = useRef((startLevel||1)>1? (startLevel-1)*CYCLE:0);
   const ids = useRef(1);
   const input = useRef({ left: false, right: false, digEdge: false, jumpEdge: false, attackEdge: false, lastHoriz: 0 });
   const aim = useRef<{ x: number; y: number }>({ x: 0, y: 1 });
@@ -347,7 +346,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       raf = requestAnimationFrame(step);
       let dt = (now - last) / 1000; last = now; if (dt > 0.05) dt = 0.05;
       shake.current = Math.max(0, shake.current - dt * 30);
-      if (pausedRef.current || over.current || restingRef.current) { setTick((t) => (t + 1) & 0xffff); return; }
+      if (pausedRef.current || over.current || restingRef.current || gateRef.current) { setTick((t) => (t + 1) & 0xffff); return; }
       elapsed.current += dt;
       const p = player.current; const a = active.current; const t = TOOL_MAP[tool.current];
       a.shield = Math.max(0, a.shield - dt); a.magnet = Math.max(0, a.magnet - dt); a.speed = Math.max(0, a.speed - dt); a.yeast = Math.max(0, a.yeast - dt); a.frozen = Math.max(0, a.frozen - dt); a.boost = Math.max(0, a.boost - dt);
@@ -795,6 +794,26 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
           onDig={() => { input.current.digEdge = true; }}
           onAttack={() => { input.current.attackEdge = true; }}
         />
+        <button
+          className="absolute z-40 btn-3d font-display font-bold text-[12px] text-[#3a1808] px-3 py-2 rounded-lg border-2 border-b-4"
+          style={{ right: 10, bottom: 52, background: "linear-gradient(180deg,#ffd27a,#d99243)", borderColor: "#7a4410" }}
+          onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); input.current.digEdge = true; }}
+        >CAVAR</button>
+        {gate && (
+          <BossStage
+            type={bossForLevel(level.current)}
+            level={level.current}
+            skin={skin}
+            hearts={hearts.current}
+            onHurt={() => hurt()}
+            onWin={() => {
+              const fakeType = bossForLevel(level.current);
+              boss.current = spawnBoss(fakeType, level.current, TILE, (COLS - 1) * TILE, 0);
+              onBossDefeated();
+              setGate(false); gateRef.current = false;
+            }}
+          />
+        )}
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-30 pointer-events-none font-display text-[10px] text-amber-100/55 bg-black/35 px-2 py-0.5 rounded-full">
           Deslizá ← → · arriba salta · abajo cava · toca pega
         </div>

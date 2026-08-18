@@ -16,10 +16,11 @@ interface Props {
   onSelectCheckpoint: (lv: number) => void;
   onPlay: () => void;
   onShop: () => void;
+  onHouse: () => void;
   onStory: () => void;
 }
 
-export default function Menu({ skin, best, crumbs, startTool, ownedTools, storyWon, checkpoint, unlocked, onSelectCheckpoint, onPlay, onShop, onStory }: Props) {
+export default function Menu({ skin, best, crumbs, startTool, ownedTools, storyWon, checkpoint, unlocked, onSelectCheckpoint, onPlay, onShop, onHouse, onStory }: Props) {
   const [help, setHelp] = useState(false);
 
   return (
@@ -134,13 +135,20 @@ export default function Menu({ skin, best, crumbs, startTool, ownedTools, storyW
             })}
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            onClick={onHouse}
+            className="btn-3d font-display font-semibold text-[14px] text-amber-50 py-2.5 rounded-full border-b-4 active:border-b-0"
+            style={{ background: "linear-gradient(180deg,#7fc24a,#3a7a1a)", borderColor: "#1a3a08", boxShadow: "0 6px 14px rgba(0,0,0,.35), inset 0 2px 0 rgba(255,255,255,.3)" }}
+          >
+            Casa
+          </button>
           <button
             onClick={onShop}
-            className="btn-3d font-display font-semibold text-[17px] text-amber-50 py-2.5 rounded-full border-b-4 active:border-b-0"
+            className="btn-3d font-display font-semibold text-[14px] text-amber-50 py-2.5 rounded-full border-b-4 active:border-b-0"
             style={{ background: "linear-gradient(180deg,#e3a35a,#a8642a)", borderColor: "#5a2810", boxShadow: "0 6px 14px rgba(0,0,0,.35), inset 0 2px 0 rgba(255,255,255,.3)" }}
           >
-            Panadería
+            Tienda
           </button>
           <button
             className="btn-3d font-display font-semibold text-[17px] text-amber-50 py-2.5 rounded-full border-b-4 active:border-b-0"
@@ -170,7 +178,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
         <ul className="mt-3 space-y-1.5 font-display text-[13px] text-amber-100/90">
           <li><b className="text-amber-200">Mover</b> — deslizá a los lados (o A / D)</li>
           <li><b className="text-amber-200">Saltar</b> — deslizá hacia arriba (o espacio)</li>
-          <li><b className="text-amber-200">Cavar</b> — deslizá hacia abajo (o S)</li>
+          <li><b className="text-amber-200">Cavar</b> — botón CAVAR, deslizá abajo o S</li>
           <li><b className="text-amber-200">Pegar</b> — tocá la pantalla (o J)</li>
           <li><b className="text-amber-200">Pausa</b> — P o el botón de arriba</li>
         </ul>

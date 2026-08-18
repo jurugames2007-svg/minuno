@@ -166,7 +166,7 @@ export const SKINS: Skin[] = [
   { id: "matrona", name: "Matrona", tag: "Obstetricia", price: 700, rarity: "Épico", category: "Familia", unlock: "shop", blurb: "Uniforme rojo de matrona chilena, cruz blanca y estetoscopio. A cuidar pancitos." },
   { id: "subzero", name: "Sub-Zero", tag: "Lin Kuei", price: 860, rarity: "Legendario", category: "Héroes", unlock: "shop", blurb: "Máscara azul, hielo en las patas y klon-clone de harina." },
   { id: "barbie", name: "Barbie", tag: "Malibú", price: 720, rarity: "Épico", category: "Princesa", unlock: "shop", blurb: "Moño rubio, vestido rosa y estrella. Puedes ser lo que quieras hornear." },
-  { id: "bebe", name: "Maxine Bebé", tag: "Familia", price: 300, rarity: "Común", category: "Familia", unlock: "shop", blurb: "Gorro de lana, chupete y pañal de tela. Todavía no cava, pero lo intenta." },
+  { id: "bebe", name: "Maxine Bebé", tag: "Familia", price: 300, rarity: "Común", category: "Familia", unlock: "shop", blurb: "Chiquitita, ojitos de tapioca y un calcetín. Todavía no cava, pero lo intenta." },
   { id: "abuela", name: "Maxine Abuelita", tag: "Familia", price: 480, rarity: "Raro", category: "Familia", unlock: "shop", blurb: "Gafas, chal de lana y canas. Hornea desde 1978." },
   { id: "sabio", name: "Maxine Sabia", tag: "Familia", price: 900, rarity: "Legendario", category: "Familia", unlock: "shop", blurb: "Barba larga, báculo de baguette y halo de migas. Conoce la receta secreta." },
   { id: "freddy", name: "Freddy", tag: "FNAF", price: 780, rarity: "Épico", category: "FNAF", unlock: "shop", blurb: "Sombrero de copa, micrófono y corbatín. La pizzería abre a medianoche." },

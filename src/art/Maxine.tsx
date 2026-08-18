@@ -60,8 +60,9 @@ export default function Maxine({ skin = "default", pose = "idle", facing = 1, si
   const isKissy = skin === "kissy";
   const isHuggy = skin === "huggy";
   const belly = isKissy ? "#ffd0e2" : skin === "penguin" ? "#f7f3ea" : pal.cream;
-  const hideBeard = skin === "mahoraga" || skin === "pochacco" || skin === "penguin" || skin === "creeper" || skin === "spider" || skin === "spooky" || skin === "eevee" || skin === "kira" || skin === "freddy" || skin === "foxy" || skin === "bonnie" || skin === "chica" || skin === "croissant";
-  const hideTuft = hideBeard || skin === "gojo" || skin === "yuta" || skin === "yuji" || skin === "eleven" || skin === "laufey" || skin === "padme" || skin === "steve" || skin === "alex" || skin === "darth" || skin === "nobara" || skin === "megumi" || skin === "jasmine" || skin === "bella" || skin === "tiana" || skin === "clawdeen" || skin === "cleo" || skin === "ghoulia" || skin === "draculaura" || skin === "barbie" || skin === "matrona" || skin === "bebe" || skin === "abuela" || skin === "sabio" || skin === "subzero" || skin === "hada" || skin === "panadero";
+  const hideBeard = skin === "mahoraga" || skin === "pochacco" || skin === "penguin" || skin === "creeper" || skin === "spider" || skin === "spooky" || skin === "eevee" || skin === "kira" || skin === "freddy" || skin === "foxy" || skin === "bonnie" || skin === "chica" || skin === "croissant" || skin === "bebe";
+  const baby = skin === "bebe";
+  const hideTuft = hideBeard || skin === "gojo" || skin === "yuta" || skin === "yuji" || skin === "eleven" || skin === "laufey" || skin === "padme" || skin === "steve" || skin === "alex" || skin === "darth" || skin === "nobara" || skin === "megumi" || skin === "jasmine" || skin === "bella" || skin === "tiana" || skin === "clawdeen" || skin === "cleo" || skin === "ghoulia" || skin === "draculaura" || skin === "barbie" || skin === "matrona" || skin === "abuela" || skin === "sabio" || skin === "subzero" || skin === "hada" || skin === "panadero";
 
   const Wiry = ({ cx, cy, n = 6, r = 10, color }: { cx: number; cy: number; n?: number; r?: number; color?: string }) => (
     <g stroke={color || pal.darkR} strokeWidth="0.9" fill="none" strokeLinecap="round" opacity="0.85">
@@ -86,6 +87,7 @@ export default function Maxine({ skin = "default", pose = "idle", facing = 1, si
       </defs>
 
       <g transform={facing === -1 ? "translate(100,0) scale(-1,1)" : undefined}>
+      <g transform={baby ? "translate(16 26) scale(0.7)" : undefined}>
       <g transform={dead ? "rotate(-18 50 72) translate(0 6)" : ""}>
 
         <Capes skin={skin} />
@@ -210,6 +212,17 @@ export default function Maxine({ skin = "default", pose = "idle", facing = 1, si
             <><path d="M36 42 q4 4 8 0" stroke="#3a1a08" strokeWidth="2" fill="none" strokeLinecap="round" /><path d="M56 42 q4 4 8 0" stroke="#3a1a08" strokeWidth="2" fill="none" strokeLinecap="round" /></>
           ) : skin === "catnap" ? (
             <g stroke="#2a1040" strokeWidth="1.6" fill="none" strokeLinecap="round"><path d="M36 42 q4 3 8 0" /><path d="M56 42 q4 3 8 0" /></g>
+          ) : skin === "bebe" ? (
+            <g>
+              <ellipse cx="40" cy="43" rx="7.2" ry="7.6" fill="#fff8ee" stroke="#e8d2b0" strokeWidth="0.6" />
+              <ellipse cx="60" cy="43" rx="7.2" ry="7.6" fill="#fff8ee" stroke="#e8d2b0" strokeWidth="0.6" />
+              <circle cx="40.4" cy="44" r="2.4" fill="#5a3418" />
+              <circle cx="60.4" cy="44" r="2.4" fill="#5a3418" />
+              <circle cx="41.6" cy="42.2" r="1.5" fill="#fff" />
+              <circle cx="61.6" cy="42.2" r="1.5" fill="#fff" />
+              <circle cx="39.2" cy="45.4" r="0.7" fill="#fff" opacity="0.7" />
+              <circle cx="59.2" cy="45.4" r="0.7" fill="#fff" opacity="0.7" />
+            </g>
           ) : skin === "spider" ? null : (
             <g className={animate ? "blink" : ""} style={{ transformOrigin: "50px 42px" }}>
               <ellipse cx="40" cy="42" rx="4.4" ry={win ? 4.8 : 5.4} fill="#fff" />
@@ -252,6 +265,7 @@ export default function Maxine({ skin = "default", pose = "idle", facing = 1, si
         </g>
 
         <HeldProps skin={skin} />
+      </g>
       </g>
       </g>
 
@@ -594,9 +608,11 @@ function BodyCostume({ skin }: { skin: SkinId }) {
       <circle cx="50" cy="76" r="2.4" fill="#ffd27a" />
     </g>;
     case "bebe": return <g>
-      <path d="M34 70 Q50 66 66 70 L64 84 Q50 88 36 84 Z" fill="#fff3d6" stroke="#e8c8a0" strokeWidth="1" />
-      <path d="M40 78 h20" stroke="#ff8fb6" strokeWidth="2" />
-      <circle cx="50" cy="62" r="3" fill="#ff8fb6" />
+      <path d="M34 66 Q50 60 66 66 L64 86 Q50 90 36 86 Z" fill="#ffe0f0" stroke="#d980b0" strokeWidth="0.8" />
+      <path d="M38 78 h24" stroke="#ff8fb6" strokeWidth="2.2" />
+      <path d="M32 82 Q28 94 40 92 Q38 86 36 84 Z" fill="#fff3d6" stroke="#e8c8a0" strokeWidth="0.7" />
+      <path d="M33 86 q4 2 8 0" stroke="#ff8fb6" strokeWidth="1.1" fill="none" />
+      <circle cx="36" cy="90" r="1.2" fill="#ff8fb6" />
     </g>;
     case "abuela": return <g>
       <path d="M28 64 Q50 58 72 64 L74 86 Q50 92 26 86 Z" fill="#7a3a6a" stroke="#3a1830" strokeWidth="1.2" />
@@ -1017,10 +1033,10 @@ function HeadGear({ skin }: { skin: SkinId }) {
       <path d="M36 46 Q50 50 64 46" stroke="#7fd0ff" strokeWidth="1.2" fill="none" />
     </g>;
     case "bebe": return <g>
-      <path d="M30 22 Q50 4 70 22 Q64 14 50 14 Q36 14 30 22 Z" fill="#ffd0e8" stroke="#d980b0" strokeWidth="0.8" />
-      <circle cx="50" cy="8" r="4" fill="#fff" />
-      <circle cx="50" cy="8" r="2" fill="#ff8fb6" />
-      <ellipse cx="50" cy="56" rx="4" ry="3.2" fill="#ff8fa0" stroke="#c44a6a" strokeWidth="0.5" />
+      <path d="M28 24 Q50 2 72 24 Q64 14 50 14 Q36 14 28 24 Z" fill="#ffd0e8" stroke="#d980b0" strokeWidth="0.8" />
+      <ellipse cx="50" cy="8" rx="7" ry="5" fill="#fff" />
+      <circle cx="50" cy="7" r="2.2" fill="#ff8fb6" />
+      <ellipse cx="50" cy="57" rx="3.6" ry="2.8" fill="#ffb0c4" stroke="#c44a6a" strokeWidth="0.4" />
     </g>;
     case "abuela": return <g>
       <path d="M26 28 Q28 10 50 8 Q72 10 74 28 Q68 16 50 16 Q32 16 26 28 Z" fill="#e8e4dc" />
