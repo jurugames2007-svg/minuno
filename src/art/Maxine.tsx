@@ -10,7 +10,25 @@ function palette(skin: SkinId): Pal {
   if (skin === "kissy") return { main: "#ff8fb6", light: "#ffc0d8", dark: "#d65a88", darkR: "#a83a66", cream: "#ffd0e2", creamSh: "#f0a0c0", earIn: "#ff5fa0", outline: "#b02a66", nose: "#1a0e08" };
   if (skin === "pochacco") return { main: "#ffffff", light: "#ffffff", dark: "#d8d8d8", darkR: "#9a9a9a", cream: "#ffffff", creamSh: "#e4e4e4", earIn: "#1a1a1a", outline: "#555555", nose: "#1a0e08" };
   if (skin === "mahoraga") return { main: "#f4f1e6", light: "#ffffff", dark: "#c9c2ae", darkR: "#8a8270", cream: "#ffffff", creamSh: "#d8d2c0", earIn: "#c9c2ae", outline: "#555555", nose: "#1a0e08" };
-  return BASE; // default, vampire, santa, lime, harness, bow, yuta, princess, yarnaby, jockey, catto
+  if (skin === "yarnaby") return { main: "#ff9d2e", light: "#ffb86a", dark: "#d96a1a", darkR: "#8a3a0a", cream: "#fff1d0", creamSh: "#ffd9a0", earIn: "#d96a1a", outline: "#6a2a00", nose: "#1a0e08" };
+  if (skin === "huggy") return { main: "#7fd0ff", light: "#a8e4ff", dark: "#3a8ac0", darkR: "#1a4a70", cream: "#d8f4ff", creamSh: "#a0cce8", earIn: "#1a4a70", outline: "#1a3a5a", nose: "#1a0e08" };
+  if (skin === "catnap") return { main: "#b06bff", light: "#d9a6ff", dark: "#7a3ab0", darkR: "#4a1a70", cream: "#e9d5ff", creamSh: "#c9a6e8", earIn: "#7a3ab0", outline: "#3a1a5a", nose: "#1a0e08" };
+  if (skin === "gojo") return { main: "#e8f1ff", light: "#ffffff", dark: "#b8c8e8", darkR: "#7a8ab0", cream: "#fff1d0", creamSh: "#e8d2b8", earIn: "#7a8ab0", outline: "#3a4a6a", nose: "#1a0e08" };
+  if (skin === "sukuna") return { main: "#e3c79a", light: "#f6e4bf", dark: "#b8956a", darkR: "#8a6a44", cream: "#fff1d0", creamSh: "#ecd2a0", earIn: "#c93030", outline: "#6a4420", nose: "#1a0e08" };
+  if (skin === "draculaura") return { main: "#ff8fb6", light: "#ffc0d8", dark: "#d65a88", darkR: "#a83a66", cream: "#ffd0e2", creamSh: "#f0a0c0", earIn: "#ff5fa0", outline: "#b02a66", nose: "#1a0e08" };
+  if (skin === "clawdeen") return { main: "#c9a86a", light: "#e8d2a0", dark: "#8a6a3a", darkR: "#5a3a1a", cream: "#fff1d0", creamSh: "#ecd2a0", earIn: "#8a6a3a", outline: "#5a3a1a", nose: "#1a0e08" };
+  if (skin === "cleo") return { main: "#d9c58a", light: "#f0e2b0", dark: "#b89a4a", darkR: "#7a642a", cream: "#fff8d0", creamSh: "#e8d2a0", earIn: "#7a642a", outline: "#5a4a1a", nose: "#1a0e08" };
+  if (skin === "ghoulia") return { main: "#a8c0d8", light: "#d0e8ff", dark: "#7a8ab0", darkR: "#4a5a80", cream: "#e8f4ff", creamSh: "#c9dcee", earIn: "#7a8ab0", outline: "#3a4a6a", nose: "#1a0e08" };
+  if (skin === "bella") return { main: "#ffd27a", light: "#ffe8a8", dark: "#c9a020", darkR: "#8a6a00", cream: "#fff3d6", creamSh: "#ffe0a0", earIn: "#8a6a00", outline: "#6a4a00", nose: "#1a0e08" };
+  if (skin === "jasmine") return { main: "#7fd0ff", light: "#a8e8ff", dark: "#3a8ac0", darkR: "#1a5a80", cream: "#d8f4ff", creamSh: "#a8d0e8", earIn: "#1a5a80", outline: "#1a3a5a", nose: "#1a0e08" };
+  if (skin === "tiana") return { main: "#7fc24a", light: "#a8e880", dark: "#4a7a1a", darkR: "#2a4a0a", cream: "#e0f4c0", creamSh: "#b8d8a0", earIn: "#4a7a1a", outline: "#2a4a0a", nose: "#1a0e08" };
+  if (skin === "widow") return { main: "#1a1a1a", light: "#3a3a3a", dark: "#000000", darkR: "#000000", cream: "#d7d2c4", creamSh: "#b8b0a0", earIn: "#000", outline: "#000", nose: "#1a0e08" };
+  if (skin === "spider") return { main: "#d9342b", light: "#ff7a6a", dark: "#7a1410", darkR: "#4a0a08", cream: "#d8f4ff", creamSh: "#a8d0e8", earIn: "#7a1410", outline: "#1a3a5a", nose: "#1a0e08" };
+  if (skin === "wonder") return { main: "#d9342b", light: "#ff6a5a", dark: "#7a1410", darkR: "#4a0a08", cream: "#ffd27a", creamSh: "#e8b86a", earIn: "#7a1410", outline: "#6a4420", nose: "#1a0e08" };
+  if (skin === "dogday") return { main: "#ffb347", light: "#ffd27a", dark: "#d98a20", darkR: "#8a4a10", cream: "#fff1d0", creamSh: "#ffd9a0", earIn: "#d98a20", outline: "#6a3410", nose: "#1a0e08" };
+  if (skin === "craftycorn") return { main: "#a8e4ff", light: "#d8f4ff", dark: "#7ab8d8", darkR: "#4a8ab0", cream: "#fff1d0", creamSh: "#ffd9a0", earIn: "#4a8ab0", outline: "#3a6a8a", nose: "#1a0e08" };
+  if (skin === "ender") return { main: "#1a1a2e", light: "#2a2a4a", dark: "#0a0a1a", darkR: "#000", cream: "#b06bff", creamSh: "#7a3ab0", earIn: "#b06bff", outline: "#000", nose: "#b06bff" };
+  return BASE; // default, vampire, santa, lime, harness, bow, yuta, princess, jockey, catto, frankie, etc
 }
 
 export default function Maxine({ skin = "default", pose = "idle", facing = 1, size = 120, className = "", animate = true }: Props) {
@@ -43,16 +61,25 @@ export default function Maxine({ skin = "default", pose = "idle", facing = 1, si
         {/* vampire cape */}
         {skin === "vampire" && <g><path d="M22 48 Q14 78 26 92 L50 86 L74 92 Q86 78 78 48 Q66 56 50 56 Q34 56 22 48 Z" fill={`url(#cape-${skin})`} stroke="#0c0612" strokeWidth="1.2" /><path d="M26 52 Q22 76 30 88 L50 82 L70 88 Q78 76 74 52 Q64 60 50 60 Q36 60 26 52 Z" fill="#7a1430" opacity="0.85" /></g>}
 
-        {/* yarnaby rainbow frill */}
-        {skin === "yarnaby" && <g>{Array.from({ length: 32 }).map((_, i) => { const a = (i / 32) * Math.PI * 2; const x = 50 + Math.cos(a) * 26; const y = 42 + Math.sin(a) * 26; const hue = (i / 32) * 360; return <g key={i} transform={`rotate(${(a * 180) / Math.PI + 90} ${x} ${y})`}><path d={`M${x} ${y} q-4 -16 0 -24 q4 8 0 24 Z`} fill={`hsl(${hue} 85% 60%)`} stroke={`hsl(${hue} 80% 38%)`} strokeWidth="0.8" /></g>; })}</g>}
+        {/* yarnaby rainbow yarn mane — improved v2: thick yarn tubes with rounded caps */}
+        {skin === "yarnaby" && <g>
+          {Array.from({ length: 28 }).map((_, i) => { const a = (i / 28) * Math.PI * 2; const x = 50 + Math.cos(a) * 27; const y = 42 + Math.sin(a) * 27; const hue = (i / 28) * 360; const len = 22 + (i % 3) * 4; return <g key={i} transform={`rotate(${(a * 180) / Math.PI + 90} ${x} ${y})`}><path d={`M${x} ${y} c-3 -9 -5 -16 0 -${len} c4 5 3 13 0 ${len} Z`} fill={`hsl(${hue} 85% 58%)`} stroke={`hsl(${hue} 78% 32%)`} strokeWidth="1.1" strokeLinecap="round" opacity="0.98" /><path d={`M${x} ${y+1} c-1.5 -6 -2 -10 0 -${len-4}`} fill="none" stroke="#fff" strokeWidth="0.9" opacity="0.35" strokeLinecap="round" /></g>; })}
+          {/* inner bright ring for volume */}
+          <circle cx="50" cy="42" r="15" fill="none" stroke="#ff9d2e" strokeWidth="0.6" opacity="0.2" />
+        </g>}
 
-        {/* mahoraga halo wheel — rotates every ~3.5s */}
+        {/* mahoraga halo wheel — v2 golden 3D dharmachakra rotates 3.5s */}
         {skin === "mahoraga" && (
           <g style={{ transformBox: "fill-box", transformOrigin: "center", animation: animate ? "spin-slow 3.5s linear infinite" : undefined }}>
             <g transform="translate(50 6)">
-              <ellipse cx="0" cy="0" rx="20" ry="5" fill="none" stroke="#8a8a6a" strokeWidth="2" />
-              {Array.from({ length: 8 }).map((_, i) => { const a = (i / 8) * Math.PI * 2; const x = Math.cos(a) * 20; const y = Math.sin(a) * 5; return <g key={i}><line x1="0" y1="0" x2={x} y2={y} stroke="#8a8a6a" strokeWidth="1.4" /><circle cx={x} cy={y} r="2.2" fill="#a8a880" stroke="#5a5a3a" strokeWidth="0.6" /></g>; })}
-              <circle cx="0" cy="0" r="2.6" fill="#a8a880" stroke="#5a5a3a" strokeWidth="0.6" />
+              {/* outer golden ring with depth */}
+              <ellipse cx="0" cy="0" rx="20" ry="6" fill="none" stroke="#c9a86a" strokeWidth="3.2" />
+              <ellipse cx="0" cy="0" rx="20" ry="6" fill="none" stroke="#ffd27a" strokeWidth="1" opacity="0.6" />
+              <ellipse cx="0" cy="0" rx="14" ry="4.2" fill="none" stroke="#8a6a2a" strokeWidth="1" opacity="0.5" />
+              {Array.from({ length: 8 }).map((_, i) => { const a = (i / 8) * Math.PI * 2; const x = Math.cos(a) * 20; const y = Math.sin(a) * 6; return <g key={i}><line x1="0" y1="0" x2={x} y2={y} stroke="#8a6a2a" strokeWidth="2.2" /><line x1="0" y1="0" x2={x} y2={y} stroke="#ffd27a" strokeWidth="0.9" opacity="0.8" /><circle cx={x} cy={y} r="2.6" fill="#2a1a0a" stroke="#c9a86a" strokeWidth="0.9" /><circle cx={x} cy={y} r="1" fill="#ffd27a" /></g>; })}
+              <circle cx="0" cy="0" r="4" fill="#2a1a0a" stroke="#c9a86a" strokeWidth="1.2" />
+              <circle cx="0" cy="0" r="2" fill="#ffd27a" />
+              <circle cx="0" cy="-1" r="0.9" fill="#fff" opacity="0.7" />
             </g>
           </g>
         )}
@@ -104,14 +131,103 @@ export default function Maxine({ skin = "default", pose = "idle", facing = 1, si
         {skin === "princess" && <g><path d="M28 70 Q50 62 72 70 L76 86 Q68 84 64 88 Q58 84 52 88 Q46 84 40 88 Q34 84 28 88 Z" fill="#ffb3d1" stroke="#c93a78" strokeWidth="1.2" /><path d="M28 70 Q50 62 72 70 L70 74 Q50 68 30 74 Z" fill="#ffd9e6" /></g>}
         {/* COSTUME: santa */}
         {skin === "santa" && <g><path d="M28 64 Q50 56 72 64 L72 72 Q50 64 28 72 Z" fill="#d9342b" stroke="#7a1410" strokeWidth="1" /><path d="M28 70 Q50 62 72 70 L72 76 Q50 68 28 76 Z" fill="#fff" /></g>}
-        {/* COSTUME: yuta */}
-        {skin === "yuta" && <g><path d="M30 62 Q50 56 70 62 L70 84 Q50 90 30 84 Z" fill="#1a2348" stroke="#070b1f" strokeWidth="1.2" /><path d="M44 60 L50 70 L56 60 L54 84 L46 84 Z" fill="#f4f1e6" /><path d="M30 64 L70 82" stroke="#0a0a0a" strokeWidth="3" /></g>}
-        {/* COSTUME: pochacco magenta shirt */}
-        {skin === "pochacco" && <g><path d="M28 64 Q50 56 72 64 L72 84 Q50 90 28 84 Z" fill="#d4145a" stroke="#7a0830" strokeWidth="1.2" /><path d="M28 64 L20 72 L24 80 L30 74 Z" fill="#d4145a" stroke="#7a0830" strokeWidth="1" /><path d="M72 64 L80 72 L76 80 L70 74 Z" fill="#d4145a" stroke="#7a0830" strokeWidth="1" /><path d="M40 58 Q50 62 60 58 L60 64 Q50 68 40 64 Z" fill="#d4145a" stroke="#7a0830" strokeWidth="1" /></g>}
+        {/* COSTUME: yuta — v2 white JJK uniform accurate */}
+        {skin === "yuta" && <g>
+          <path d="M30 62 Q50 55 70 62 L70 84 Q50 91 30 84 Z" fill="#ffffff" stroke="#b8c0cc" strokeWidth="1.2" />
+          <path d="M30 62 Q50 60 70 62 L70 66 Q50 62 30 66 Z" fill="#e8ecf4" />
+          {/* collar */}
+          <path d="M40 58 Q50 62 60 58 L60 64 Q50 68 40 64 Z" fill="#ffffff" stroke="#b8c0cc" strokeWidth="1" />
+          <circle cx="48" cy="64" r="0.9" fill="#c9a86a" /><circle cx="52" cy="64" r="0.9" fill="#c9a86a" />
+          {/* katana strap diagonal */}
+          <path d="M32 62 L70 84" stroke="#2a2a2a" strokeWidth="3.2" strokeLinecap="round" />
+          <rect x="34" y="62" width="6" height="3" rx="1" fill="#c9a86a" stroke="#7a5a2a" strokeWidth="0.6" />
+        </g>}
+        {/* COSTUME: pochacco magenta shirt — v2 with shading + collar */}
+        {skin === "pochacco" && <g>
+          <path d="M28 64 Q50 55 72 64 L72 84 Q50 91 28 84 Z" fill="#d4145a" stroke="#7a0830" strokeWidth="1.2" />
+          <path d="M28 64 L19 71 L23 79 L30 74 Z" fill="#d4145a" stroke="#7a0830" strokeWidth="1" />
+          <path d="M72 64 L81 71 L77 79 L70 74 Z" fill="#d4145a" stroke="#7a0830" strokeWidth="1" />
+          <path d="M40 58 Q50 62 60 58 L60 64 Q50 68 40 64 Z" fill="#d4145a" stroke="#7a0830" strokeWidth="1" />
+          {/* highlight & collar */}
+          <path d="M28 64 Q50 60 72 64 L71 68 Q50 63 29 68 Z" fill="#ff2d7a" opacity="0.9" />
+          <path d="M44 60 Q50 64 56 60" fill="none" stroke="#fff" strokeWidth="0.8" opacity="0.5" />
+          {/* Pochacco face charm dot on shirt */}
+          <circle cx="50" cy="74" r="2.2" fill="#fff" opacity="0.0" />
+        </g>}
         {/* COSTUME: mahoraga hakama + sash */}
         {skin === "mahoraga" && <g><path d="M28 74 L24 92 L40 90 L50 92 L60 90 L76 92 L72 74 Z" fill="#14181c" stroke="#000" strokeWidth="1" /><rect x="28" y="70" width="44" height="6" fill="#8a9498" stroke="#3a4044" strokeWidth="0.8" /><path d="M46 73 q-4 4 -2 8 q4 -2 6 -4 q2 2 6 4 q2 -4 -2 -8 Z" fill="#8a9498" stroke="#3a4044" strokeWidth="0.6" /><path d="M32 78 l0 10 M42 78 l0 12 M58 78 l0 12 M68 78 l0 10" stroke="#3a4044" strokeWidth="0.6" /></g>}
-        {/* kissy long arms */}
-        {isKissy && <g><path d="M30 68 Q14 60 8 74 Q4 84 14 86 Q10 80 16 78 Q12 86 20 84" fill="none" stroke="#ff7fb0" strokeWidth="5" strokeLinecap="round" /><path d="M70 68 Q86 60 92 74 Q96 84 86 86 Q90 80 84 78 Q88 86 80 84" fill="none" stroke="#ff7fb0" strokeWidth="5" strokeLinecap="round" /><circle cx="13" cy="85" r="4" fill="#ffe066" stroke="#b8910a" strokeWidth="0.8" /><circle cx="87" cy="85" r="4" fill="#ffe066" stroke="#b8910a" strokeWidth="0.8" /></g>}
+        {/* COSTUME: gojo — silver uniform */}
+        {skin === "gojo" && <g><path d="M29 66 Q50 55 71 66 L70 84 Q50 91 30 84 Z" fill="#e8f1ff" stroke="#7a8ab0" strokeWidth="1.2"/><path d="M29 66 Q50 60 71 66 L71 68 Q50 63 29 68 Z" fill="#ffffff" opacity="0.8"/><circle cx="38" cy="72" r="1" fill="#7a8ab0"/><circle cx="62" cy="72" r="1" fill="#7a8ab0"/></g>}
+        {/* COSTUME: nobara — brown coat red buttons hammer */}
+        {skin === "nobara" && <g><path d="M28 66 Q50 55 72 66 L71 84 Q50 91 29 84 Z" fill="#6a3a1a" stroke="#3a2010" strokeWidth="1.2"/><path d="M34 70 h6 v6 h-6 Z" fill="#d44a6a" stroke="#5a1020" strokeWidth="0.7"/><path d="M60 70 h6 v6 h-6 Z" fill="#d44a6a" stroke="#5a1020" strokeWidth="0.7"/><rect x="44" y="73" width="12" height="3" fill="#c9a86a"/></g>}
+        {/* COSTUME: megumi — black uniform with dog shadow */}
+        {skin === "megumi" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#1a1a2e" stroke="#0a0a1a" strokeWidth="1.2"/><path d="M44 72 Q50 76 56 72" stroke="#7a8ab0" strokeWidth="0.8" fill="none"/><circle cx="50" cy="76" r="1.5" fill="#7a8ab0"/></g>}
+        {/* COSTUME: sukuna — kimono open with tattoos */}
+        {skin === "sukuna" && <g><path d="M28 66 Q50 55 72 66 L72 84 Q50 91 28 84 Z" fill="#c93030" stroke="#7a1020" strokeWidth="1.2"/><path d="M36 66 L42 84 M58 66 L64 84" stroke="#1a0a0a" strokeWidth="1"/><path d="M44 70 Q50 74 56 70" stroke="#000" strokeWidth="0.8" fill="none"/></g>}
+        {/* COSTUME: draculaura — pink victorian dress */}
+        {skin === "draculaura" && <g><path d="M28 68 Q50 60 72 68 L74 84 Q50 90 26 84 Z" fill="#ff8fb6" stroke="#b02a66" strokeWidth="1.2"/><path d="M28 68 Q50 64 72 68 L71 72 Q50 68 29 72 Z" fill="#1a1a1a" opacity="0.9"/><circle cx="50" cy="76" r="2" fill="#fff"/></g>}
+        {/* COSTUME: frankie — stitched green jacket */}
+        {skin === "frankie" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#7fc24a" stroke="#2a5a10" strokeWidth="1.2"/><path d="M34 68 L34 84 M50 68 L50 84 M66 68 L66 84" stroke="#2a5a10" strokeWidth="0.6" strokeDasharray="2 2"/></g>}
+        {/* COSTUME: schnauzarella — blue ball gown */}
+        {skin === "schnauzarella" && <g><path d="M26 68 Q50 58 74 68 L76 84 Q50 92 24 84 Z" fill="#7fd0ff" stroke="#1a5a8a" strokeWidth="1.2"/><path d="M26 68 Q50 64 74 68 L73 72 Q50 68 27 72 Z" fill="#fff" opacity="0.6"/></g>}
+        {/* COSTUME: ariel — mermaid tail */}
+        {skin === "ariel" && <g><path d="M30 68 Q50 62 70 68 L68 84 Q50 92 32 84 Z" fill="#00b8a9" stroke="#0a5a4a" strokeWidth="1.2"/><path d="M50 84 L46 92 L54 92 Z" fill="#00b8a9" stroke="#0a5a4a" strokeWidth="0.8"/><circle cx="50" cy="74" r="2.5" fill="#ffd27a" stroke="#7a5a0a" strokeWidth="0.6"/></g>}
+        {/* COSTUME: captain — star shield */}
+        {skin === "captain" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#1a3a8a" stroke="#0a1a4a" strokeWidth="1.2"/><circle cx="50" cy="74" r="6" fill="#fff" stroke="#d9342b" strokeWidth="1.2"/><path d="M50 68 l2 4 l4 0 l-3 3 l1 4 l-4 -3 l-4 3 l1 -4 l-3 -3 l4 0 Z" fill="#d9342b"/></g>}
+        {/* COSTUME: bat — black cape */}
+        {skin === "bat" && <g><path d="M22 48 Q14 78 26 92 L50 86 L74 92 Q86 78 78 48 Q66 56 50 56 Q34 56 22 48 Z" fill="#1a1a1a" stroke="#000" strokeWidth="1.2"/><path d="M26 52 Q22 76 30 88 L50 82 L70 88 Q78 76 74 52 Q64 60 50 60 Q36 60 26 52 Z" fill="#3a3a3a" opacity="0.9"/></g>}
+        {/* COSTUME: huggy — already blue fur via palette, add bow tie */}
+        {skin === "huggy" && <g><path d="M40 58 Q50 62 60 58 L60 64 Q50 68 40 64 Z" fill="#ffd27a" stroke="#7a5a2a" strokeWidth="0.8"/><circle cx="50" cy="62" r="1.5" fill="#d9342b"/></g>}
+        {/* COSTUME: catnap — purple collar moon */}
+        {skin === "catnap" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#7a3ab0" stroke="#3a1a5a" strokeWidth="1.2"/><circle cx="50" cy="72" r="3" fill="#ffd27a" stroke="#7a5a2a" strokeWidth="0.6"/><path d="M50 72 Q52 74 50 76 Q48 74 50 72" fill="#7a3ab0"/></g>}
+        {/* COSTUME: eleven — pink dress + waffle */}
+        {skin === "eleven" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#ff8fb6" stroke="#b02a66" strokeWidth="1.2"/><rect x="44" y="72" width="12" height="6" rx="1" fill="#e3c79a" stroke="#7a5a2c" strokeWidth="0.6"/><path d="M46 73 h8 M48 75 h4" stroke="#7a5a2c" strokeWidth="0.6"/></g>}
+        {/* COSTUME: rm — leather jacket */}
+        {skin === "rm" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#1a1a1a" stroke="#000" strokeWidth="1.2"/><path d="M38 66 L38 84 M62 66 L62 84" stroke="#3a3a3a" strokeWidth="1"/><rect x="44" y="71" width="12" height="7" rx="1" fill="#c9a86a" stroke="#7a5a2a" strokeWidth="0.8"/><path d="M50 71 v7" stroke="#7a5a2c" strokeWidth="0.6"/><circle cx="46" cy="74" r="0.6" fill="#fff"/><circle cx="54" cy="74" r="0.6" fill="#fff"/></g>}
+        {/* COSTUME: steve — blue shirt pickaxe */}
+        {skin === "steve" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#3a8ac0" stroke="#1a4a6e" strokeWidth="1.2"/><rect x="48" y="70" width="10" height="3" fill="#7a5a2c"/><rect x="56" y="68" width="3" height="8" fill="#d7d2c4"/></g>}
+        {/* COSTUME: creeper — pixel green */}
+        {skin === "creeper" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#7fc24a" stroke="#2a5a10" strokeWidth="1.2"/><rect x="34" y="70" width="6" height="6" fill="#1a1a1a"/><rect x="60" y="70" width="6" height="6" fill="#1a1a1a"/><rect x="44" y="76" width="12" height="3" fill="#1a1a1a"/></g>}
+        {/* COSTUME: unicornio — rainbow body */}
+        {skin === "unicornio" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#fff" stroke="#d9a6ff" strokeWidth="1.2"/><path d="M30 66 Q50 62 70 66 L70 70 Q50 66 30 70 Z" fill="url(#fur-unicornio)" opacity="0.35"/></g>}
+        {/* COSTUME: pirata — red coat */}
+        {skin === "pirata" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#d9342b" stroke="#7a1410" strokeWidth="1.2"/><circle cx="42" cy="72" r="1.2" fill="#ffd27a"/><circle cx="58" cy="72" r="1.2" fill="#ffd27a"/></g>}
+        {/* COSTUME: astronauta — white suit */}
+        {skin === "astronauta" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#fff" stroke="#7a8aa8" strokeWidth="1.2"/><rect x="44" y="70" width="12" height="6" rx="1" fill="#d8f4ff" stroke="#7a8aa8" strokeWidth="0.6"/><circle cx="50" cy="73" r="1" fill="#ff3030"/></g>}
+        {/* COSTUME: zombie — torn green */}
+        {skin === "zombie" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#7fc24a" stroke="#2a5a10" strokeWidth="1.2"/><path d="M34 70 L36 84 M60 72 L58 84" stroke="#1a1a1a" strokeWidth="1" strokeDasharray="2 2"/></g>}
+        {/* COSTUME: ninja — black suit */}
+        {skin === "ninja" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#1a1a1a" stroke="#000" strokeWidth="1.2"/><path d="M38 70 L38 84 M62 70 L62 84" stroke="#3a3a3a" strokeWidth="1"/></g>}
+        {/* COSTUME: mago — robe stars */}
+        {skin === "mago" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#1a1a5a" stroke="#0a0a3a" strokeWidth="1.2"/><circle cx="40" cy="72" r="1" fill="#ffd27a"/><circle cx="60" cy="74" r="1" fill="#ffd27a"/><path d="M50 70 l1 2 l2 0 l-1 2 l1 2 l-2 -1 l-2 1 l1 -2 l-1 -2 l2 0 Z" fill="#ffd27a"/></g>}
+        {/* COSTUME: payaso — polka dots */}
+        {skin === "payaso" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#fff" stroke="#d7d2c4" strokeWidth="1.2"/><circle cx="38" cy="72" r="2" fill="#ff5fa0"/><circle cx="62" cy="72" r="2" fill="#7fd0ff"/><circle cx="50" cy="76" r="2" fill="#ffd27a"/></g>}
+        {skin === "clawdeen" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#7a3ab0" stroke="#3a1a70" strokeWidth="1.2"/><path d="M30 66 Q50 60 70 66 L70 70 Q50 66 30 70 Z" fill="#000"/><circle cx="50" cy="74" r="3" fill="#ffd27a" stroke="#7a5a0a" strokeWidth="0.6"/><path d="M48 72 l2 2 l2 -2" fill="none" stroke="#7a5a0a" strokeWidth="0.6"/></g>}
+        {skin === "cleo" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#2a8ac0" stroke="#1a5a70" strokeWidth="1.2"/><rect x="36" y="70" width="28" height="3" fill="#ffd27a" stroke="#7a5a0a" strokeWidth="0.6"/><rect x="48" y="70" width="4" height="6" fill="#7a5a0a"/></g>}
+        {skin === "ghoulia" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#a8c0d8" stroke="#4a5a80" strokeWidth="1.2"/><rect x="38" y="70" width="24" height="4" rx="1" fill="#ff5fa0" stroke="#b02a66" strokeWidth="0.6"/><circle cx="50" cy="74" r="1.5" fill="#fff"/></g>}
+        {skin === "bella" && <g><path d="M26 68 Q50 58 74 68 L76 84 Q50 92 24 84 Z" fill="#ffd27a" stroke="#7a5a0a" strokeWidth="1.2"/><path d="M26 68 Q50 64 74 68 L73 72 Q50 68 27 72 Z" fill="#fff" opacity="0.5"/><circle cx="50" cy="74" r="2" fill="#ff5fa0"/></g>}
+        {skin === "jasmine" && <g><path d="M32 66 Q50 55 68 66 L68 76 Q50 62 32 76 Z" fill="#7fd0ff" stroke="#1a5a8a" strokeWidth="1.2"/><path d="M32 76 Q50 84 68 76 L68 84 Q50 91 32 84 Z" fill="#7fd0ff" stroke="#1a5a8a" strokeWidth="1.2"/><circle cx="50" cy="72" r="1.5" fill="#ffd27a" stroke="#7a5a0a" strokeWidth="0.6"/></g>}
+        {skin === "tiana" && <g><path d="M28 68 Q50 60 72 68 L74 84 Q50 92 26 84 Z" fill="#7fc24a" stroke="#2a5a10" strokeWidth="1.2"/><path d="M28 68 Q50 64 72 68 L71 72 Q50 68 29 72 Z" fill="#a8e880" opacity="0.6"/><circle cx="50" cy="74" r="1.8" fill="#fff" opacity="0.8"/></g>}
+        {skin === "widow" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#1a1a1a" stroke="#000" strokeWidth="1.2"/><path d="M44 70 Q50 66 56 70 Q54 74 50 72 Q46 74 44 70 Z" fill="#d9342b"/><circle cx="50" cy="74" r="1" fill="#fff"/></g>}
+        {skin === "spider" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#d9342b" stroke="#7a1410" strokeWidth="1.2"/><path d="M30 66 Q50 60 70 66 L70 68 Q50 64 30 68 Z" fill="#1a3a8a"/><path d="M42 72 Q50 68 58 72" stroke="#fff" strokeWidth="0.8" fill="none"/></g>}
+        {skin === "wonder" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#d9342b" stroke="#7a1410" strokeWidth="1.2"/><path d="M32 70 h36 v3 h-36 Z" fill="#ffd27a"/><circle cx="50" cy="74" r="2" fill="#ffd27a" stroke="#7a5a0a" strokeWidth="0.6"/></g>}
+        {skin === "dogday" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#ffb347" stroke="#7a4a10" strokeWidth="1.2"/><circle cx="50" cy="72" r="3" fill="#ffd27a" stroke="#7a5a0a" strokeWidth="0.6"/><circle cx="50" cy="72" r="1" fill="#fff"/></g>}
+        {skin === "craftycorn" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#a8e4ff" stroke="#4a8ab0" strokeWidth="1.2"/><path d="M50 66 L46 72 L50 76 L54 72 Z" fill="#fff" stroke="#b06bff" strokeWidth="0.7"/><circle cx="50" cy="74" r="1.2" fill="#ffd27a"/></g>}
+        {skin === "alex" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#ff8c3a" stroke="#7a3a10" strokeWidth="1.2"/><rect x="48" y="70" width="8" height="3" fill="#7a5a2c"/></g>}
+        {skin === "ender" && <g><path d="M30 66 Q50 55 70 66 L70 84 Q50 91 30 84 Z" fill="#1a1a2e" stroke="#000" strokeWidth="1.2"/><circle cx="50" cy="74" r="2" fill="#b06bff" stroke="#7a3ab0" strokeWidth="0.6"/><circle cx="50" cy="74" r="0.7" fill="#fff"/></g>}
+
+        {/* kissy long arms — v2 thicker + fur texture */}
+        {isKissy && <g>
+          <path d="M30 68 Q12 58 6 72 Q2 82 12 86 Q9 80 15 77 Q11 85 20 83" fill="none" stroke="#ff7fb0" strokeWidth="7.2" strokeLinecap="round" />
+          <path d="M70 68 Q88 58 94 72 Q98 82 88 86 Q91 80 85 77 Q89 85 80 83" fill="none" stroke="#ff7fb0" strokeWidth="7.2" strokeLinecap="round" />
+          {/* fur tuft lines on arms */}
+          <g stroke="#ffc0d8" strokeWidth="0.9" opacity="0.6" fill="none" strokeLinecap="round">
+            <path d="M20 70 q-2 3 -4 6" /><path d="M18 76 q-1 3 -2 5" /><path d="M80 70 q2 3 4 6" /><path d="M82 76 q1 3 2 5" />
+          </g>
+          <circle cx="12" cy="85.5" r="4.8" fill="#ffe066" stroke="#b8910a" strokeWidth="0.9" />
+          <circle cx="88" cy="85.5" r="4.8" fill="#ffe066" stroke="#b8910a" strokeWidth="0.9" />
+          <circle cx="11" cy="84" r="1" fill="#fff" opacity="0.7" /><circle cx="87" cy="84" r="1" fill="#fff" opacity="0.7" />
+        </g>}
 
         {/* JOCKEY rider (behind Maxine's head) */}
         {skin === "jockey" && (
@@ -252,8 +368,34 @@ export default function Maxine({ skin = "default", pose = "idle", facing = 1, si
           {skin === "bow" && <g transform="translate(50 16)"><path d="M-2 0 Q-14 -8 -14 2 Q-14 10 -2 4 Z" fill="#ff5fa0" stroke="#b02a66" strokeWidth="1" /><path d="M2 0 Q14 -8 14 2 Q14 10 2 4 Z" fill="#ff5fa0" stroke="#b02a66" strokeWidth="1" /><circle cx="0" cy="2" r="3" fill="#ff8fc0" stroke="#b02a66" strokeWidth="1" /></g>}
           {skin === "santa" && <g><path d="M30 26 Q50 8 70 26 Q66 18 58 14 Q64 4 50 2 Q36 6 40 16 Q32 20 30 26 Z" fill="#d9342b" stroke="#7a1410" strokeWidth="1.2" /><path d="M28 24 Q50 18 72 24 L70 30 Q50 26 30 30 Z" fill="#fff" /><circle cx="52" cy="2" r="4" fill="#fff" /></g>}
           {skin === "princess" && <g><path d="M36 22 L40 10 L46 18 L50 6 L54 18 L60 10 L64 22 Z" fill="#ffd27a" stroke="#a8730a" strokeWidth="1" /><circle cx="50" cy="12" r="2" fill="#ff5fa0" /></g>}
-          {skin === "yuta" && <path d="M30 26 Q40 16 50 20 Q60 16 70 26 Q62 20 50 24 Q38 20 30 26 Z" fill="#1a1008" />}
+          {skin === "yuta" && <g>
+            <path d="M28 28 Q32 14 42 12 Q48 8 55 12 Q64 10 72 18 Q70 26 66 28 Q62 18 50 20 Q38 18 30 26 Z" fill="#0a0a0a" stroke="#000" strokeWidth="0.8" />
+            <path d="M38 16 q2 4 3 6 q2 -3 4 -5" fill="none" stroke="#1a1a1a" strokeWidth="0.8" opacity="0.6" />
+          </g>}
           {skin === "kissy" && <g><path d="M28 28 Q50 12 72 28 Q68 20 50 16 Q32 20 28 28 Z" fill="#ff5fa0" /><path d="M46 16 q4 -6 8 0 q-4 4 -8 0 Z" fill="#ff8fc0" /></g>}
+          {skin === "gojo" && <g><rect x="30" y="30" width="40" height="8" rx="2" fill="#1a1a1a" stroke="#000" strokeWidth="0.8" /><rect x="32" y="32" width="36" height="4" rx="1" fill="#7fd0ff" opacity="0.6" /><path d="M38 18 Q50 10 62 18 Q58 12 50 14 Q42 12 38 18 Z" fill="#ffffff" stroke="#b8c8e8" strokeWidth="0.8" /></g>}
+          {skin === "sukuna" && <g><path d="M34 28 q2 -2 4 0 M42 24 q2 -2 4 0 M58 24 q-2 -2 -4 0 M66 28 q-2 -2 -4 0" stroke="#c93030" strokeWidth="1.4" fill="none" strokeLinecap="round"/><circle cx="40" cy="42" r="1" fill="#ffd27a"/><circle cx="60" cy="42" r="1" fill="#ffd27a"/></g>}
+          {skin === "draculaura" && <g><path d="M28 30 Q30 18 42 22 Q40 28 34 32 Z" fill="#1a1a1a" /><path d="M72 30 Q70 18 58 22 Q60 28 66 32 Z" fill="#1a1a1a" /><circle cx="50" cy="16" r="3" fill="#ff5fa0" stroke="#b02a66" strokeWidth="0.8"/><path d="M44 14 l2 2 l2 -2" fill="#000"/></g>}
+          {skin === "frankie" && <g><path d="M30 32 Q32 28 34 32 M66 32 Q68 28 70 32" stroke="#000" strokeWidth="1" fill="none"/><rect x="34" y="18" width="4" height="4" fill="#7a5a2c" stroke="#000" strokeWidth="0.6"/><rect x="62" y="18" width="4" height="4" fill="#7a5a2c" stroke="#000" strokeWidth="0.6"/><path d="M40 22 Q50 26 60 22" stroke="#000" strokeWidth="0.7" strokeDasharray="2 2" fill="none"/></g>}
+          {skin === "huggy" && <g><path d="M26 34 Q14 38 16 50 Q22 48 26 40 Z" fill="#7fd0ff" stroke="#1a3a5a" strokeWidth="0.8"/><path d="M74 34 Q86 38 84 50 Q78 48 74 40 Z" fill="#7fd0ff" stroke="#1a3a5a" strokeWidth="0.8"/><path d="M36 30 Q50 34 64 30" fill="none" stroke="#fff" strokeWidth="1.2"/><circle cx="50" cy="16" r="2.2" fill="#ffd27a" stroke="#7a3a5a" strokeWidth="0.6"/></g>}
+          {skin === "catnap" && <g><ellipse cx="50" cy="16" rx="12" ry="4" fill="#7a3ab0" stroke="#3a1a5a" strokeWidth="0.8"/><circle cx="50" cy="14" r="2" fill="#ffd27a" stroke="#7a5a2a" strokeWidth="0.6"/><path d="M38 46 q4 -2 8 2" stroke="#000" strokeWidth="0.6" fill="none" opacity="0.5"/><path d="M54 46 q4 -2 8 2" stroke="#000" strokeWidth="0.6" fill="none" opacity="0.5"/></g>}
+          {skin === "unicornio" && <g><path d="M50 6 L46 18 L54 18 Z" fill="#fff" stroke="#b06bff" strokeWidth="1"/><path d="M46 18 Q50 10 54 18" fill="none" stroke="#ffd27a" strokeWidth="1.2"/><path d="M36 22 Q40 14 46 16 Q42 20 36 22 Z" fill="#ff8fb6"/><path d="M64 22 Q60 14 54 16 Q58 20 64 22 Z" fill="#ff8fb6"/></g>}
+          {skin === "pirata" && <g><path d="M30 26 Q50 12 70 26 L68 30 Q50 18 32 30 Z" fill="#d9342b" stroke="#7a1410" strokeWidth="1"/><circle cx="42" cy="38" r="5" fill="#1a1a1a"/><path d="M42 38 l6 6" stroke="#fff" strokeWidth="0.8"/></g>}
+          {skin === "astronauta" && <g><circle cx="50" cy="32" r="16" fill="none" stroke="#fff" strokeWidth="2"/><circle cx="50" cy="32" r="14" fill="#d8f4ff" opacity="0.25"/><rect x="44" y="12" width="12" height="4" rx="1" fill="#fff" stroke="#7a8aa8" strokeWidth="0.6"/></g>}
+          {skin === "ninja" && <g><rect x="30" y="28" width="40" height="10" rx="2" fill="#1a1a1a" /><ellipse cx="40" cy="33" rx="1.5" ry="1" fill="#ff3030"/><ellipse cx="60" cy="33" rx="1.5" ry="1" fill="#ff3030"/></g>}
+          {skin === "clawdeen" && <g><path d="M28 30 Q30 18 36 20 Q34 26 30 32 Z" fill="#5a3a1a"/><path d="M72 30 Q70 18 64 20 Q66 26 70 32 Z" fill="#5a3a1a"/><circle cx="36" cy="26" r="1" fill="#ffd27a"/><circle cx="64" cy="26" r="1" fill="#ffd27a"/></g>}
+          {skin === "cleo" && <g><path d="M34 18 Q50 8 66 18 Q60 12 50 14 Q40 12 34 18 Z" fill="#ffd27a" stroke="#7a5a0a" strokeWidth="0.8"/><circle cx="50" cy="14" r="1.5" fill="#7fd0ff" stroke="#1a5a8a" strokeWidth="0.6"/></g>}
+          {skin === "ghoulia" && <g><rect x="32" y="28" width="36" height="4" rx="1" fill="#ff5fa0" stroke="#b02a66" strokeWidth="0.6"/><circle cx="38" cy="30" r="1" fill="#fff"/><circle cx="62" cy="30" r="1" fill="#fff"/></g>}
+          {skin === "bella" && <g><circle cx="50" cy="14" r="2" fill="#ffd27a" stroke="#7a5a0a" strokeWidth="0.6"/><path d="M42 18 Q50 12 58 18" stroke="#7a5a0a" strokeWidth="0.7" fill="none"/></g>}
+          {skin === "jasmine" && <g><circle cx="50" cy="14" r="2.5" fill="#7fd0ff" stroke="#1a5a8a" strokeWidth="0.8"/><path d="M36 20 Q42 16 50 18 Q58 16 64 20" fill="none" stroke="#1a5a8a" strokeWidth="0.7"/></g>}
+          {skin === "tiana" && <g><path d="M36 16 Q50 8 64 16 Q60 12 50 14 Q40 12 36 16 Z" fill="#7fc24a" stroke="#2a5a10" strokeWidth="0.8"/><circle cx="50" cy="12" r="1.2" fill="#fff"/></g>}
+          {skin === "widow" && <g><path d="M30 28 Q36 22 42 24 Q40 30 34 32 Z" fill="#000"/><path d="M70 28 Q64 22 58 24 Q60 30 66 32 Z" fill="#000"/></g>}
+          {skin === "spider" && <g><rect x="32" y="26" width="36" height="8" rx="1" fill="#d9342b" stroke="#7a1410" strokeWidth="0.7"/><path d="M50 26 v8 M44 28 l12 4 M56 28 l-12 4" stroke="#fff" strokeWidth="0.6"/></g>}
+          {skin === "wonder" && <g><path d="M34 18 Q50 8 66 18 Q60 14 50 16 Q40 14 34 18 Z" fill="#ffd27a" stroke="#7a5a0a" strokeWidth="0.8"/><circle cx="50" cy="14" r="1" fill="#d9342b"/></g>}
+          {skin === "dogday" && <g><circle cx="50" cy="16" r="3" fill="#ffb347" stroke="#7a4a10" strokeWidth="0.8"/><circle cx="50" cy="16" r="1" fill="#fff"/></g>}
+          {skin === "craftycorn" && <g><path d="M50 8 L47 18 L53 18 Z" fill="#fff" stroke="#b06bff" strokeWidth="0.8"/><circle cx="50" cy="16" r="1.5" fill="#ffd27a"/></g>}
+          {skin === "alex" && <g><path d="M36 20 Q40 12 50 14 Q60 12 64 20 Q60 16 50 18 Q40 16 36 20 Z" fill="#ff8c3a"/><rect x="48" y="14" width="4" height="2" fill="#fff"/></g>}
+          {skin === "ender" && <g><ellipse cx="40" cy="42" rx="2" ry="1.5" fill="#b06bff"/><ellipse cx="60" cy="42" rx="2" ry="1.5" fill="#b06bff"/><circle cx="40" cy="42" r="0.7" fill="#fff"/><circle cx="60" cy="42" r="0.7" fill="#fff"/></g>}
         </g>
       </g>
       </g>

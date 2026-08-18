@@ -21,7 +21,7 @@ const ARENA_H = 9;
 const REST_H = 4;
 const CYCLE = LEVEL_LEN + ARENA_H + REST_H + 2; // +door +floor
 
-type Cell = 0 | 1 | 2 | 3 | 4 | 5;
+type Cell = 0 | 1 | 2 | 3 | 4 | 5 | 6; // 6=PLATFORM flotante
 type EnemyType = "spoon" | "mouse" | "whisk" | "bubble" | "spatula";
 interface Enemy { id: number; x: number; y: number; vx: number; vy: number; minX: number; maxX: number; type: EnemyType; hp: number; hitCd: number; homeY: number; stateT: number; active: boolean; }
 interface BreadItem { id: number; x: number; y: number; type: BreadType; taken: boolean; phase: number; }
@@ -29,7 +29,7 @@ interface PowerItem { id: number; x: number; y: number; kind: string; taken: boo
 interface Particle { x: number; y: number; vx: number; vy: number; life: number; max: number; color: string; size: number; }
 
 interface World { rows: Record<number, Cell[]>; enemies: Enemy[]; breads: BreadItem[]; powers: PowerItem[]; bullets: Bullet[]; isRest: Record<number, boolean>; isBoss: Record<number, boolean>; doorRow: Record<number, number>; }
-interface Player { x: number; y: number; prevY: number; vx: number; vy: number; onGround: boolean; facing: 1 | -1; invuln: number; hurtTimer: number; digTimer: number; attackTimer: number; attackCd: number; coyote: number; jumpBuf: number; usedDouble: boolean; }
+interface Player { x: number; y: number; prevY: number; vx: number; vy: number; onGround: boolean; facing: 1 | -1; invuln: number; hurtTimer: number; digTimer: number; attackTimer: number; attackCd: number; coyote: number; jumpBuf: number; usedDouble: boolean; wallSlide: number; wallDir: 0|1|-1; }
 interface Active { shield: number; magnet: number; speed: number; yeast: number; frozen: number; bounceUsed: boolean; }
 
 function mulberry32(seed: number) {
@@ -51,9 +51,11 @@ interface Props {
   best: number;
   startTool: ToolId;
   ownedMeta: ToolId[];
+  startLevel?: number;
 }
 
-export default function Game({ skin, onExit, onVictory, best, startTool, ownedMeta }: Props) {
+export default function Game({ skin, onExit, onVictory, best, startTool, ownedMeta, startLevel=1 }: Props) {
+  const startRow = 3 + ((startLevel||1)-1)*47;
   const stageRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const [, setTick] = useState(0);
@@ -71,7 +73,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
   }, []);
 
   const world = useRef<World>({ rows: {}, enemies: [], breads: [], powers: [], bullets: [], isRest: {}, isBoss: {}, doorRow: {} });
-  const player = useRef<Player>({ x: 3 * TILE + TILE / 2 - PW / 2, y: 2 * TILE, prevY: 2 * TILE, vx: 0, vy: 0, onGround: false, facing: 1, invuln: 0, hurtTimer: 0, digTimer: 0, attackTimer: 0, attackCd: 0, coyote: 0, jumpBuf: 0, usedDouble: false });
+  const player = useRef<Player>({ x: 3 * TILE + TILE / 2 - PW / 2, y: startRow * TILE, prevY: startRow * TILE, vx: 0, vy: 0, onGround: false, facing: 1, invuln: 0, hurtTimer: 0, digTimer: 0, attackTimer: 0, attackCd: 0, coyote: 0, jumpBuf: 0, usedDouble: false, wallSlide: 0, wallDir: 0 });
   const active = useRef<Active>({ shield: 0, magnet: 0, speed: 0, yeast: 0, frozen: 0, bounceUsed: false });
   const cameraY = useRef(0);
   const hearts = useRef(3);
@@ -79,16 +81,16 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
   const breadRun = useRef(0);
   const crownsRun = useRef(0);
   const breadCount = useRef(0);
-  const startY = useRef(2 * TILE);
-  const maxDepth = useRef(0);
+  const startY = useRef(startRow * TILE);
+  const maxDepth = useRef((startLevel||1)>1? (startLevel-1)*47:0);
   const ids = useRef(1);
   const input = useRef({ left: false, right: false, digEdge: false, jumpEdge: false, attackEdge: false, lastHoriz: 0 });
   const aim = useRef<{ x: number; y: number }>({ x: 0, y: 1 });
   const over = useRef(false);
   const elapsed = useRef(0);
   const stoneHits = useRef<Map<string, number>>(new Map());
-  const level = useRef(1);
-  const lastRestLevel = useRef(0);
+  const level = useRef(startLevel||1);
+  const lastRestLevel = useRef((startLevel||1)-1);
   const lastBossLevel = useRef(0);
   const tool = useRef<ToolId>(startTool);
   const ownedTools = useRef<ToolId[]>(Array.from(new Set(["palito" as ToolId, ...ownedMeta, startTool])));
@@ -126,12 +128,36 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       const row = new Array(COLS).fill(2) as Cell[]; row[2] = 0; row[3] = 0; row[4] = 0; row[5] = 0;
       w.rows[r] = row; return;
     }
-    // LEVEL rows (dense)
+    // LEVEL rows (dense) — V2 torre de plataformas Once Upon a Tower
+    // Plataformas flotantes cada 3 filas para crear torre 2.5D con saltos garantizados
     const cells: Cell[] = new Array(COLS).fill(1);
     cells[0] = 2; cells[COLS - 1] = 2;
     veinCol.current += R() < 0.5 ? -1 : 1;
     if (veinCol.current < 1) veinCol.current = 1; if (veinCol.current > COLS - 2) veinCol.current = COLS - 2;
     const v = veinCol.current; cells[v] = 0; cells[v + 1] = 0;
+    // V2: fila de plataforma flotante (torre) — 30% prob cada 3 filas
+    const isPlatformRow = R() < 0.32 && (r % 3 === 0) && off > 3 && off < LEVEL_LEN - 2;
+    if (isPlatformRow) {
+      // Convertir a fila de plataformas: vacía con muros laterales y plataformas flotantes 6
+      for(let c=1;c<COLS-1;c++) cells[c]=0;
+      cells[0]=2; cells[COLS-1]=2;
+      cells[v]=0; cells[v+1]=0; // corredor garantizado siempre vacío
+      // Plataforma izquierda o derecha, nunca bloqueando vena
+      const side = R() < 0.5 ? 1 : 5;
+      if (side===1 && v>2) { cells[1]=6; cells[2]=6; if(R()<0.5) cells[3]=6; }
+      else if (side===5 && v<4) { cells[5]=6; cells[6]=6; if(R()<0.5) cells[4]=6; }
+      else { // alternativa centro-lateral
+        const pc = R()<0.5? 1: 5; cells[pc]=6; cells[pc+1]=6;
+      }
+      w.rows[r]=cells;
+      // Plataformas llevan panes y enemigos en superficie
+      for(let c=1;c<COLS-1;c++) if(cells[c]===6 && R()<0.3) w.breads.push({ id: ids.current++, x: c*TILE+TILE/2, y: r*TILE - 6, type: pickBread(R), taken:false, phase:R()*6 });
+      if(R()<0.18){
+        const platCols=[]; for(let c=1;c<COLS-1;c++) if(cells[c]===6) platCols.push(c);
+        if(platCols.length){ const c=platCols[(R()*platCols.length)|0]; const type: EnemyType = R()<0.6? "mouse":"spoon"; w.enemies.push({ id: ids.current++, x: c*TILE+TILE/2, y: r*TILE - 12, vx:(R()<0.5?-1:1)*40, vy:0, minX: c*TILE+8, maxX: c*TILE+TILE-8, type, hp:1, hitCd:0, homeY: r*TILE-12, stateT: R()*3, active:true }); }
+      }
+      return;
+    }
     const easy = r < 12;
     let stoneRun = 0;
     for (let c = 1; c < COLS - 1; c++) {
@@ -168,7 +194,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
 
   function getCell(r: number, c: number): Cell { if (c < 0 || c >= COLS) return 2; ensureRow(r); return world.current.rows[r]?.[c] ?? 1; }
   function setCell(r: number, c: number, v: Cell) { ensureRow(r); if (world.current.rows[r]) world.current.rows[r][c] = v; }
-  const solid = (c: Cell) => c === 1 || c === 2 || c === 3;
+  const solid = (c: Cell) => c === 1 || c === 2 || c === 3 || c === 6;
 
   const particles = useRef<Particle[]>([]);
   function spawnDust(x: number, y: number, color: string, n = 8) { for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2; const sp = 30 + Math.random() * 110; particles.current.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 40, life: 0.5, max: 0.5, color, size: 2 + Math.random() * 3 }); } }
@@ -202,7 +228,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       const cyc = cycleOf(rr); const lockedDoor = world.current.doorRow[cyc] === rr && !bossDefeated.current[cyc + 1];
       if (lockedDoor) { spawnDust(cc * TILE + TILE / 2, rr * TILE + TILE / 2, "#9aa0a8", 4); continue; } // the gate won't budge until the boss falls
       const cell = getCell(rr, cc);
-      if (cell === 1 || cell === 4 || cell === 5) { setCell(rr, cc, 0); broke = true; spawnDust(cc * TILE + TILE / 2, rr * TILE + TILE / 2, cell === 1 ? "#caa06a" : "#e3a35a", 10); score.current += 2; if (t.healOnDig && Math.random() < 0.14 && hearts.current < 5) { hearts.current++; spawnDust(p.x + PW / 2, p.y, "#ff8fa0", 10); } }
+      if (cell === 1 || cell === 4 || cell === 5 || cell === 6) { setCell(rr, cc, 0); broke = true; const col = cell===6? "#d7c9a0": cell === 1 ? "#caa06a" : "#e3a35a"; spawnDust(cc * TILE + TILE / 2, rr * TILE + TILE / 2, col, 10); score.current += 2; if (t.healOnDig && Math.random() < 0.14 && hearts.current < 5) { hearts.current++; spawnDust(p.x + PW / 2, p.y, "#ff8fa0", 10); } }
       else if (cell === 2) { const key = `${rr},${cc}`; const need = t.speedMul >= 1.3 ? 1 : 2; const have = (stoneHits.current.get(key) ?? 0) + 1; if (have >= need) { setCell(rr, cc, 0); stoneHits.current.delete(key); broke = true; spawnDust(cc * TILE + TILE / 2, rr * TILE + TILE / 2, "#d7d2c4", 12); score.current += 3; } else { stoneHits.current.set(key, have); spawnDust(cc * TILE + TILE / 2, rr * TILE + TILE / 2, "#ffffff", 5); } }
     }
     if (broke) { p.digTimer = 0.18 / t.speedMul; if (ax !== 0 && ay === 0) { const targetX = (pc + ax) * TILE + (ax > 0 ? 2 : TILE - PW - 2); p.x += (targetX - p.x) * 0.6; p.facing = ax as 1 | -1; } if (ay === 1) p.onGround = false; }
@@ -273,6 +299,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
 
   // ---------- main loop ----------
   useEffect(() => {
+    for (let r = Math.max(0,startRow-5); r < startRow+60; r++) ensureRow(r);
     for (let r = 0; r < 60; r++) ensureRow(r);
     let raf = 0; let last = performance.now();
     const ctx: BossCtx = {
@@ -305,41 +332,69 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       const pc = Math.floor((p.x + PW / 2) / TILE); const pr = Math.floor((p.y + PH / 2) / TILE);
       if (getCell(pr, pc) === 4) p.vx *= 0.45;
 
+      // ——— STRICT AABB HORIZONTAL ———
+      p.wallSlide = Math.max(0, p.wallSlide - dt);
+      let touchingWall: 0|1|-1 = 0;
       p.x += p.vx * dt;
       {
         const top = Math.floor(p.y / TILE); const bot = Math.floor((p.y + PH - 1) / TILE);
-        if (p.vx > 0) { const col = Math.floor((p.x + PW) / TILE); for (let r = top; r <= bot; r++) if (solid(getCell(r, col))) { p.x = col * TILE - PW; p.vx = 0; break; } }
-        else if (p.vx < 0) { const col = Math.floor(p.x / TILE); for (let r = top; r <= bot; r++) if (solid(getCell(r, col))) { p.x = (col + 1) * TILE; p.vx = 0; break; } }
+        if (p.vx > 0) { const col = Math.floor((p.x + PW) / TILE); for (let r = top; r <= bot; r++) if (solid(getCell(r, col))) { p.x = col * TILE - PW - 0.1; p.vx = 0; touchingWall = 1; p.wallDir = 1; break; } }
+        else if (p.vx < 0) { const col = Math.floor(p.x / TILE); for (let r = top; r <= bot; r++) if (solid(getCell(r, col))) { p.x = (col + 1) * TILE + 0.1; p.vx = 0; touchingWall = -1; p.wallDir = -1; break; } }
+        else {
+          // even without velocity, detect adjacent wall for slide
+          const leftCol = Math.floor((p.x - 0.5) / TILE); const rightCol = Math.floor((p.x + PW + 0.5) / TILE);
+          for(let r=top;r<=bot;r++){ if(solid(getCell(r,leftCol))) touchingWall=-1; if(solid(getCell(r,rightCol))) touchingWall=1; }
+        }
+        if(touchingWall!==0 && !p.onGround && p.vy>0){
+          const pressing = (touchingWall===1 && input.current.right) || (touchingWall===-1 && input.current.left);
+          if(pressing){ p.wallSlide = 0.35; p.wallDir = touchingWall; p.vy = Math.min(p.vy, 90); }
+        }
       }
       p.x = Math.max(TILE, Math.min(p.x, (COLS - 1) * TILE - PW));
 
       if (input.current.digEdge) { input.current.digEdge = false; tryDig(); }
       if (input.current.attackEdge) { input.current.attackEdge = false; doAttack(); }
 
-      // jump buffering + coyote
+      // ——— JUMP: coyote + buffer + DOUBLE JUMP + WALL JUMP ———
       p.coyote = p.onGround ? 0.12 : Math.max(0, p.coyote - dt);
       if (input.current.jumpEdge) { input.current.jumpEdge = false; p.jumpBuf = 0.12; }
       p.jumpBuf = Math.max(0, p.jumpBuf - dt);
-      if (p.jumpBuf > 0 && (p.coyote > 0 || (a.yeast > 0 && !p.usedDouble))) {
-        if (p.coyote <= 0) p.usedDouble = true;
-        p.vy = -JUMP_V; p.jumpBuf = 0; p.coyote = 0; p.onGround = false;
-        spawnDust(p.x + PW / 2, p.y + PH, "#fff3d6", 6);
+      // wall jump priority
+      if (p.jumpBuf > 0 && p.wallSlide > 0 && !p.onGround) {
+        p.vy = -JUMP_V * 0.95; p.vx = -p.wallDir * 150; p.jumpBuf = 0; p.coyote = 0; p.onGround = false; p.wallSlide = 0; p.usedDouble = false;
+        spawnDust(p.x + PW/2, p.y + PH/2, "#fff3d6", 8); p.facing = (-p.wallDir as 1|-1);
+      } else if (p.jumpBuf > 0 && (p.coyote > 0 || !p.usedDouble)) {
+        // double jump general (1 extra), yeast da igual pero resetea en suelo
+        const isDouble = p.coyote <= 0;
+        if (isDouble) p.usedDouble = true;
+        else p.usedDouble = false;
+        p.vy = isDouble ? -JUMP_V*0.92 : -JUMP_V;
+        p.jumpBuf = 0; p.coyote = 0; p.onGround = false; p.wallSlide = 0;
+        spawnDust(p.x + PW / 2, p.y + PH, "#fff3d6", isDouble? 8:6);
+        // salto doble deja rastro de harina extra
+        if(isDouble) for(let i=0;i<3;i++) particles.current.push({x:p.x+PW/2, y:p.y+PH, vx:(Math.random()-0.5)*40, vy:20, life:0.4, max:0.4, color:"#fff7e0", size:2});
       }
+      // yeast extra ya no es necesario pero mantiene compatibilidad: si tiene levadura permite otro doble
+      if(a.yeast>0) p.usedDouble = false;
 
       p.vy += G * dt; if (p.vy > MAX_FALL) p.vy = MAX_FALL;
+      // wall slide ralentiza caída si sigue presionando
+      if(p.wallSlide>0 && p.vy>0) p.vy = Math.min(p.vy, 85);
       p.y += p.vy * dt; p.onGround = false;
       {
         const left = Math.floor(p.x / TILE); const right = Math.floor((p.x + PW - 1) / TILE);
-        if (p.vy < 0) { const hrow = Math.floor(p.y / TILE); for (let c = left; c <= right; c++) if (solid(getCell(hrow, c))) { p.y = (hrow + 1) * TILE; p.vy = 0; break; } } // ceiling: never jump through a block or the locked gate
-        if (p.vy >= 0) { const row = Math.floor((p.y + PH) / TILE); for (let c = left; c <= right; c++) { const cell = getCell(row, c); if (solid(cell)) { p.y = row * TILE - PH; p.vy = 0; p.onGround = true; p.usedDouble = false; if (cell === 3) { if (TOOL_MAP[tool.current].spikeImmune) { setCell(row, c, 0); spawnDust(c * TILE + TILE / 2, row * TILE + TILE / 2, "#d7d2c4", 8); score.current += 1; } else hurt(); } break; } } }
-        // re-resolve horizontal against the post-fall rows (kills the 1-frame side-ledge nibble so walls always feel solid)
+        // techo estricto
+        if (p.vy < 0) { const hrow = Math.floor(p.y / TILE); for (let c = left; c <= right; c++) if (solid(getCell(hrow, c))) { p.y = (hrow + 1) * TILE + 0.5; p.vy = 0; break; } }
+        // suelo estricto + plataforma
+        if (p.vy >= 0) { const row = Math.floor((p.y + PH) / TILE); for (let c = left; c <= right; c++) { const cell = getCell(row, c); if (solid(cell)) { p.y = row * TILE - PH - 0.5; p.vy = 0; p.onGround = true; p.usedDouble = false; p.wallSlide=0; if (cell === 3) { if (TOOL_MAP[tool.current].spikeImmune) { setCell(row, c, 0); spawnDust(c * TILE + TILE / 2, row * TILE + TILE / 2, "#d7d2c4", 8); score.current += 1; } else hurt(); } break; } } }
+        // re-resolve horizontal post-caída para bordes sólidos
         { const t2 = Math.floor(p.y / TILE); const b2 = Math.floor((p.y + PH - 1) / TILE);
-          if (p.vx >= 0) { const col = Math.floor((p.x + PW) / TILE); for (let r = t2; r <= b2; r++) if (solid(getCell(r, col))) { p.x = col * TILE - PW; p.vx = 0; break; } }
-          else { const col = Math.floor(p.x / TILE); for (let r = t2; r <= b2; r++) if (solid(getCell(r, col))) { p.x = (col + 1) * TILE; p.vx = 0; break; } }
+          if (p.vx >= 0) { const col = Math.floor((p.x + PW) / TILE); for (let r = t2; r <= b2; r++) if (solid(getCell(r, col))) { p.x = col * TILE - PW -0.1; p.vx = 0; if(p.vy>0) {p.wallSlide=0.3; p.wallDir=1;} break; } }
+          else { const col = Math.floor(p.x / TILE); for (let r = t2; r <= b2; r++) if (solid(getCell(r, col))) { p.x = (col + 1) * TILE +0.1; p.vx = 0; if(p.vy>0){p.wallSlide=0.3; p.wallDir=-1;} break; } }
           p.x = Math.max(TILE, Math.min(p.x, (COLS - 1) * TILE - PW)); }
-        // emergency eject: if a knockback or a weird frame ever leaves the puppy embedded in a solid tile, spit her out upward so she can never get stuck
+        // eject si queda dentro de bloque (rescate antisoftlock 3s gracia ya via invuln, pero eject físico)
         const eR = Math.floor((p.y + PH / 2) / TILE); const eC = Math.floor((p.x + PW / 2) / TILE);
-        if (solid(getCell(eR, eC))) { let er = eR; while (er >= 0 && solid(getCell(er, eC))) er--; p.y = er * TILE - PH; p.vy = 0; p.onGround = true; p.usedDouble = false; }
+        if (solid(getCell(eR, eC))) { let er = eR; while (er >= 0 && solid(getCell(er, eC))) er--; p.y = er * TILE - PH -1; p.vy = 0; p.onGround = true; p.usedDouble = false; p.wallSlide=0; p.invuln=Math.max(p.invuln,0.6); spawnDust(p.x+PW/2,p.y+PH/2,"#ffd27a",6); }
       }
 
       const frontRow = Math.floor((p.y + STAGE_H) / TILE) + 4;
@@ -548,7 +603,20 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
           <div className="absolute" style={{ left: p.x - 6, top: p.y - 14, width: PW + 12, height: PH + 18, opacity: flick ? 0.35 : 1, transition: "opacity .05s" }}>
             {active.current.shield > 0 && <div className="absolute inset-0 rounded-full border-2 border-cyan-300" style={{ boxShadow: "0 0 12px #7fd0ff", animation: "glow-pulse 1.2s infinite" }} />}
             {active.current.frozen > 0 && <div className="absolute inset-0 rounded-full" style={{ background: "#7fd0ff33", boxShadow: "inset 0 0 10px #7fd0ff" }} />}
-            {!isFoot && <div className="absolute" style={{ left: p.facing === 1 ? PW - 2 + (p.attackTimer > 0 ? 6 : 0) : -12 - (p.attackTimer > 0 ? 6 : 0), top: PH * 0.48, zIndex: 2, transform: p.attackTimer > 0 ? `rotate(${p.facing * -25}deg)` : undefined, transition: "transform .08s" }}><Plushie id={tool.current} size={tool.current === "kissy" ? 26 : 22} flip={p.facing} /></div>}
+            {/* soul orbs Guyu/Dixie orbit above head */}
+            {(tool.current === "guyu" || tool.current === "dixie") && (
+              <div className="absolute" style={{ left: PW/2 - 16, top: -18, zIndex: 4, animation: "hop 1.6s ease-in-out infinite", filter: "drop-shadow(0 0 6px #ffd27a88)" }}>
+                <Plushie id={tool.current} size={32} />
+              </div>
+            )}
+            {/* trailing pelitos for Guyu */}
+            {tool.current === "guyu" && (
+              <div className="absolute pointer-events-none" style={{ left: PW/2 - 12, top: -10, width: 24, height: 24, opacity: 0.7 }}>
+                <div className="flour" style={{ left: "10%", animationDuration: "2s" } as any} />
+                <div className="flour" style={{ left: "70%", animationDuration: "2.4s", animationDelay: "0.4s" } as any} />
+              </div>
+            )}
+            {!isFoot && tool.current !== "guyu" && tool.current !== "dixie" && <div className="absolute" style={{ left: p.facing === 1 ? PW - 2 + (p.attackTimer > 0 ? 6 : 0) : -12 - (p.attackTimer > 0 ? 6 : 0), top: PH * 0.48, zIndex: 2, transform: p.attackTimer > 0 ? `rotate(${p.facing * -25}deg)` : undefined, transition: "transform .08s" }}><Plushie id={tool.current} size={tool.current === "kissy" ? 26 : 22} flip={p.facing} /></div>}
             <Maxine skin={skin} pose={pose} facing={p.facing} size={PW + 18} />
             {isFoot && <div className="absolute pointer-events-none" style={{ left: -2, top: PH * 0.82, width: PW + 12, height: 14, zIndex: 3 }}><Plushie id="zapatitos" size={PW + 12} /></div>}
           </div>
@@ -649,6 +717,7 @@ function Tile({ c, r, cell, zone }: { c: number; r: number; cell: Cell; zone: st
   if (cell === 3) return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE }}><svg width={TILE} height={TILE} viewBox="0 0 45 45"><rect x="0" y="34" width="45" height="11" fill={P.wallDk} />{Array.from({ length: 5 }).map((_, i) => <path key={i} d={`M${3 + i * 9} 34 L${7.5 + i * 9} 8 L${12 + i * 9} 34 Z`} fill="#d7d2c4" stroke="#5a5545" strokeWidth="1" />)}</svg></div>);
   if (cell === 4) return <div className="absolute rounded-md" style={{ left: x + 3, top: y + 3, width: TILE - 6, height: TILE - 6, background: "radial-gradient(circle at 40% 30%, #ffe08a99, #c9842a99)", border: "2px solid #7a441066" }} />;
   if (cell === 5) return <div className="absolute rounded-md" style={{ left: x + 2, top: y + 6, width: TILE - 4, height: TILE - 10, background: "linear-gradient(180deg,#5a4010aa,#2a1c08cc)", border: "1px solid #ffe06655" }} />;
+  if (cell === 6) return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: `linear-gradient(180deg, ${P.wall} 0%, ${P.wallDk} 100%)`, boxShadow: `inset 0 -3px 0 rgba(0,0,0,0.25), inset 0 2px 0 rgba(255,255,255,0.2)`, border: `1px solid ${P.wallDk}` }}><div className="absolute" style={{ left: 4, top: 8, right: 4, height: 2, background: P.wallDk, opacity: 0.5, borderRadius: 1 }} /><div className="absolute" style={{ left: 6, top: 16, width: 6, height: 6, background: "#5a2a0a", borderRadius: 1, opacity: 0.3 }} /><div className="absolute" style={{ left: TILE-12, top: 16, width: 6, height: 6, background: "#5a2a0a", borderRadius: 1, opacity: 0.3 }} /></div>); // PLATFORM flotante - sólida y saltable
   if (cell === 2) return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: P.wall, boxShadow: `inset 0 -4px 0 ${P.wallDk}, inset 0 3px 0 rgba(255,255,255,.18)` }}><div className="absolute inset-0" style={{ backgroundImage: `linear-gradient(to right, ${P.wallDk}66 0 2px, transparent 2px ${TILE / 2}px), linear-gradient(to bottom, ${P.wallDk}66 0 2px, transparent 2px ${TILE / 2}px)`, backgroundSize: `${TILE / 2}px ${TILE / 2}px` }} /></div>);
   return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: P.dirt, boxShadow: `inset 0 -4px 0 ${P.dirtDk}, inset 0 3px 0 rgba(255,255,255,.12)` }}><div className="absolute rounded-sm" style={{ left: 6, top: 8, width: 7, height: 6, background: P.dirtDk, opacity: 0.6 }} /><div className="absolute rounded-sm" style={{ left: 26, top: 20, width: 9, height: 7, background: P.dirtDk, opacity: 0.5 }} />{zone === "horno" && <div className="absolute rounded-full" style={{ left: 30, top: 8, width: 4, height: 4, background: "#ff7a2a", boxShadow: "0 0 6px #ff7a2a", animation: "flicker 1s infinite" }} />}</div>);
 }

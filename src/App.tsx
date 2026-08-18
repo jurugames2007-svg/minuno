@@ -13,7 +13,7 @@ import Shop from "./screens/Shop";
 import GameOver from "./screens/GameOver";
 import Game from "./game/Game";
 import { Flour } from "./art/Decor";
-import type { SkinId } from "./data/skins";
+import { SKINS, type SkinId } from "./data/skins";
 import type { ToolId } from "./art/Plushie";
 
 type Screen = "intro" | "menu" | "shop" | "game" | "over" | "victory";
@@ -36,6 +36,8 @@ export default function App() {
   const [startTool, setStartTool] = useState<ToolId>(() => load("maxine_starttool", "palito" as ToolId));
   const [runId, setRunId] = useState(0);
   const [overStats, setOverStats] = useState<OverStats | null>(null);
+  const [checkpoint, setCheckpoint] = useState<number>(() => load("maxine_checkpoint", 1));
+  const [unlocked, setUnlocked] = useState<number[]>(() => load("maxine_checkpoints", [1]));
 
   useEffect(() => { const t = setTimeout(hideSplash, 900); return () => clearTimeout(t); }, []);
 
@@ -45,6 +47,15 @@ export default function App() {
   useEffect(() => save("maxine_best", best), [best]);
   useEffect(() => save("maxine_tools", ownedTools), [ownedTools]);
   useEffect(() => save("maxine_starttool", startTool), [startTool]);
+  useEffect(() => save("maxine_checkpoint", checkpoint), [checkpoint]);
+  useEffect(() => save("maxine_checkpoints", unlocked), [unlocked]);
+  const unlockForDepth = (depth:number)=>{
+    const CYCLE_TILES=47;
+    const newUnlock=[1];
+    for(const lv of [5,10,15,20,25]){ if(depth >= (lv-1)*CYCLE_TILES) newUnlock.push(lv); }
+    const merged=Array.from(new Set([...unlocked,...newUnlock])).sort((a,b)=>a-b);
+    if(merged.length!==unlocked.length) setUnlocked(merged);
+  };
 
   const buySkin = (id: SkinId, price: number) => {
     if (owned.includes(id) || crumbs < price) return;
@@ -85,6 +96,9 @@ export default function App() {
             startTool={startTool}
             ownedTools={ownedTools}
             storyWon={storyWon}
+            checkpoint={checkpoint}
+            unlocked={unlocked}
+            onSelectCheckpoint={setCheckpoint}
             onPlay={() => { setRunId((n) => n + 1); setScreen("game"); }}
             onShop={() => setScreen("shop")}
             onStory={() => setScreen("intro")}
@@ -98,7 +112,7 @@ export default function App() {
             ownedTools={ownedTools}
             startTool={startTool}
             onEquip={(id) => setSkin(id)}
-            onBuySkin={(id: SkinId) => { const price: Record<SkinId, number> = { default: 0, bow: 120, lime: 180, harness: 220, santa: 350, vampire: 420, princess: 500, yuta: 700, kissy: 850, yarnaby: 1200, pochacco: 550, mahoraga: 900, jockey: 480, catto: 360 }; buySkin(id, price[id]); }}
+            onBuySkin={(id: SkinId) => { const found = SKINS.find(s=>s.id===id); buySkin(id, found?found.price:0); }}
             onBuyTool={buyToolMeta}
             onEquipTool={(id: ToolId) => setStartTool(id)}
             onBack={() => setScreen("menu")}
@@ -117,15 +131,18 @@ export default function App() {
             best={best}
             startTool={startTool}
             ownedMeta={ownedTools}
+            startLevel={checkpoint}
             onExit={(s) => {
               setCrumbs((c) => c + s.crowns);
               setBest((b) => Math.max(b, s.depth));
+              unlockForDepth(s.depth);
               setOverStats(s);
               setScreen("over");
             }}
             onVictory={(s) => {
               setCrumbs((c) => c + s.crowns);
               setBest((b) => Math.max(b, s.depth));
+              unlockForDepth(s.depth);
               setOverStats({ ...s, isNewBest: s.depth > best });
               setStoryWon(true); save("maxine_story_won", true);
               setScreen("victory");

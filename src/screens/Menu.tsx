@@ -46,12 +46,15 @@ interface Props {
   startTool: ToolId;
   ownedTools: ToolId[];
   storyWon: boolean;
+  checkpoint: number;
+  unlocked: number[];
+  onSelectCheckpoint: (lv:number)=>void;
   onPlay: () => void;
   onShop: () => void;
   onStory: () => void;
 }
 
-export default function Menu({ skin, best, crumbs, startTool, ownedTools, storyWon, onPlay, onShop, onStory }: Props) {
+export default function Menu({ skin, best, crumbs, startTool, ownedTools, storyWon, checkpoint, unlocked, onSelectCheckpoint, onPlay, onShop, onStory }: Props) {
   return (
     <div className="absolute inset-0 select-none">
       <KitchenBackdrop depth={0} />
@@ -132,7 +135,7 @@ export default function Menu({ skin, best, crumbs, startTool, ownedTools, storyW
             <span>ARRANQUE: {TOOL_MAP[startTool].name.toUpperCase()}</span>
           </div>
           <div className="absolute left-1/2 -translate-x-1/2 -bottom-7 font-pixel text-[7px] text-amber-200/70">
-            {ownedTools.length}/7 peluches en tu mochila
+            {ownedTools.length}/30 herramientas en tu mochila
           </div>
           <div className="absolute -right-2 bottom-2">
             <svg width="34" height="40" viewBox="0 0 34 40">
@@ -150,14 +153,37 @@ export default function Menu({ skin, best, crumbs, startTool, ownedTools, storyW
       <div className="absolute right-8 top-[62%] hop" style={{ animationDelay: "0.9s" }}><Bread type="miche" size={30} /></div>
       <div className="absolute right-14 top-[50%] hop" style={{ animationDelay: "0.5s" }}><Bread type="divine" size={26} /></div>
 
-      <div className="absolute bottom-[6%] inset-x-0 px-8 flex flex-col gap-3 z-20 slide-up" style={{ animationDelay: "0.15s" }}>
+      <div className="absolute bottom-[6%] inset-x-0 px-8 flex flex-col gap-2 z-20 slide-up" style={{ animationDelay: "0.15s" }}>
         <button
           onClick={onPlay}
           className="btn-3d font-display font-bold text-2xl text-white py-3 rounded-full border-b-4 active:border-b-0"
           style={{ background: "linear-gradient(180deg,#ff7a4a,#d9342b)", borderColor: "#7a1410", boxShadow: "0 8px 20px rgba(217,52,43,.45), inset 0 2px 0 rgba(255,255,255,.35)" }}
         >
-          ¡A CAVAR!
+          ¡A CAVAR!{checkpoint>1? ` · N${checkpoint}`:""}
         </button>
+        <div className="bg-black/35 backdrop-blur-sm rounded-xl p-2 border border-amber-300/20">
+          <div className="font-pixel text-[7px] text-amber-200/70 text-center mb-1.5">CHECKPOINT CADA 5 NIVELES — ELIGE INICIO</div>
+          <div className="grid grid-cols-5 gap-1.5">
+            {[1,5,10,15,20].map(lv=>{
+              const isUnlocked=unlocked.includes(lv);
+              const isActive=checkpoint===lv;
+              return (
+                <button key={lv} disabled={!isUnlocked} onClick={()=>isUnlocked&&onSelectCheckpoint(lv)}
+                  className="btn-3d font-pixel text-[9px] py-2 rounded-lg border-b-2 active:border-b-0 flex flex-col items-center justify-center"
+                  style={{
+                    background: isActive? "linear-gradient(180deg,#7fc24a,#3a7a1a)": isUnlocked? "#3a2010": "#1a0c04",
+                    color: isActive? "#fff": isUnlocked? "#ffd27a": "#6a5a4a",
+                    borderColor: isActive? "#1a3a08": "#1a0c04",
+                    opacity: isUnlocked?1:0.5
+                  }}>
+                  <span>N{lv}</span>
+                  <span className="text-[6px]">{isUnlocked? (isActive?"▶":"OK"):"🔒"}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="font-pixel text-[6px] text-amber-100/60 text-center mt-1.5">Llega al N5, N10... para desbloquear. Retoma o reinicia.</div>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={onShop}
