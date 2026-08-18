@@ -11,6 +11,7 @@ import { Flour } from "./art/Decor";
 import { SKINS, type SkinId } from "./data/skins";
 import type { ToolId } from "./art/Plushie";
 import { CYCLE } from "./data/world";
+import { type SpellId } from "./data/spells";
 
 type Screen = "intro" | "menu" | "shop" | "game" | "over" | "victory" | "house" | "campo";
 
@@ -49,6 +50,8 @@ export default function App() {
   const [checkpoint, setCheckpoint] = useState<number>(() => load("maxine_checkpoint", 1));
   const [unlocked, setUnlocked] = useState<number[]>(() => load("maxine_checkpoints", [1]));
   const [justUnlockedUgly, setJustUnlockedUgly] = useState(false);
+  const [spells, setSpells] = useState<SpellId[]>(() => load("maxine_spells", [] as SpellId[]));
+  const [spell, setSpell] = useState<SpellId | null>(() => load("maxine_spell", null as SpellId | null));
 
   useEffect(() => { const t = setTimeout(hideSplash, 900); return () => clearTimeout(t); }, []);
 
@@ -187,6 +190,17 @@ export default function App() {
             ownedMeta={ownedTools}
             startLevel={checkpoint}
             storyWon={storyWon}
+            spells={spells}
+            spell={spell}
+            onCycleSpell={() => {
+              if (spells.length === 0) return;
+              const i = spell ? spells.indexOf(spell) : -1;
+              setSpell(spells[(i + 1) % spells.length]);
+            }}
+            onUnlockSpell={(id) => {
+              setSpells((s) => s.includes(id) ? s : [...s, id]);
+              setSpell(id);
+            }}
             onExit={(s) => { finishRun(s); setScreen("over"); }}
             onVictory={(s) => {
               const first = !storyWon;

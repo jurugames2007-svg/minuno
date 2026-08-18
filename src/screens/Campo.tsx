@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import Maxine, { type Pose } from "../art/Maxine";
-import { Crown, Flour } from "../art/Decor";
+import { Crown } from "../art/Decor";
 import { Plushie, type ToolId } from "../art/Plushie";
 import type { SkinId } from "../data/skins";
-import { FIELD_SECRETS, type FieldSecret } from "../data/secrets";
+import { FIELD_SECRETS } from "../data/secrets";
+import { AREAS, AREA_LIST, type AreaId } from "../data/areas";
 import PawButton from "../ui/PawButton";
 
-const COLS = 118;
-const ROWS = 38;
+const COLS = 48;
+const ROWS = 22;
 const TILE = 20;
 const VW = 360;
 const VH = 640;
@@ -17,14 +18,6 @@ const G = 1500;
 const JUMP = 430;
 
 type Cell = 0 | 1 | 2 | 3 | 4 | 5;
-
-interface Pickup {
-  id: string;
-  x: number;
-  y: number;
-  secret: FieldSecret;
-  taken: boolean;
-}
 
 interface Props {
   skin: SkinId;
@@ -37,108 +30,74 @@ interface Props {
   onBack: () => void;
 }
 
-function mulberry(seed: number) {
-  let a = seed >>> 0;
-  return () => {
-    a |= 0; a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
+const SECRETS_IN: Partial<Record<AreaId, string[]>> = {
+  A1: ["lodo"],
+  B1: ["exploradora"],
+  C1: ["hueso"],
+  D1: ["hada"],
+  E1: ["casco", "pico"],
+  F1: ["llanta"],
+};
+
+function surfaceAt(c: number, area: AreaId) {
+  const base = area === "C1" || area === "E1" ? 10 : 14;
+  return base + Math.round(Math.sin(c * 0.18 + area.charCodeAt(0)) * 2.2);
 }
 
-function surfaceAt(c: number) {
-  const hill = Math.sin(c * 0.11) * 3.2 + Math.sin(c * 0.27) * 1.6;
-  return 16 + Math.round(hill);
-}
-
-function buildWorld() {
-  const R = mulberry(20260818);
+function buildArea(area: AreaId) {
   const grid: Cell[][] = [];
   for (let r = 0; r < ROWS; r++) {
     const row: Cell[] = [];
     for (let c = 0; c < COLS; c++) {
-      const s = surfaceAt(c);
-      if (r < s) row.push(0);
-      else if (r === s) row.push(3);
-      else if (r < s + 7) row.push(1);
-      else row.push(R() < 0.18 ? 2 : 1);
+      const s = surfaceAt(c, area);
+      if (c === 0 || c === COLS - 1) row.push(2);
+      else if (r < s) row.push(0);
+      else if (r === s) row.push(area === "B1" || area === "F1" ? 4 : 3);
+      else if (r < s + 5) row.push(1);
+      else row.push(2);
     }
     grid.push(row);
   }
-  const carve = (cx: number, cy: number, rw: number, rh: number) => {
-    for (let r = cy; r < cy + rh; r++) for (let c = cx; c < cx + rw; c++) {
-      if (r > 0 && r < ROWS && c > 1 && c < COLS - 1) grid[r][c] = 0;
-    }
-  };
-  carve(28, 22, 14, 6);
-  carve(52, 24, 10, 7);
-  carve(78, 21, 16, 8);
-  carve(40, 18, 5, 10);
-  for (const c of [12, 24, 36, 48, 61, 74, 88, 102]) {
-    const s = surfaceAt(c);
-    if (grid[s - 1]) grid[s - 1][c] = 4;
-    if (c % 24 === 0 && grid[s - 2]) grid[s - 2][c] = 4;
+  if (area === "C1" || area === "E1") {
+    for (let r = 12; r < 18; r++) for (let c = 16; c < 34; c++) grid[r][c] = 0;
   }
-  for (const c of [18, 55, 70]) {
-    const s = surfaceAt(c);
-    for (let h = 1; h <= 4; h++) if (grid[s - h]) grid[s - h][c] = 5;
-    if (grid[s - 5]) { grid[s - 5][c] = 5; grid[s - 5][c + 1] = 5; }
+  for (const c of [10, 22, 34]) {
+    const s = surfaceAt(c, area);
+    if (grid[s - 1]) grid[s - 1][c] = 5;
   }
-  const pickups: Pickup[] = [
-    { id: "lodo", x: 18 * TILE + 4, y: (surfaceAt(18) - 1) * TILE - 6, secret: FIELD_SECRETS[0], taken: false },
-    { id: "hueso", x: 34 * TILE + 6, y: 25 * TILE + 4, secret: FIELD_SECRETS[4], taken: false },
-    { id: "exploradora", x: 61 * TILE + 2, y: (surfaceAt(61) - 3) * TILE - 4, secret: FIELD_SECRETS[1], taken: false },
-    { id: "pico", x: 86 * TILE + 4, y: 27 * TILE + 2, secret: FIELD_SECRETS[5], taken: false },
-    { id: "llanta", x: 102 * TILE + 2, y: (surfaceAt(102) - 2) * TILE - 4, secret: FIELD_SECRETS[2], taken: false },
-    { id: "hada", x: 55 * TILE + 2, y: (surfaceAt(55) - 6) * TILE, secret: FIELD_SECRETS[3], taken: false },
-    { id: "casco", x: 42 * TILE + 4, y: 28 * TILE, secret: FIELD_SECRETS[6], taken: false },
-  ];
-  return { grid, pickups };
+  return grid;
 }
 
 export default function Campo({ skin, owned, ownedTools, crumbs, onFindSkin, onFindTool, onEarn, onBack }: Props) {
-  const built = useRef(buildWorld());
-  const grid = useRef(built.current.grid);
-  const pickups = useRef(built.current.pickups.map((p) => {
-    const have = (p.secret.skin && owned.includes(p.secret.skin)) || (p.secret.tool && ownedTools.includes(p.secret.tool));
-    return { ...p, taken: !!have };
-  }));
-  const p = useRef({ x: 8 * TILE, y: (surfaceAt(8) - 2) * TILE, vx: 0, vy: 0, on: false, face: 1 as 1 | -1, prevY: 0, dig: 0 });
+  const [area, setArea] = useState<AreaId>("A1");
+  const [mapOn, setMapOn] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const [visited, setVisited] = useState<AreaId[]>(["A1"]);
+  const grid = useRef(buildArea("A1"));
+  const p = useRef({ x: 4 * TILE, y: 10 * TILE, vx: 0, vy: 0, on: false, face: 1 as 1 | -1, prevY: 0, dig: 0 });
   const cam = useRef({ x: 0, y: 0 });
   const input = useRef({ l: false, r: false, jump: false, dig: false });
+  const taken = useRef<Set<string>>(new Set(
+    FIELD_SECRETS.filter((s) => (s.skin && owned.includes(s.skin)) || (s.tool && ownedTools.includes(s.tool))).map((s) => s.id),
+  ));
   const [, setTick] = useState(0);
-  const [toast, setToast] = useState<string | null>(null);
-  const [found, setFound] = useState(() => pickups.current.filter((q) => q.taken).length);
+
+  const go = (next: AreaId, from: "left" | "right") => {
+    setArea(next);
+    setVisited((v) => v.includes(next) ? v : [...v, next]);
+    grid.current = buildArea(next);
+    p.current.x = from === "right" ? 3 * TILE : (COLS - 5) * TILE;
+    p.current.y = (surfaceAt(4, next) - 2) * TILE;
+    p.current.vy = 0;
+  };
 
   useEffect(() => {
     let raf = 0;
     let last = performance.now();
     const solid = (c: Cell) => c === 1 || c === 2 || c === 3 || c === 4 || c === 5;
     const get = (r: number, c: number): Cell => {
-      if (c < 0 || c >= COLS || r < 0) return 2;
-      if (r >= ROWS) return 2;
+      if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return 2;
       return grid.current[r][c];
-    };
-    const set = (r: number, c: number, v: Cell) => {
-      if (r >= 0 && r < ROWS && c > 0 && c < COLS - 1) grid.current[r][c] = v;
-    };
-    const tryDig = () => {
-      const pl = p.current;
-      const pc = Math.floor((pl.x + PW / 2) / TILE);
-      const pr = Math.floor((pl.y + PH / 2) / TILE);
-      const targets: [number, number][] = [[pr + 1, pc], [pr, pc + pl.face], [pr + 1, pc + pl.face]];
-      let broke = false;
-      for (const [rr, cc] of targets) {
-        const cell = get(rr, cc);
-        if (cell === 1 || cell === 3 || cell === 4 || cell === 5) {
-          set(rr, cc, 0); broke = true;
-          if (cell === 4 && Math.random() < 0.35) onEarn(2);
-        } else if (cell === 2) {
-          set(rr, cc, 0); broke = true;
-        }
-      }
-      if (broke) { pl.dig = 0.16; onEarn(1); }
     };
     const step = (now: number) => {
       raf = requestAnimationFrame(step);
@@ -160,65 +119,69 @@ export default function Campo({ skin, owned, ownedTools, crumbs, onFindSkin, onF
           for (let r = top; r <= bot; r++) if (solid(get(r, col))) { pl.x = (col + 1) * TILE + 0.1; pl.vx = 0; break; }
         }
       }
-      pl.x = Math.max(TILE, Math.min(pl.x, COLS * TILE - TILE - PW));
       if (input.current.jump) { input.current.jump = false; if (pl.on) { pl.vy = -JUMP; pl.on = false; } }
-      if (input.current.dig) { input.current.dig = false; tryDig(); }
+      if (input.current.dig) {
+        input.current.dig = false;
+        const pc = Math.floor((pl.x + PW / 2) / TILE); const pr = Math.floor((pl.y + PH / 2) / TILE);
+        const rr = pr + 1, cc = pc;
+        if (cc > 0 && cc < COLS - 1 && rr < ROWS) {
+          const cell = get(rr, cc);
+          if (cell === 1 || cell === 3 || cell === 4 || cell === 5 || cell === 2) {
+            grid.current[rr][cc] = 0; pl.dig = 0.16; onEarn(1);
+          }
+        }
+      }
       pl.vy += G * dt; if (pl.vy > 560) pl.vy = 560;
       pl.y += pl.vy * dt; pl.on = false;
       {
         const left = Math.floor(pl.x / TILE); const right = Math.floor((pl.x + PW - 1) / TILE);
-        if (pl.vy < 0) {
-          const hrow = Math.floor(pl.y / TILE);
-          for (let c = left; c <= right; c++) if (solid(get(hrow, c))) { pl.y = (hrow + 1) * TILE + 0.2; pl.vy = 0; break; }
-        }
         if (pl.vy >= 0) {
           const row = Math.floor((pl.y + PH) / TILE);
-          for (let c = left; c <= right; c++) {
-            if (solid(get(row, c))) {
-              pl.y = row * TILE - PH - 0.4; pl.vy = 0; pl.on = true; break;
-            }
-          }
+          for (let c = left; c <= right; c++) if (solid(get(row, c))) { pl.y = row * TILE - PH - 0.4; pl.vy = 0; pl.on = true; break; }
         }
       }
-      if (pl.y > ROWS * TILE) { pl.y = (surfaceAt(8) - 2) * TILE; pl.x = 8 * TILE; pl.vy = 0; }
+      const def = AREAS[area];
+      if (pl.x < TILE * 2 && def.left) go(def.left, "left");
+      if (pl.x > (COLS - 3) * TILE && def.right) go(def.right, "right");
+      if (pl.y > ROWS * TILE) { pl.y = (surfaceAt(8, area) - 2) * TILE; pl.vy = 0; }
 
-      for (const pk of pickups.current) {
-        if (pk.taken) continue;
-        if (Math.abs(pk.x - (pl.x + PW / 2)) < 16 && Math.abs(pk.y - (pl.y + PH / 2)) < 16) {
-          pk.taken = true;
-          if (pk.secret.skin) onFindSkin(pk.secret.skin);
-          if (pk.secret.tool) onFindTool(pk.secret.tool);
+      const idsHere = SECRETS_IN[area] ?? [];
+      for (const id of idsHere) {
+        if (taken.current.has(id)) continue;
+        const sec = FIELD_SECRETS.find((s) => s.id === id);
+        if (!sec) continue;
+        const sx = 22 * TILE, sy = (surfaceAt(22, area) - 1) * TILE;
+        if (Math.abs(pl.x - sx) < 20 && Math.abs(pl.y - sy) < 22) {
+          taken.current.add(id);
+          if (sec.skin) onFindSkin(sec.skin);
+          if (sec.tool) onFindTool(sec.tool);
           onEarn(12);
-          setFound((n) => n + 1);
-          setToast(`¡${pk.secret.title}! ${pk.secret.blurb}`);
-          window.setTimeout(() => setToast(null), 3200);
+          setToast(`¡${sec.title}!`);
+          window.setTimeout(() => setToast(null), 2800);
         }
       }
 
-      const tx = pl.x + PW / 2 - VW / 2;
-      const ty = pl.y + PH / 2 - VH * 0.55;
-      cam.current.x += (tx - cam.current.x) * Math.min(1, dt * 7);
-      cam.current.y += (ty - cam.current.y) * Math.min(1, dt * 7);
+      cam.current.x += (pl.x + PW / 2 - VW / 2 - cam.current.x) * Math.min(1, dt * 7);
+      cam.current.y += (pl.y + PH / 2 - VH * 0.55 - cam.current.y) * Math.min(1, dt * 7);
       cam.current.x = Math.max(0, Math.min(cam.current.x, COLS * TILE - VW));
-      cam.current.y = Math.max(0, Math.min(cam.current.y, ROWS * TILE - VH + 20));
+      cam.current.y = Math.max(0, Math.min(cam.current.y, ROWS * TILE - VH + 8));
       setTick((n) => (n + 1) & 0xffff);
     };
     raf = requestAnimationFrame(step);
     const kd = (e: KeyboardEvent) => {
       if (e.repeat) return;
-      if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") input.current.l = true;
-      if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") input.current.r = true;
-      if (e.key === " " || e.key === "ArrowUp" || e.key === "w" || e.key === "W") { input.current.jump = true; e.preventDefault(); }
-      if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") input.current.dig = true;
+      if (e.key === "ArrowLeft" || e.key === "a") input.current.l = true;
+      if (e.key === "ArrowRight" || e.key === "d") input.current.r = true;
+      if (e.key === " " || e.key === "ArrowUp" || e.key === "w") { input.current.jump = true; e.preventDefault(); }
+      if (e.key === "ArrowDown" || e.key === "s") input.current.dig = true;
     };
     const ku = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") input.current.l = false;
-      if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") input.current.r = false;
+      if (e.key === "ArrowLeft" || e.key === "a" || e.key === "ArrowRight" || e.key === "d") input.current.l = false;
     };
     window.addEventListener("keydown", kd);
     window.addEventListener("keyup", ku);
     return () => { cancelAnimationFrame(raf); window.removeEventListener("keydown", kd); window.removeEventListener("keyup", ku); };
-  }, [onEarn, onFindSkin, onFindTool]);
+  }, [area, onEarn, onFindSkin, onFindTool]);
 
   const pad = useRef({ x: 0, y: 0, id: -1, jumped: false, dug: false });
   const onPadDown = (e: PointerEvent<HTMLDivElement>) => {
@@ -234,28 +197,27 @@ export default function Campo({ skin, owned, ownedTools, crumbs, onFindSkin, onF
   };
   const onPadUp = () => { input.current.l = false; input.current.r = false; pad.current.id = -1; };
 
+  const def = AREAS[area];
   const pl = p.current;
   const pose: Pose = pl.dig > 0 ? "dig" : !pl.on && pl.vy > 40 ? "fall" : "idle";
   const c0 = Math.floor(cam.current.x / TILE) - 1;
   const c1 = Math.floor((cam.current.x + VW) / TILE) + 1;
   const r0 = Math.floor(cam.current.y / TILE) - 1;
   const r1 = Math.floor((cam.current.y + VH) / TILE) + 1;
-  const hiddenLeft = FIELD_SECRETS.length - found;
+  const hereSecrets = (SECRETS_IN[area] ?? []).filter((id) => !taken.current.has(id));
 
   return (
-    <div className="absolute inset-0 overflow-hidden select-none" style={{ background: "linear-gradient(180deg,#7ec8ff 0%,#c8e8a0 42%,#6a4a22 42%,#3a2410 100%)" }}>
-      <Flour count={8} />
+    <div className="absolute inset-0 overflow-hidden select-none" style={{ background: def.sky }}>
       <div className="absolute top-2 left-2 right-2 z-30 flex items-center justify-between">
         <button onClick={onBack} className="btn-3d font-display font-bold text-[13px] bg-[#3a2010] text-amber-100 px-3 py-2 rounded-xl border-2 border-[#1a0c04] border-b-4">Atrás</button>
+        <button onClick={() => setMapOn(true)} className="btn-3d font-display font-bold text-[13px] px-3 py-2 rounded-xl border-2 border-b-4" style={{ background: "#1a3a5a", color: "#7fd0ff", borderColor: "#0a2030" }}>Mapa</button>
         <div className="flex items-center gap-1.5 bg-[#3a2010] border-2 border-[#1a0c04] rounded-xl px-3 py-2">
           <Crown size={16} /><span className="font-display font-bold text-[15px] text-amber-200">{crumbs}</span>
         </div>
       </div>
       <div className="absolute top-[52px] left-1/2 -translate-x-1/2 z-30 text-center pointer-events-none">
-        <div className="font-display font-bold text-amber-50 text-[15px]" style={{ textShadow: "0 2px 0 #3a2010" }}>Campo de llantas</div>
-        <div className="font-display text-[11px] text-amber-100/85 bg-black/35 rounded-full px-2 py-0.5 mt-0.5">
-          Secretos {found}/{FIELD_SECRETS.length}{hiddenLeft > 0 ? ` · ${hiddenLeft} ocultos` : " · ¡todo hallado!"}
-        </div>
+        <div className="font-display font-bold text-amber-50 text-[15px]" style={{ textShadow: "0 2px 0 #102" }}>{def.tag} · {def.name}</div>
+        <div className="font-display text-[11px] text-amber-100/85 bg-black/35 rounded-full px-2 py-0.5 mt-0.5">{def.hint}</div>
       </div>
 
       <div className="absolute inset-0" style={{ transform: `translate3d(${-cam.current.x}px, ${-cam.current.y}px, 0)` }}>
@@ -267,21 +229,20 @@ export default function Campo({ skin, owned, ownedTools, crumbs, onFindSkin, onF
             if (c < 0 || c >= COLS) return null;
             const cell = grid.current[r][c];
             if (cell === 0) return null;
-            return <FieldTile key={`${r}-${c}`} c={c} r={r} cell={cell} />;
+            return <Tile key={`${r}-${c}`} c={c} r={r} cell={cell} dirt={def.dirt} grass={def.grass} />;
           });
         })}
-        {Array.from({ length: 7 }).map((_, i) => {
-          const x = (14 + i * 16) * TILE;
-          const s = surfaceAt(14 + i * 16);
-          return <Tree key={i} x={x} y={s * TILE} />;
+        {hereSecrets.map((id) => {
+          const sec = FIELD_SECRETS.find((s) => s.id === id);
+          if (!sec) return null;
+          return (
+            <div key={id} className="absolute hop" style={{ left: 22 * TILE - 8, top: (surfaceAt(22, area) - 1) * TILE - 10 }}>
+              {sec.tool ? <Plushie id={sec.tool} size={22} /> : <div className="w-6 h-6 rounded-md border-2 border-amber-200" style={{ background: "#ffd27a" }} />}
+            </div>
+          );
         })}
-        {pickups.current.filter((pk) => !pk.taken).map((pk) => (
-          <div key={pk.id} className="absolute hop" style={{ left: pk.x - 10, top: pk.y - 10 }}>
-            {pk.secret.tool ? <Plushie id={pk.secret.tool} size={22} /> : (
-              <div className="w-6 h-6 rounded-md border-2 border-amber-200" style={{ background: "radial-gradient(circle,#ffd27a,#c9842a)" }} />
-            )}
-          </div>
-        ))}
+        {def.left && <div className="absolute font-display font-bold text-amber-100/70 text-[12px]" style={{ left: 28, top: surfaceAt(3, area) * TILE - 40 }}>← {AREAS[def.left].tag}</div>}
+        {def.right && <div className="absolute font-display font-bold text-amber-100/70 text-[12px]" style={{ left: (COLS - 6) * TILE, top: surfaceAt(COLS - 4, area) * TILE - 40 }}>{AREAS[def.right].tag} →</div>}
         <div className="absolute" style={{ left: pl.x - 6, top: pl.y - 10 }}>
           <Maxine skin={skin} pose={pose} facing={pl.face} size={PW + 18} />
         </div>
@@ -292,56 +253,51 @@ export default function Campo({ skin, owned, ownedTools, crumbs, onFindSkin, onF
       <PawButton onPress={() => { input.current.dig = true; }} />
 
       {toast && (
-        <div className="absolute left-3 right-3 z-40 slide-up" style={{ top: 96 }}>
-          <div className="rounded-xl border-2 border-amber-300/50 bg-black/80 px-3 py-2 text-center">
-            <div className="font-pixel text-[8px] text-amber-200/70">SECRETO</div>
-            <div className="font-display font-bold text-amber-50 text-[14px] leading-snug">{toast}</div>
+        <div className="absolute left-3 right-3 z-40" style={{ top: 96 }}>
+          <div className="rounded-xl border-2 border-amber-300/50 bg-black/80 px-3 py-2 text-center font-display font-bold text-amber-50">{toast}</div>
+        </div>
+      )}
+
+      {mapOn && (
+        <div className="absolute inset-0 z-50 bg-black/75 flex items-center justify-center p-3">
+          <div className="w-full rounded-2xl border-2 border-[#3a8ab0] p-3" style={{ background: "#0a1830" }}>
+            <div className="font-display font-bold text-[#7fd0ff] text-center mb-2">Mapa del campo</div>
+            <div className="grid grid-cols-3 gap-2">
+              {AREA_LIST.map((id) => {
+                const a = AREAS[id];
+                const seen = visited.includes(id);
+                return (
+                  <button key={id} disabled={!seen} onClick={() => { if (seen) { go(id, "right"); setMapOn(false); } }}
+                    className="rounded-lg border-2 py-2 font-display font-bold text-[13px] disabled:opacity-40"
+                    style={{ background: id === area ? "#2a6a8a" : "#12243a", color: "#d8f4ff", borderColor: seen ? "#4aa0c8" : "#1a3048" }}>
+                    {seen ? `${a.tag} ${a.name}` : "???"}
+                  </button>
+                );
+              })}
+            </div>
+            <button onClick={() => setMapOn(false)} className="btn-3d mt-3 w-full font-display font-bold py-2 rounded-full" style={{ background: "#ffd27a", color: "#3a1808" }}>Cerrar</button>
           </div>
         </div>
       )}
-      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-30 pointer-events-none font-display text-[10px] text-amber-50/70 bg-black/40 px-2 py-0.5 rounded-full">
-        Corré · saltá · huella cava · husmeá las llantas
-      </div>
     </div>
   );
 }
 
-function FieldTile({ c, r, cell }: { c: number; r: number; cell: Cell }) {
+function Tile({ c, r, cell, dirt, grass }: { c: number; r: number; cell: Cell; dirt: string; grass: string }) {
   const x = c * TILE, y = r * TILE;
   if (cell === 4) {
     return (
       <div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE }}>
-        <svg width={TILE} height={TILE} viewBox="0 0 20 20">
-          <circle cx="10" cy="10" r="8.2" fill="#1a1a1a" stroke="#0a0a0a" strokeWidth="1" />
-          <circle cx="10" cy="10" r="4.2" fill="#3a2410" stroke="#6a6a6a" strokeWidth="1.2" />
-          <circle cx="10" cy="10" r="1.6" fill="#2a1a08" />
-        </svg>
+        <svg width={TILE} height={TILE} viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="#1a1a1a" /><circle cx="10" cy="10" r="4" fill="#3a2410" /></svg>
       </div>
     );
   }
-  if (cell === 5) {
-    return <div className="absolute" style={{ left: x + 2, top: y + 8, width: TILE - 4, height: 6, background: "#6a3a14", borderRadius: 2, boxShadow: "0 2px 0 #2a1408" }} />;
-  }
-  if (cell === 2) {
-    return <div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: "#8a8a90", boxShadow: "inset 0 -3px 0 #5a5a62, inset 0 2px 0 #c8c8d0" }} />;
-  }
-  if (cell === 3) {
-    return (
-      <div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: "#6a3a14", boxShadow: "inset 0 -3px 0 #3a2010" }}>
-        <div className="absolute inset-x-0 top-0 h-2" style={{ background: "#4a9a2a" }} />
-        <div className="absolute left-1 top-0 w-1.5 h-2.5 rounded-sm" style={{ background: "#3a7a1a" }} />
-      </div>
-    );
-  }
-  return <div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: "#8a5420", boxShadow: "inset 0 -3px 0 #5a3010, inset 0 2px 0 #c9842a44" }} />;
-}
-
-function Tree({ x, y }: { x: number; y: number }) {
-  return (
-    <div className="absolute pointer-events-none" style={{ left: x - 10, top: y - 36, width: 28, height: 40 }}>
-      <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-2 h-5" style={{ background: "#5a3216" }} />
-      <div className="absolute left-1/2 -translate-x-1/2 bottom-3 w-8 h-8 rounded-full" style={{ background: "#3a7a1a" }} />
-      <div className="absolute left-1/2 -translate-x-1/2 bottom-6 w-6 h-6 rounded-full" style={{ background: "#4a9a2a" }} />
+  if (cell === 5) return <div className="absolute" style={{ left: x + 2, top: y + 8, width: TILE - 4, height: 6, background: "#6a3a14" }} />;
+  if (cell === 2) return <div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: "#6a6a72" }} />;
+  if (cell === 3) return (
+    <div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: dirt }}>
+      <div className="absolute inset-x-0 top-0 h-2" style={{ background: grass }} />
     </div>
   );
+  return <div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: dirt }} />;
 }

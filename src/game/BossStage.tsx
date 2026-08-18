@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import Maxine, { type Pose } from "../art/Maxine";
 import { type Boss, type Bullet, spawnBoss, stepBoss, BossView, BulletView, BOSS_NAME, type BossType } from "../art/Bosses";
+import { fireBossPattern } from "./bossPatterns";
 import type { SkinId } from "../data/skins";
 import { CEIL, FLOOR, WALL, maxineIntroKind, moodPose, stageFor } from "../data/cinematics";
 import { PawIcon } from "../ui/PawButton";
@@ -28,12 +29,6 @@ const LEFT = WALL + 4;
 const RIGHT = W - WALL - PW - 4;
 const TOP = CEIL + 4;
 const STAND_Y = FLOOR - PH - 1;
-
-const SHOT_KIND: Partial<Record<BossType, Bullet["kind"]>> = {
-  escoba: "dust", gato: "hairball", antisam: "button", caballo: "wood",
-  fantasma: "ecto", cuchara: "dough", hornito: "flame", refriRey: "ice",
-  alacena: "can", bigotesGrande: "bark", bigotes: "bark",
-};
 
 function clampPlayer(pl: { x: number; y: number; vy: number; on: boolean; used: boolean }) {
   pl.x = Math.max(LEFT, Math.min(RIGHT, pl.x));
@@ -175,15 +170,12 @@ export default function BossStage({ type, level, skin, hearts, onHurt, onWin }: 
           b.x = Math.max(150, Math.min(W - WALL - 48, b.x));
           b.y = Math.max(CEIL + 50, Math.min(FLOOR - 70, b.y));
           pressure.current += dt;
-          if (pressure.current > 1.15) {
+          if (pressure.current > 1.25) {
+            const beat = Math.floor(b.t * 2);
             pressure.current = 0;
-            const dx = ctx.playerX - b.x, dy = ctx.playerY - b.y;
-            const d = Math.hypot(dx, dy) || 1;
-            const kind = SHOT_KIND[type] ?? "dust";
-            ctx.spawnBullet({ x: b.x - 20, y: b.y, vx: (dx / d) * 220, vy: (dy / d) * 180, life: 2.4, kind });
-            ctx.spawnBullet({ x: b.x - 20, y: b.y - 12, vx: (dx / d) * 180, vy: (dy / d) * 140 - 40, life: 2.1, kind });
-            b.telegraph = 0.4;
-            b.atkX = pl.x - 8; b.atkY = pl.y - 4; b.atkW = PW + 16; b.atkH = PH + 12;
+            b.telegraph = 0.45;
+            b.atkX = pl.x - 10; b.atkY = pl.y - 6; b.atkW = PW + 20; b.atkH = PH + 14;
+            fireBossPattern(type, b, ctx, beat);
           }
           if (Math.abs(pl.x + PW / 2 - b.x) < 40 && Math.abs(pl.y + PH / 2 - b.y) < 42 && pl.inv <= 0) {
             pl.inv = 1; pl.vy = -200; pl.x = Math.max(LEFT, pl.x - 22); onHurt(); shake.current = 8;

@@ -8,6 +8,8 @@ import * as Audio from "./AudioEngine";
 import BossStage from "./BossStage";
 import { COLS, TILE, LEVEL_LEN, GATE_H, REST_H, CYCLE } from "../data/world";
 import PawButton from "../ui/PawButton";
+import MagicButton from "../ui/MagicButton";
+import { spellForBoss, type SpellId } from "../data/spells";
 
 const STAGE_W = COLS * TILE;
 const STAGE_H = 640;
@@ -51,9 +53,13 @@ interface Props {
   ownedMeta: ToolId[];
   startLevel?: number;
   storyWon?: boolean;
+  spells?: SpellId[];
+  spell?: SpellId | null;
+  onCycleSpell?: () => void;
+  onUnlockSpell?: (id: SpellId) => void;
 }
 
-export default function Game({ skin, onExit, onVictory, best, startTool, ownedMeta, startLevel=1, storyWon=false }: Props) {
+export default function Game({ skin, onExit, onVictory, best, startTool, ownedMeta, startLevel=1, storyWon=false, spells=[], spell=null, onCycleSpell, onUnlockSpell }: Props) {
   const startRow = 3 + ((startLevel||1)-1)*CYCLE;
   const stageRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -279,6 +285,19 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
     const t = TOOL_MAP[tool.current]; const dmg = 1 + (t.speedMul >= 1.45 ? 1 : 0) + (t.healOnDig ? 1 : 0);
     const arc = attackArc();
     spawnDust(arc.x + arc.w / 2, arc.y + arc.h / 2, "#fff3d6", 6); Audio.playAttack();
+    if (spell) {
+      const cx = p.x + PW / 2, cy = p.y + PH / 2, f = p.facing;
+      if (spell === "barrido") { for (let i = -1; i <= 1; i++) world.current.bullets.push({ id: ids.current++, x: cx + f * 10, y: cy, vx: f * 180, vy: i * 70, life: 0.7, kind: "dust", ally: true }); }
+      if (spell === "arcoiris") { p.invuln = Math.max(p.invuln, 0.55); p.vx = f * 260; p.x += f * 18; }
+      if (spell === "costura") { active.current.shield = Math.max(active.current.shield, 4); }
+      if (spell === "carga") { p.vx = f * 320; p.x += f * 28; }
+      if (spell === "espectro") { p.invuln = Math.max(p.invuln, 0.9); }
+      if (spell === "masa") { world.current.bullets.push({ id: ids.current++, x: cx, y: cy, vx: f * 140, vy: -160, life: 2, kind: "dough", grav: 280, ally: true }); }
+      if (spell === "llama") { world.current.bullets.push({ id: ids.current++, x: cx, y: cy, vx: f * 240, vy: 0, life: 1.2, kind: "flame", ally: true }); }
+      if (spell === "hielo") { active.current.frozen = 0; for (const e of world.current.enemies) { if (Math.hypot(e.x - cx, e.y - cy) < 90) { e.vx *= 0.2; e.hitCd = 0.8; } } }
+      if (spell === "iman") { active.current.magnet = Math.max(active.current.magnet, 10); }
+      if (spell === "ladrido") { for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; world.current.bullets.push({ id: ids.current++, x: cx, y: cy, vx: Math.cos(a) * 180, vy: Math.sin(a) * 180, life: 0.8, kind: "bark" }); } }
+    }
     for (const e of world.current.enemies) {
       if (e.hp >= 999) continue;
       if (e.x > arc.x && e.x < arc.x + arc.w && e.y > arc.y && e.y < arc.y + arc.h) {
@@ -565,6 +584,15 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
         const b = world.current.bullets[i]; b.life -= dt; if (b.life <= 0) { world.current.bullets.splice(i, 1); continue; }
         if (b.grav) b.vy += b.grav * dt;
         b.x += b.vx * dt; b.y += b.vy * dt;
+        if (b.ally) {
+          for (const e of world.current.enemies) {
+            if (e.hp < 999 && Math.abs(b.x - e.x) < 18 && Math.abs(b.y - e.y) < 18) {
+              e.hp -= 1; e.hitCd = 0.2; spawnDust(e.x, e.y, "#ffd27a", 6);
+              world.current.bullets.splice(i, 1); break;
+            }
+          }
+          continue;
+        }
         if (b.kind === "panback") {
           const bo = boss.current;
           if (bo && Math.abs(b.x - bo.x) < 42 && Math.abs(b.y - bo.y) < 42) {
@@ -572,7 +600,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
             else { bo.shieldFlash = 0.2; }
             world.current.bullets.splice(i, 1); continue;
           }
-        } else if (Math.abs(b.x - (p.x + PW / 2)) < PW * 0.7 && Math.abs(b.y - (p.y + PH / 2)) < PH * 0.7) { hurt(); world.current.bullets.splice(i, 1); continue; }
+        } else if (!b.ally && Math.abs(b.x - (p.x + PW / 2)) < PW * 0.7 && Math.abs(b.y - (p.y + PH / 2)) < PH * 0.7) { hurt(); world.current.bullets.splice(i, 1); continue; }
       }
 
       // breads + powers
@@ -809,6 +837,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
           onAttack={() => { input.current.attackEdge = true; }}
         />
         <PawButton onPress={() => { input.current.digEdge = true; }} />
+        <MagicButton spell={spell} locked={spells.length === 0} onCycle={() => onCycleSpell?.()} />
         {gate && (
           <BossStage
             type={bossForLevel(level.current)}
@@ -818,6 +847,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
             onHurt={() => hurt()}
             onWin={() => {
               const fakeType = bossForLevel(level.current);
+              onUnlockSpell?.(spellForBoss(fakeType));
               boss.current = spawnBoss(fakeType, level.current, TILE, (COLS - 1) * TILE, 0);
               onBossDefeated();
               setGate(false); gateRef.current = false;

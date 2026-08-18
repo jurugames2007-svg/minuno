@@ -17,6 +17,7 @@ export interface Bullet {
   id: number; x: number; y: number; vx: number; vy: number;
   life: number; kind: "dust" | "pan" | "panback" | "ice" | "flame" | "crumb" | "shock" | "bark" | "splinter" | "hairball" | "button" | "wood" | "ecto" | "dough" | "can" | "book";
   grav?: number;
+  ally?: boolean;
 }
 
 export interface BossCtx {
