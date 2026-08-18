@@ -1,43 +1,8 @@
+import { useState } from "react";
 import Maxine from "../art/Maxine";
 import { Bread, Flour, KitchenBackdrop, Crown } from "../art/Decor";
-import { Plushie } from "../art/Plushie";
+import { Plushie, TOOL_MAP, type ToolId } from "../art/Plushie";
 import type { SkinId } from "../data/skins";
-
-const HELP = [
-  "COMO SE JUEGA",
-  "",
-  "MOVE  :  flechas / A D",
-  "SALTO :  espacio / W / flecha arriba",
-  "CAVAR :  flecha abajo / S",
-  "PEGAR :  J / X / Shift",
-  "PAUSA :  P",
-  "",
-  "Mantene una direccion y CAVAR",
-  "para picar hacia ese lado.",
-  "Saltá encima de enemigos para aplastarlos",
-  "o pegales con el peluche en la mano.",
-  "",
-  "MISION: rescatar a JAVIERA,",
-  "secuestrada por BIGOTES EL FEO,",
-  "un Jack Russell con parche y pinchos.",
-  "",
-  "Cada nivel termina en un JEFE con su truco:",
-  "Aspiradora, Chef Fantasma, Nevera,",
-  "Horno Colosal, Pan Monstruo y Bigotes.",
-  "Lee la pista bajo su barra de vida.",
-  "No los spamees: espera la ventana",
-  "y usa el peluche correcto.",
-  "",
-  "En el descanso compras power-ups",
-  "y peluches-herramienta con lo juntado.",
-  "Empezas con un palito; desbloquea",
-  "a Javiera la matrona en la Panaderia.",
-  "",
-  "3 corazones - cavar es gratis.",
-].join("\n");
-
-import type { ToolId } from "../art/Plushie";
-import { TOOL_MAP } from "../art/Plushie";
 
 interface Props {
   skin: SkinId;
@@ -48,13 +13,15 @@ interface Props {
   storyWon: boolean;
   checkpoint: number;
   unlocked: number[];
-  onSelectCheckpoint: (lv:number)=>void;
+  onSelectCheckpoint: (lv: number) => void;
   onPlay: () => void;
   onShop: () => void;
   onStory: () => void;
 }
 
 export default function Menu({ skin, best, crumbs, startTool, ownedTools, storyWon, checkpoint, unlocked, onSelectCheckpoint, onPlay, onShop, onStory }: Props) {
+  const [help, setHelp] = useState(false);
+
   return (
     <div className="absolute inset-0 select-none">
       <KitchenBackdrop depth={0} />
@@ -67,37 +34,31 @@ export default function Menu({ skin, best, crumbs, startTool, ownedTools, storyW
           <line x1="180" y1="0" x2="180" y2="30" />
         </g>
         <path d="M32 40 h16 v6 a8 8 0 0 1 -16 0 Z" fill="#8a5a2c" stroke="#3a2010" strokeWidth="1.4" />
-        <g transform="translate(312 54)">
-          <rect x="6" y="0" width="4" height="14" rx="2" fill="#d7d2c4" />
-          {[0, 1, 2, 3].map((i) => (
-            <path key={i} d={`M8 14 Q${2 + i * 4} 24 8 32 Q${14 - i * 4} 24 8 14`} fill="none" stroke="#d7d2c4" strokeWidth="1.2" />
-          ))}
-        </g>
         <circle cx="180" cy="36" r="8" fill="#c9842a" stroke="#5a3a10" strokeWidth="1.2" />
       </svg>
 
       <div className="absolute top-3 left-3 right-3 flex items-start justify-between z-20">
         <div className="flex items-center gap-1.5 bg-black/35 backdrop-blur-sm rounded-full px-3 py-1.5 border border-amber-300/30">
           <Crown size={16} />
-          <span className="font-pixel text-[10px] text-amber-200">{crumbs}</span>
+          <span className="font-display font-bold text-[14px] text-amber-200 tabular-nums">{crumbs}</span>
         </div>
-        <button onClick={onStory} title="Ver la historia" className="btn-3d bg-black/45 backdrop-blur-sm rounded-full px-2.5 py-1.5 border border-amber-300/30 font-pixel text-[10px] text-amber-100 flex items-center gap-1">
-          <span className="text-[12px]">📖</span> HISTORIA
+        <button onClick={onStory} title="Ver la historia" className="btn-3d bg-black/45 backdrop-blur-sm rounded-full px-3 py-1.5 border border-amber-300/30 font-display font-semibold text-[13px] text-amber-100">
+          Historia
         </button>
-        <div className="bg-black/35 backdrop-blur-sm rounded-full px-3 py-1.5 border border-amber-300/30 font-pixel text-[9px] text-amber-100 leading-tight text-right">
-          RÉCORD<br /><span className="text-amber-300 text-[11px]">{best} m</span>
+        <div className="bg-black/35 backdrop-blur-sm rounded-full px-3 py-1.5 border border-amber-300/30 font-display text-[12px] text-amber-100 leading-tight text-right">
+          Récord<br /><span className="text-amber-300 text-[15px] font-bold">{best} m</span>
         </div>
       </div>
       {storyWon && (
-        <div className="absolute top-[52px] left-1/2 -translate-x-1/2 z-20 bg-[#7fc24a] text-[#1a3a08] font-pixel text-[8px] px-2 py-1 rounded-full border-2 border-[#1a3a08] shadow pop flex items-center gap-1">
-          ♥ JAVIERA RESCATADA
+        <div className="absolute top-[52px] left-1/2 -translate-x-1/2 z-20 bg-[#7fc24a] text-[#1a3a08] font-display font-bold text-[12px] px-2.5 py-1 rounded-full border-2 border-[#1a3a08] shadow pop">
+          Javiera rescatada · piel Feo desbloqueada
         </div>
       )}
 
-      <div className="absolute top-[14%] inset-x-0 text-center z-10 px-6 slide-up">
+      <div className="absolute top-[13%] inset-x-0 text-center z-10 px-6 slide-up">
         <div className="inline-block relative">
           <h1
-            className="font-display font-bold leading-none text-[64px]"
+            className="font-display font-bold leading-none text-[58px] tracking-tight"
             style={{
               color: "#fff3d6",
               textShadow: "0 4px 0 #7a3410, 0 6px 0 #3a1808, 0 8px 18px rgba(0,0,0,.5)",
@@ -113,10 +74,10 @@ export default function Menu({ skin, best, crumbs, startTool, ownedTools, storyW
             <Bread type="pretzel" size={30} />
           </div>
         </div>
-        <p className="font-display text-amber-200/90 tracking-[0.3em] text-xs mt-1 uppercase">Panadería Encantada</p>
+        <p className="font-display text-amber-200/90 tracking-[0.22em] text-[13px] mt-1 uppercase font-semibold">Panadería Encantada</p>
       </div>
 
-      <div className="absolute left-1/2 -translate-x-1/2 top-[34%] z-10">
+      <div className="absolute left-1/2 -translate-x-1/2 top-[32%] z-10">
         <div className="relative">
           <svg width="220" height="120" viewBox="0 0 220 120" className="absolute left-1/2 -translate-x-1/2 top-10">
             <ellipse cx="110" cy="92" rx="100" ry="22" fill="#000" opacity="0.35" />
@@ -128,81 +89,101 @@ export default function Menu({ skin, best, crumbs, startTool, ownedTools, storyW
             <div className="absolute left-[28%] top-[56%] z-20 rotate-12" style={{ animation: "hop 1.8s ease-in-out infinite" }}>
               <Plushie id={startTool} size={startTool === "kissy" ? 38 : 34} />
             </div>
-            <Maxine skin={skin} pose="idle" size={180} />
+            <Maxine skin={skin} pose="idle" size={176} />
           </div>
-          <div className="absolute left-1/2 -translate-x-1/2 -bottom-2 bg-[#fff3d6] border-2 border-[#7a3410] rounded-full px-3 py-0.5 font-pixel text-[8px] text-[#7a3410] shadow pop flex items-center gap-1">
+          <div className="absolute left-1/2 -translate-x-1/2 -bottom-2 bg-[#fff3d6] border-2 border-[#7a3410] rounded-full px-3 py-0.5 font-display font-bold text-[11px] text-[#7a3410] shadow pop flex items-center gap-1 whitespace-nowrap">
             <Plushie id={startTool} size={12} />
-            <span>ARRANQUE: {TOOL_MAP[startTool].name.toUpperCase()}</span>
+            <span>Arranque: {TOOL_MAP[startTool].name}</span>
           </div>
-          <div className="absolute left-1/2 -translate-x-1/2 -bottom-7 font-pixel text-[7px] text-amber-200/70">
-            {ownedTools.length}/30 herramientas en tu mochila
-          </div>
-          <div className="absolute -right-2 bottom-2">
-            <svg width="34" height="40" viewBox="0 0 34 40">
-              <path d="M6 18 h18 v10 a8 8 0 0 1 -16 0 Z" fill="#fff3d6" stroke="#7a4410" strokeWidth="1.6" />
-              <path d="M24 20 q6 0 6 5 q0 4 -6 4" fill="none" stroke="#7a4410" strokeWidth="1.6" />
-              <g className="flicker" style={{ transformOrigin: "15px 14px" }}>
-                <path d="M12 14 q-2 -6 2 -10 q2 4 0 6 q4 -2 2 4 Z" fill="#fff" opacity="0.6" />
-              </g>
-            </svg>
+          <div className="absolute left-1/2 -translate-x-1/2 -bottom-7 font-display text-[11px] text-amber-200/70">
+            {ownedTools.length} herramientas en la mochila
           </div>
         </div>
       </div>
 
       <div className="absolute left-6 top-[58%] hop" style={{ animationDelay: "0.2s" }}><Bread type="baguette" size={30} /></div>
       <div className="absolute right-8 top-[62%] hop" style={{ animationDelay: "0.9s" }}><Bread type="miche" size={30} /></div>
-      <div className="absolute right-14 top-[50%] hop" style={{ animationDelay: "0.5s" }}><Bread type="divine" size={26} /></div>
 
-      <div className="absolute bottom-[6%] inset-x-0 px-8 flex flex-col gap-2 z-20 slide-up" style={{ animationDelay: "0.15s" }}>
+      <div className="absolute bottom-[5%] inset-x-0 px-6 flex flex-col gap-2 z-20 slide-up" style={{ animationDelay: "0.15s", paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}>
         <button
           onClick={onPlay}
-          className="btn-3d font-display font-bold text-2xl text-white py-3 rounded-full border-b-4 active:border-b-0"
+          className="btn-3d font-display font-bold text-[22px] text-white py-3 rounded-full border-b-4 active:border-b-0"
           style={{ background: "linear-gradient(180deg,#ff7a4a,#d9342b)", borderColor: "#7a1410", boxShadow: "0 8px 20px rgba(217,52,43,.45), inset 0 2px 0 rgba(255,255,255,.35)" }}
         >
-          ¡A CAVAR!{checkpoint>1? ` · N${checkpoint}`:""}
+          ¡A cavar!{checkpoint > 1 ? ` · N${checkpoint}` : ""}
         </button>
         <div className="bg-black/35 backdrop-blur-sm rounded-xl p-2 border border-amber-300/20">
-          <div className="font-pixel text-[7px] text-amber-200/70 text-center mb-1.5">CHECKPOINT CADA 5 NIVELES — ELIGE INICIO</div>
+          <div className="font-display font-semibold text-[11px] text-amber-200/80 text-center mb-1.5">Checkpoint cada 5 niveles</div>
           <div className="grid grid-cols-5 gap-1.5">
-            {[1,5,10,15,20].map(lv=>{
-              const isUnlocked=unlocked.includes(lv);
-              const isActive=checkpoint===lv;
+            {[1, 5, 10, 15, 20].map((lv) => {
+              const isUnlocked = unlocked.includes(lv);
+              const isActive = checkpoint === lv;
               return (
-                <button key={lv} disabled={!isUnlocked} onClick={()=>isUnlocked&&onSelectCheckpoint(lv)}
-                  className="btn-3d font-pixel text-[9px] py-2 rounded-lg border-b-2 active:border-b-0 flex flex-col items-center justify-center"
+                <button key={lv} disabled={!isUnlocked} onClick={() => isUnlocked && onSelectCheckpoint(lv)}
+                  className="btn-3d font-display font-bold text-[12px] py-2 rounded-lg border-b-2 active:border-b-0 flex flex-col items-center justify-center"
                   style={{
-                    background: isActive? "linear-gradient(180deg,#7fc24a,#3a7a1a)": isUnlocked? "#3a2010": "#1a0c04",
-                    color: isActive? "#fff": isUnlocked? "#ffd27a": "#6a5a4a",
-                    borderColor: isActive? "#1a3a08": "#1a0c04",
-                    opacity: isUnlocked?1:0.5
+                    background: isActive ? "linear-gradient(180deg,#7fc24a,#3a7a1a)" : isUnlocked ? "#3a2010" : "#1a0c04",
+                    color: isActive ? "#fff" : isUnlocked ? "#ffd27a" : "#6a5a4a",
+                    borderColor: isActive ? "#1a3a08" : "#1a0c04",
+                    opacity: isUnlocked ? 1 : 0.5,
                   }}>
                   <span>N{lv}</span>
-                  <span className="text-[6px]">{isUnlocked? (isActive?"▶":"OK"):"🔒"}</span>
+                  <span className="text-[10px] font-semibold">{isUnlocked ? (isActive ? "aquí" : "ok") : "—"}</span>
                 </button>
               );
             })}
           </div>
-          <div className="font-pixel text-[6px] text-amber-100/60 text-center mt-1.5">Llega al N5, N10... para desbloquear. Retoma o reinicia.</div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={onShop}
-            className="btn-3d font-display font-semibold text-lg text-amber-50 py-2.5 rounded-full border-b-4 active:border-b-0"
+            className="btn-3d font-display font-semibold text-[17px] text-amber-50 py-2.5 rounded-full border-b-4 active:border-b-0"
             style={{ background: "linear-gradient(180deg,#e3a35a,#a8642a)", borderColor: "#5a2810", boxShadow: "0 6px 14px rgba(0,0,0,.35), inset 0 2px 0 rgba(255,255,255,.3)" }}
           >
-            🥐 Panadería
+            Panadería
           </button>
           <button
-            className="btn-3d font-display font-semibold text-lg text-amber-50 py-2.5 rounded-full border-b-4 active:border-b-0"
+            className="btn-3d font-display font-semibold text-[17px] text-amber-50 py-2.5 rounded-full border-b-4 active:border-b-0"
             style={{ background: "linear-gradient(180deg,#7a5a3a,#3a2410)", borderColor: "#1a0c04", boxShadow: "0 6px 14px rgba(0,0,0,.35), inset 0 2px 0 rgba(255,255,255,.15)" }}
-            onClick={() => alert(HELP)}
+            onClick={() => setHelp(true)}
           >
-            ❔ Cómo jugar
+            Cómo jugar
           </button>
         </div>
       </div>
 
-      <div className="absolute bottom-1 inset-x-0 text-center font-pixel text-[8px] text-amber-200/40 z-10">v1.1 · prototipo web jugable</div>
+      <div className="absolute bottom-1 inset-x-0 text-center font-display text-[10px] text-amber-200/40 z-10">v2.0 · torre de bolsillo</div>
+
+      {help && <HelpModal onClose={() => setHelp(false)} />}
+    </div>
+  );
+}
+
+function HelpModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="absolute inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+      <div className="w-full max-w-[360px] rounded-2xl border-2 border-amber-300/30 bg-[#2a1408] p-4 shadow-2xl slide-up max-h-[82%] overflow-y-auto scrollbar-none">
+        <h2 className="font-display font-bold text-[22px] text-amber-50 text-center">Cómo se juega</h2>
+        <p className="font-display text-[13px] text-amber-100/85 mt-2 leading-snug text-center">
+          Sube la torre de la cocina, cava, salta y rescata a Javiera.
+        </p>
+        <ul className="mt-3 space-y-1.5 font-display text-[13px] text-amber-100/90">
+          <li><b className="text-amber-200">Mover</b> — flechas o A / D · botones táctiles</li>
+          <li><b className="text-amber-200">Saltar</b> — espacio, W o el botón verde</li>
+          <li><b className="text-amber-200">Cavar</b> — flecha abajo, S o el botón naranja</li>
+          <li><b className="text-amber-200">Pegar</b> — J, X, Shift o el puño</li>
+          <li><b className="text-amber-200">Pausa</b> — P o el botón de arriba</li>
+        </ul>
+        <p className="font-display text-[13px] text-amber-100/80 mt-3 leading-snug">
+          Aplasta enemigos cayéndoles encima. Cada nivel cierra con un jefe: espera la ventana verde y golpea con el peluche.
+        </p>
+        <p className="font-display text-[13px] text-amber-100/80 mt-2 leading-snug">
+          El último es <b className="text-[#c07040]">Bigotes el Feo</b>. Si lo derrotas, desbloqueas su piel en la categoría Feo.
+        </p>
+        <button onClick={onClose} className="btn-3d mt-4 w-full font-display font-bold text-[16px] text-white py-2.5 rounded-full border-b-4" style={{ background: "linear-gradient(180deg,#ff7a4a,#d9342b)", borderColor: "#7a1410" }}>
+          Entendido
+        </button>
+      </div>
     </div>
   );
 }

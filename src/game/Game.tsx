@@ -53,9 +53,10 @@ interface Props {
   startTool: ToolId;
   ownedMeta: ToolId[];
   startLevel?: number;
+  storyWon?: boolean;
 }
 
-export default function Game({ skin, onExit, onVictory, best, startTool, ownedMeta, startLevel=1 }: Props) {
+export default function Game({ skin, onExit, onVictory, best, startTool, ownedMeta, startLevel=1, storyWon=false }: Props) {
   const startRow = 3 + ((startLevel||1)-1)*47;
   const stageRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -311,7 +312,11 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
     const b = boss.current; if (!b) return;
     const L = level.current; bossDefeated.current[L] = true; bossActive.current = false;
     spawnDust(b.x, b.y, "#ffd27a", 40); shake.current = 14; score.current += 200; crownsRun.current += 3; Audio.playBossDefeat();
-    if (b.type === "bigotes" && L === 5) { boss.current = null; setTimeout(() => onVictory({ depth: maxDepth.current, score: score.current, bread: breadCount.current, crowns: crownsRun.current }), 750); return; }
+    if ((b.type === "bigotes" || b.type === "bigotesGrande") && !storyWon) {
+      boss.current = null;
+      setTimeout(() => onVictory({ depth: maxDepth.current, score: score.current, bread: breadCount.current, crowns: crownsRun.current }), 750);
+      return;
+    }
     const cyc = cycleOf(Math.floor(player.current.y / TILE));
     let dr = world.current.doorRow[cyc];
     if (dr == null) { const rr = 3 + cyc * CYCLE + LEVEL_LEN + ARENA_H; ensureRow(rr); dr = world.current.doorRow[cyc]; } // make sure the gate exists even if the camera hadn't generated it yet
@@ -687,7 +692,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
             {!isFoot && tool.current !== "guyu" && tool.current !== "dixie" && <div className="absolute" style={{ left: p.facing === 1 ? PW - 2 + (p.attackTimer > 0 ? 6 : 0) : -12 - (p.attackTimer > 0 ? 6 : 0), top: PH * 0.48, zIndex: 2, transform: p.attackTimer > 0 ? `rotate(${p.facing * -25}deg)` : undefined, transition: "transform .08s" }}><Plushie id={tool.current} size={tool.current === "kissy" ? 26 : 22} flip={p.facing} /></div>}
             <Maxine skin={skin} pose={pose} facing={p.facing} size={PW + 18} />
             {/* Aura de escalada y boost */}
-            {(p.wallSlide > 0 || a.boost > 0) && <div className="absolute inset-0 rounded-full border-2 opacity-60" style={{ borderColor: p.wallSlide > 0 ? "#7fc24a" : "#ffd27a", boxShadow: p.wallSlide > 0 ? "0 0 12px #7fc24a" : "0 0 14px #ffd27a", animation: "glow-pulse 1.2s infinite" }} />}
+            {(p.wallSlide > 0 || active.current.boost > 0) && <div className="absolute inset-0 rounded-full border-2 opacity-60" style={{ borderColor: p.wallSlide > 0 ? "#7fc24a" : "#ffd27a", boxShadow: p.wallSlide > 0 ? "0 0 12px #7fc24a" : "0 0 14px #ffd27a", animation: "glow-pulse 1.2s infinite" }} />}
             {isFoot && <div className="absolute pointer-events-none" style={{ left: -2, top: PH * 0.82, width: PW + 12, height: 14, zIndex: 3 }}><Plushie id="zapatitos" size={PW + 12} /></div>}
           </div>
         </div>
@@ -696,36 +701,35 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
         <div className="absolute top-2 left-2 flex gap-1 z-30">{Array.from({ length: Math.max(3, hearts.current) }).map((_, i) => <Heart key={i} filled={i < hearts.current} size={20} />)}</div>
         <div className="absolute top-2 right-2 flex flex-col items-end gap-1 z-30">
           <div className="flex items-center gap-1 bg-black/45 rounded-full px-2 py-0.5 border border-amber-300/30"><Crown size={12} /><span className="font-pixel text-[10px] text-amber-200">{crownsRun.current}</span></div>
-          <div className="flex items-center gap-1 bg-black/45 rounded-full px-2 py-0.5 border border-amber-300/30"><span className="text-[12px]">PAN</span><span className="font-pixel text-[10px] text-amber-100">{breadRun.current}</span></div>
+          <div className="flex items-center gap-1 bg-black/45 rounded-full px-2 py-0.5 border border-amber-300/30"><span className="font-display text-[11px] font-bold text-amber-200/80">Pan</span><span className="font-display font-bold text-[12px] text-amber-100">{breadRun.current}</span></div>
         </div>
         <div className="absolute top-2 left-1/2 -translate-x-1/2 text-center z-30 pointer-events-none">
-          <div className="font-pixel text-[8px] text-amber-200/80">NIVEL {level.current} · {ZONE_NAME[zone]}</div>
+          <div className="font-display font-semibold text-[11px] text-amber-200/80">Nivel {level.current} · {ZONE_NAME[zone]}</div>
           <div className="font-display font-bold text-amber-50 text-base leading-none" style={{ textShadow: "0 2px 0 #7a3410" }}>{depth} m</div>
         </div>
-        <div className="absolute top-[58px] left-1/2 -translate-x-1/2 z-30 pointer-events-none flex items-center gap-1 bg-black/35 rounded-full px-2 py-0.5 border border-amber-300/20"><Plushie id={tool.current} size={14} /><span className="font-pixel text-[8px] text-amber-100">{TOOL_MAP[tool.current].name}</span></div>
-        {/* Tutorial contextual breve */}
+        <div className="absolute top-[58px] left-1/2 -translate-x-1/2 z-30 pointer-events-none flex items-center gap-1 bg-black/35 rounded-full px-2 py-0.5 border border-amber-300/20"><Plushie id={tool.current} size={14} /><span className="font-display font-semibold text-[11px] text-amber-100">{TOOL_MAP[tool.current].name}</span></div>
         <div className="absolute top-[86px] left-1/2 -translate-x-1/2 z-30 pointer-events-none text-center">
-          <div className="font-pixel text-[7px] text-amber-100/50 bg-black/30 rounded px-2 py-0.5">
-            {!p.onGround ? "ESPACIO = SALTO · SHIFT = ATAQUE" : p.vy > 0 ? "CAYENDO... · SALTA PARA SUBIR" : "← → MOVER · ↓ CAVAR"}
+          <div className="font-display text-[11px] text-amber-100/70 bg-black/30 rounded-full px-2 py-0.5">
+            {!p.onGround ? "Salto · puño para atacar" : p.vy > 0 ? "Cayendo… salta para subir" : "Mueve · cava hacia abajo"}
           </div>
         </div>
 
         {bossActive.current && boss.current && (
           <div className="absolute left-4 right-4 z-30 pointer-events-none" style={{ top: 86 }}>
-            <div className="text-center font-pixel text-[9px] text-rose-200 mb-0.5" style={{ textShadow: "0 0 6px #ff3060" }}>{BOSS_NAME[boss.current.type]}</div>
+            <div className="text-center font-display font-bold text-[13px] text-rose-200 mb-0.5" style={{ textShadow: "0 0 6px #ff3060" }}>{BOSS_NAME[boss.current.type]}</div>
             <div className="h-2.5 rounded-full border border-rose-300/50 bg-black/50 overflow-hidden">
               <div className="h-full" style={{ width: `${Math.max(0, (boss.current.hp / boss.current.maxHp) * 100)}%`, background: "linear-gradient(90deg,#ff3060,#ffd27a)", transition: "width .15s", boxShadow: "0 0 8px #ff306088" }} />
             </div>
             <div className="flex items-center justify-center gap-1 mt-1">
-              {boss.current.stun > 0 ? <span className="font-pixel text-[7px] px-1.5 py-0.5 rounded-full bg-amber-300 text-amber-900">ATURDIDO</span>
-                : boss.current.vulnerable ? <span className="font-pixel text-[7px] px-1.5 py-0.5 rounded-full bg-lime-300 text-lime-900">VULNERABLE</span>
-                : <span className="font-pixel text-[7px] px-1.5 py-0.5 rounded-full bg-rose-400/80 text-white">PROTEGIDO</span>}
-              <span className="font-display italic text-[10px] text-amber-100/80">{BOSS_TAUNT[boss.current.type]}</span>
+              {boss.current.stun > 0 ? <span className="font-display font-bold text-[10px] px-1.5 py-0.5 rounded-full bg-amber-300 text-amber-900">Aturdido</span>
+                : boss.current.vulnerable ? <span className="font-display font-bold text-[10px] px-1.5 py-0.5 rounded-full bg-lime-300 text-lime-900">Vulnerable</span>
+                : <span className="font-display font-bold text-[10px] px-1.5 py-0.5 rounded-full bg-rose-400/80 text-white">Protegido</span>}
+              <span className="font-display italic text-[11px] text-amber-100/80">{BOSS_TAUNT[boss.current.type]}</span>
             </div>
           </div>
         )}
 
-        <button aria-label="Pausar juego" onClick={() => setPaused((v) => !v)} className="absolute top-10 right-2 z-40 bg-black/45 rounded-md px-2 py-1 font-pixel text-[9px] text-amber-100 border border-amber-300/30">{paused ? "▶" : "❚❚"}</button>
+        <button aria-label="Pausar juego" onClick={() => setPaused((v) => !v)} className="absolute top-10 right-2 z-40 bg-black/45 rounded-md px-2 py-1 font-display font-bold text-[12px] text-amber-100 border border-amber-300/30">{paused ? "▶" : "❚❚"}</button>
 
         {activeList.length > 0 && (
           <div className="absolute bottom-32 left-1/2 -translate-x-1/2 flex gap-2 z-30">

@@ -1,15 +1,16 @@
 {
-  "name": "react-vite-tailwind",
+  "name": "maxine-panaderia",
   "private": true,
-  "version": "0.0.0",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "cap:sync": "npx cap sync",
+    "preview": "vite preview --host 0.0.0.0",
+    "cap:add": "npx cap add android",
+    "cap:sync": "npm run build && npx cap sync android",
     "cap:open": "npx cap open android",
-    "cap:build": "npm run build && npx cap sync && npx cap open android"
+    "apk": "npm run build && npx cap sync android"
   },
   "dependencies": {
     "clsx": "2.1.1",

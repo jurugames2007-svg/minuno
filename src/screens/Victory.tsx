@@ -3,9 +3,9 @@ import { Flour } from "../art/Decor";
 import Maxine from "../art/Maxine";
 
 interface Stats { depth: number; score: number; bread: number; crowns: number; }
-interface Props { stats: Stats; onContinue: () => void; onMenu: () => void; }
+interface Props { stats: Stats; onContinue: () => void; onMenu: () => void; unlockedUgly?: boolean; }
 
-export default function Victory({ stats, onContinue, onMenu }: Props) {
+export default function Victory({ stats, onContinue, onMenu, unlockedUgly }: Props) {
   return (
     <div className="absolute inset-0 select-none overflow-hidden flex flex-col" style={{ background: "radial-gradient(100% 70% at 50% 18%, #ffd27a44 0%, #7a3410 40%, #2a1408 80%, #0a0402 100%)" }}>
       <Flour count={22} />
@@ -42,7 +42,7 @@ export default function Victory({ stats, onContinue, onMenu }: Props) {
             </g>
           </svg>
           <div className="absolute left-1/2 -translate-x-1/2 top-[6%] pop" style={{ marginLeft: 6 }}><JavieraHuman size={136} waving /></div>
-          <div className="absolute left-[24%] top-[42%] hop"><Maxine pose="win" size={92} /></div>
+          <div className="absolute left-[24%] top-[42%] hop"><Maxine skin={unlockedUgly ? "bigotes" : "default"} pose="win" size={92} /></div>
           <div className="absolute right-[4%] bottom-[8%]" style={{ animation: "vic-flee 4.5s cubic-bezier(.5,0,.8,.4) infinite" }}>
             <svg width="46" height="46" viewBox="0 0 100 100" style={{ transform: "scaleX(-1)" }}>
               <ellipse cx="50" cy="68" rx="20" ry="12" fill="#fff" stroke="#3a2010" strokeWidth="1.2" />
