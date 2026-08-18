@@ -51,9 +51,11 @@ interface Props {
   best: number;
   startTool: ToolId;
   ownedMeta: ToolId[];
+  startLevel?: number;
 }
 
-export default function Game({ skin, onExit, onVictory, best, startTool, ownedMeta }: Props) {
+export default function Game({ skin, onExit, onVictory, best, startTool, ownedMeta, startLevel=1 }: Props) {
+  const startRow = 3 + ((startLevel||1)-1)*47;
   const stageRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const [, setTick] = useState(0);
@@ -71,7 +73,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
   }, []);
 
   const world = useRef<World>({ rows: {}, enemies: [], breads: [], powers: [], bullets: [], isRest: {}, isBoss: {}, doorRow: {} });
-  const player = useRef<Player>({ x: 3 * TILE + TILE / 2 - PW / 2, y: 2 * TILE, prevY: 2 * TILE, vx: 0, vy: 0, onGround: false, facing: 1, invuln: 0, hurtTimer: 0, digTimer: 0, attackTimer: 0, attackCd: 0, coyote: 0, jumpBuf: 0, usedDouble: false });
+  const player = useRef<Player>({ x: 3 * TILE + TILE / 2 - PW / 2, y: startRow * TILE, prevY: startRow * TILE, vx: 0, vy: 0, onGround: false, facing: 1, invuln: 0, hurtTimer: 0, digTimer: 0, attackTimer: 0, attackCd: 0, coyote: 0, jumpBuf: 0, usedDouble: false });
   const active = useRef<Active>({ shield: 0, magnet: 0, speed: 0, yeast: 0, frozen: 0, bounceUsed: false });
   const cameraY = useRef(0);
   const hearts = useRef(3);
@@ -79,16 +81,16 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
   const breadRun = useRef(0);
   const crownsRun = useRef(0);
   const breadCount = useRef(0);
-  const startY = useRef(2 * TILE);
-  const maxDepth = useRef(0);
+  const startY = useRef(startRow * TILE);
+  const maxDepth = useRef((startLevel||1)>1? (startLevel-1)*47:0);
   const ids = useRef(1);
   const input = useRef({ left: false, right: false, digEdge: false, jumpEdge: false, attackEdge: false, lastHoriz: 0 });
   const aim = useRef<{ x: number; y: number }>({ x: 0, y: 1 });
   const over = useRef(false);
   const elapsed = useRef(0);
   const stoneHits = useRef<Map<string, number>>(new Map());
-  const level = useRef(1);
-  const lastRestLevel = useRef(0);
+  const level = useRef(startLevel||1);
+  const lastRestLevel = useRef((startLevel||1)-1);
   const lastBossLevel = useRef(0);
   const tool = useRef<ToolId>(startTool);
   const ownedTools = useRef<ToolId[]>(Array.from(new Set(["palito" as ToolId, ...ownedMeta, startTool])));
@@ -273,6 +275,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
 
   // ---------- main loop ----------
   useEffect(() => {
+    for (let r = Math.max(0,startRow-5); r < startRow+60; r++) ensureRow(r);
     for (let r = 0; r < 60; r++) ensureRow(r);
     let raf = 0; let last = performance.now();
     const ctx: BossCtx = {
@@ -548,7 +551,20 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
           <div className="absolute" style={{ left: p.x - 6, top: p.y - 14, width: PW + 12, height: PH + 18, opacity: flick ? 0.35 : 1, transition: "opacity .05s" }}>
             {active.current.shield > 0 && <div className="absolute inset-0 rounded-full border-2 border-cyan-300" style={{ boxShadow: "0 0 12px #7fd0ff", animation: "glow-pulse 1.2s infinite" }} />}
             {active.current.frozen > 0 && <div className="absolute inset-0 rounded-full" style={{ background: "#7fd0ff33", boxShadow: "inset 0 0 10px #7fd0ff" }} />}
-            {!isFoot && <div className="absolute" style={{ left: p.facing === 1 ? PW - 2 + (p.attackTimer > 0 ? 6 : 0) : -12 - (p.attackTimer > 0 ? 6 : 0), top: PH * 0.48, zIndex: 2, transform: p.attackTimer > 0 ? `rotate(${p.facing * -25}deg)` : undefined, transition: "transform .08s" }}><Plushie id={tool.current} size={tool.current === "kissy" ? 26 : 22} flip={p.facing} /></div>}
+            {/* soul orbs Guyu/Dixie orbit above head */}
+            {(tool.current === "guyu" || tool.current === "dixie") && (
+              <div className="absolute" style={{ left: PW/2 - 16, top: -18, zIndex: 4, animation: "hop 1.6s ease-in-out infinite", filter: "drop-shadow(0 0 6px #ffd27a88)" }}>
+                <Plushie id={tool.current} size={32} />
+              </div>
+            )}
+            {/* trailing pelitos for Guyu */}
+            {tool.current === "guyu" && (
+              <div className="absolute pointer-events-none" style={{ left: PW/2 - 12, top: -10, width: 24, height: 24, opacity: 0.7 }}>
+                <div className="flour" style={{ left: "10%", animationDuration: "2s" } as any} />
+                <div className="flour" style={{ left: "70%", animationDuration: "2.4s", animationDelay: "0.4s" } as any} />
+              </div>
+            )}
+            {!isFoot && tool.current !== "guyu" && tool.current !== "dixie" && <div className="absolute" style={{ left: p.facing === 1 ? PW - 2 + (p.attackTimer > 0 ? 6 : 0) : -12 - (p.attackTimer > 0 ? 6 : 0), top: PH * 0.48, zIndex: 2, transform: p.attackTimer > 0 ? `rotate(${p.facing * -25}deg)` : undefined, transition: "transform .08s" }}><Plushie id={tool.current} size={tool.current === "kissy" ? 26 : 22} flip={p.facing} /></div>}
             <Maxine skin={skin} pose={pose} facing={p.facing} size={PW + 18} />
             {isFoot && <div className="absolute pointer-events-none" style={{ left: -2, top: PH * 0.82, width: PW + 12, height: 14, zIndex: 3 }}><Plushie id="zapatitos" size={PW + 12} /></div>}
           </div>

@@ -1,4 +1,4 @@
-export type ToolId = "palito" | "sam" | "calcetin" | "pulpito" | "pelota" | "kissy" | "javiera" | "zapatitos";
+export type ToolId = "palito" | "sam" | "calcetin" | "pulpito" | "pelota" | "kissy" | "javiera" | "zapatitos" | "guyu" | "dixie" | "rodillo" | "batidora" | "sarten" | "cuchilla" | "sacabocados" | "delantal" | "guantes" | "gorro" | "mandil" | "tabla";
 
 export interface ToolDef {
   id: ToolId;
@@ -43,6 +43,20 @@ export const TOOLS: ToolDef[] = [
   { id: "kissy",     name: "Kissy Missy",   tag: "peluche rosa",        desc: "Brazos largos: cava 2 tiles de alcance horizontal.",                   priceBread: 140, priceCrowns: 0, metaPrice: 11, speedMul: 1.45, reach: true, color: "#ff7fb0" },
   { id: "javiera",   name: "Javiera",       tag: "matrona · scrubs rojos", desc: "Gatita naranja con uniforme de matrona chilena. Cavado +80% y cura al romper.", priceBread: 0, priceCrowns: 6, metaPrice: 15, speedMul: 1.8, healOnDig: true, color: "#e23b3b" },
   { id: "zapatitos", name: "Zapatitos",     tag: "de lona roja",          desc: "Zapatillas de lona con suela gruesa. Caminas sobre pinchos sin pincharte.", priceBread: 80, priceCrowns: 0, metaPrice: 6, speedMul: 1.1, spikeImmune: true, footwear: true, color: "#e23b3b" },
+  { id: "guyu",      name: "Guyu",          tag: "medallita · pelitos", desc: "Medallita circular neutra que cuida a Maxine. Aura de pelitos suaves que ralentiza el peligro y abre camino.", priceBread: 100, priceCrowns: 0, metaPrice: 9, speedMul: 1.35, wide: true, slowAura: true, color: "#e8e0c8" },
+  { id: "dixie",     name: "Dixie",         tag: "medallita · mañosa",  desc: "Medallita circular neutra que protege a Maxine. Su berrinche dulce absorbe un golpe y reconforta al cavar.", priceBread: 120, priceCrowns: 0, metaPrice: 10, speedMul: 1.25, bounce: true, healOnDig: true, color: "#e8e0c8" },
+  // V2 ofensivas/defensivas/movilidad/utilidad
+  { id: "rodillo",   name: "Rodillo",       tag: "amasador",            desc: "Aplasta en línea recta. Cooldown 3s. Wide + 20% velocidad.",              priceBread: 60,  priceCrowns: 0, metaPrice: 6, speedMul: 1.2, wide: true, color: "#a87848" },
+  { id: "batidora",  name: "Batidora",      tag: "remolino",            desc: "Crea remolino que empuja. SlowAura + Wide.",                             priceBread: 90,  priceCrowns: 0, metaPrice: 8, speedMul: 1.25, wide: true, slowAura: true, color: "#8a8aa8" },
+  { id: "sarten",    name: "Sartén",        tag: "anti-grasa",          desc: "Rebota proyectiles. Bounce + 15% speed.",                                priceBread: 80,  priceCrowns: 0, metaPrice: 7, speedMul: 1.15, bounce: true, color: "#3a3a3a" },
+  { id: "cuchilla",  name: "Cuchilla",      tag: "pizza",               desc: "Atraviesa enemigos. Reach 2 tiles.",                                      priceBread: 70,  priceCrowns: 0, metaPrice: 7, speedMul: 1.3, reach: true, color: "#d7d2c4" },
+  { id: "sacabocados", name: "Sacabocados", tag: "gigante",             desc: "Crea agujeros temporales. Wide extremo.",                                 priceBread: 110, priceCrowns: 0, metaPrice: 9, speedMul: 1.2, wide: true, color: "#c9a86a" },
+  { id: "delantal",  name: "Delantal",      tag: "reforzado",           desc: "Absorbe 2 golpes. Bounce + heal.",                                        priceBread: 100, priceCrowns: 0, metaPrice: 8, speedMul: 1.1, bounce: true, healOnDig: true, color: "#e3a35a" },
+  { id: "guantes",   name: "Guantes Horno", tag: "ígneo",               desc: "Inmunidad a calor/lava. SpikeImmune.",                                    priceBread: 85,  priceCrowns: 0, metaPrice: 7, speedMul: 1.15, spikeImmune: true, color: "#ff7a2a" },
+  { id: "gorro",     name: "Gorro Chef",    tag: "protector",           desc: "Protege de caídas. Bounce.",                                              priceBread: 75,  priceCrowns: 0, metaPrice: 6, speedMul: 1.1, bounce: true, color: "#fff" },
+  { id: "mandil",    name: "Mandil",        tag: "anti-manchas",        desc: "Cura al quedarse quieto. HealOnDig.",                                     priceBread: 90,  priceCrowns: 0, metaPrice: 8, speedMul: 1.2, healOnDig: true, color: "#d7d2c4" },
+  { id: "tabla",     name: "Tabla Flotar",  tag: "levitar",             desc: "Flotar tras salto. Yeast + 10% speed (simulado Wide).",                  priceBread: 95,  priceCrowns: 0, metaPrice: 9, speedMul: 1.25, wide: true, color: "#e8c9a0" },
+
 ];
 
 export const TOOL_MAP: Record<ToolId, ToolDef> = Object.fromEntries(TOOLS.map((t) => [t.id, t])) as Record<ToolId, ToolDef>;
@@ -208,5 +222,73 @@ function renderPlush(id: ToolId) {
           <path d="M15 3 h2 v1.5 h-1.5 v1 h-1 v-1 h-0.5 Z" fill="#d41a1a" />
         </g>
       );
+    case "guyu":
+      return (
+        <g>
+          {/* Guyu — medallita circular neutra sin cara ni color, que cuida a Maxine */}
+          {/* medallón base — sin color vivo, tono hueso/niebla */}
+          <circle cx="16" cy="16" r="13" fill="#fdfbf3" stroke="#c9bda8" strokeWidth="1.6" />
+          <circle cx="16" cy="16" r="11.2" fill="none" stroke="#e8e0c8" strokeWidth="1" />
+          <circle cx="16" cy="16" r="9.6" fill="none" stroke="#d7cdb8" strokeWidth="0.7" strokeDasharray="1.2 1.8" opacity="0.7" />
+          {/* anilla superior */}
+          <circle cx="16" cy="4.2" r="2" fill="none" stroke="#c9bda8" strokeWidth="1.2" />
+          <circle cx="16" cy="4.2" r="0.9" fill="#e8e0c8" stroke="#c9bda8" strokeWidth="0.6" />
+          {/* grabado central minimalista: pelitos suaves (tres líneas curvas) + huellita tenue */}
+          <g stroke="#b8ad98" strokeWidth="0.9" fill="none" strokeLinecap="round" opacity="0.95">
+            <path d="M11.5 14 q2 1.2 4 0" />
+            <path d="M10.5 16.2 q2 1.4 4.5 0" />
+            <path d="M11.8 18.4 q1.8 1 3.8 0" />
+          </g>
+          <g fill="#b8ad98" opacity="0.9">
+            <circle cx="20.2" cy="16" r="1.3" />
+            <circle cx="18.6" cy="13.6" r="0.7" />
+            <circle cx="21.6" cy="13.7" r="0.7" />
+            <circle cx="19.2" cy="18.6" r="0.7" />
+            <circle cx="21.8" cy="18" r="0.6" />
+          </g>
+          {/* brillo sutil */}
+          <ellipse cx="13.5" cy="11" rx="1.6" ry="0.9" fill="#fff" opacity="0.55" />
+          <circle cx="20.2" cy="10.2" r="0.5" fill="#fff" opacity="0.45" />
+        </g>
+      );
+    case "dixie":
+      return (
+        <g>
+          {/* Dixie — medallita circular neutra sin cara ni color, que protege a Maxine */}
+          <circle cx="16" cy="16" r="13" fill="#fdfbf3" stroke="#c9bda8" strokeWidth="1.6" />
+          <circle cx="16" cy="16" r="11.2" fill="none" stroke="#e8e0c8" strokeWidth="1" />
+          <circle cx="16" cy="16" r="9.6" fill="none" stroke="#d7cdb8" strokeWidth="0.7" strokeDasharray="1.2 1.8" opacity="0.7" />
+          <circle cx="16" cy="4.2" r="2" fill="none" stroke="#c9bda8" strokeWidth="1.2" />
+          <circle cx="16" cy="4.2" r="0.9" fill="#e8e0c8" stroke="#c9bda8" strokeWidth="0.6" />
+          {/* grabado central: corazón hueco minimal + onda mañosa */}
+          <g fill="none" stroke="#b8ad98" strokeWidth="0.95" strokeLinecap="round" strokeLinejoin="round" opacity="0.95">
+            <path d="M16 13.6 c-1.1 -1 -2.6 -1 -3.2 0.4 c-0.6 1.3 1 2.9 3.2 4.1 c2.2 -1.2 3.8 -2.8 3.2 -4.1 c-0.6 -1.4 -2.1 -1.4 -3.2 -0.4 Z" />
+            <path d="M10.8 18.6 q1.2 0.7 2.4 0 q1.2 -0.7 2.4 0 q1.2 0.7 2.4 0 q1.2 -0.7 2.4 0" />
+          </g>
+          {/* puntitos grabado */}
+          <circle cx="12.2" cy="15.2" r="0.5" fill="#b8ad98" opacity="0.8" /><circle cx="19.8" cy="15.2" r="0.5" fill="#b8ad98" opacity="0.8" />
+          <ellipse cx="13.6" cy="11.1" rx="1.5" ry="0.85" fill="#fff" opacity="0.5" />
+        </g>
+      );
+    case "rodillo":
+      return (<g><rect x="6" y="12" width="20" height="8" rx="4" fill="#a87848" stroke="#5a3510" strokeWidth="1"/><rect x="4" y="14" width="3" height="4" rx="1" fill="#5a3510"/><rect x="25" y="14" width="3" height="4" rx="1" fill="#5a3510"/></g>);
+    case "batidora":
+      return (<g><rect x="12" y="4" width="8" height="14" rx="3" fill="#8a8aa8" stroke="#3a3a6a" strokeWidth="1"/><circle cx="16" cy="22" r="6" fill="none" stroke="#d7d2c4" strokeWidth="1.2"/><path d="M16 22 q-3 3 -6 0" stroke="#d7d2c4" strokeWidth="0.8" fill="none"/></g>);
+    case "sarten":
+      return (<g><circle cx="16" cy="14" r="8" fill="#3a3a3a" stroke="#1a1a1a" strokeWidth="1"/><rect x="16" y="12" width="10" height="3" rx="1" fill="#5a3a1a"/><circle cx="13" cy="12" r="1" fill="#fff" opacity="0.6"/></g>);
+    case "cuchilla":
+      return (<g><circle cx="16" cy="16" r="9" fill="none" stroke="#d7d2c4" strokeWidth="2"/><circle cx="16" cy="16" r="2" fill="#3a3a3a"/><path d="M16 7 l0 18 M7 16 l18 0" stroke="#d7d2c4" strokeWidth="0.8"/></g>);
+    case "sacabocados":
+      return (<g><rect x="10" y="6" width="12" height="12" rx="6" fill="#c9a86a" stroke="#7a5a2a" strokeWidth="1"/><circle cx="16" cy="12" r="4" fill="#fff" stroke="#7a5a2a" strokeWidth="0.8"/><rect x="14" y="18" width="4" height="8" rx="1" fill="#7a5a2a"/></g>);
+    case "delantal":
+      return (<g><path d="M10 8 Q16 6 22 8 L24 26 Q16 28 8 26 Z" fill="#e3a35a" stroke="#7a4a1a" strokeWidth="1"/><rect x="14" y="10" width="4" height="3" fill="#fff"/><path d="M10 8 L10 6 L22 6 L22 8" stroke="#7a4a1a" strokeWidth="0.8" fill="none"/></g>);
+    case "guantes":
+      return (<g><path d="M10 14 Q10 8 14 8 H18 Q22 8 22 14 V22 H10 Z" fill="#ff7a2a" stroke="#7a1410" strokeWidth="1"/><circle cx="15" cy="12" r="1" fill="#fff"/><circle cx="17" cy="14" r="0.8" fill="#fff"/></g>);
+    case "gorro":
+      return (<g><path d="M8 16 Q16 4 24 16 L24 22 L8 22 Z" fill="#fff" stroke="#7a8aa8" strokeWidth="1"/><rect x="8" y="16" width="16" height="3" fill="#d7d2c4"/></g>);
+    case "mandil":
+      return (<g><path d="M12 8 Q16 6 20 8 L20 24 Q16 26 12 24 Z" fill="#d7d2c4" stroke="#7a6a5a" strokeWidth="1"/><circle cx="16" cy="12" r="1.2" fill="#ff8fa0"/></g>);
+    case "tabla":
+      return (<g><rect x="8" y="14" width="16" height="6" rx="3" fill="#e8c9a0" stroke="#7a5a2c" strokeWidth="1"/><path d="M12 17 q4 -2 8 0" stroke="#7a5a2c" strokeWidth="0.6" fill="none"/></g>);
   }
 }
