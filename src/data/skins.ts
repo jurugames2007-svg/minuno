@@ -13,33 +13,25 @@ export type SkinId =
   | "mahoraga"
   | "jockey"
   | "catto"
-  // V2 Jujutsu
   | "gojo"
   | "nobara"
   | "megumi"
   | "sukuna"
-  // V2 Monster High
+  | "yuji"
   | "draculaura"
   | "frankie"
-  // V2 Princess
   | "schnauzarella"
   | "ariel"
-  // V2 Heroes
   | "captain"
   | "bat"
-  // V2 Poppy
   | "huggy"
   | "catnap"
-  // V2 Stranger
   | "eleven"
-  // V2 BTS
   | "rm"
-  // V2 Minecraft
   | "steve"
   | "creeper"
-  // V2 Star Wars
   | "darth"
-  // V2 Disfraces
+  | "padme"
   | "unicornio"
   | "pirata"
   | "astronauta"
@@ -59,84 +51,210 @@ export type SkinId =
   | "dogday"
   | "craftycorn"
   | "alex"
-  | "ender";
+  | "ender"
+  | "boxer"
+  | "laufey"
+  | "penguin"
+  | "bigotes"
+  | "eevee"
+  | "kira"
+  | "spooky"
+  | "matrona"
+  | "subzero"
+  | "barbie"
+  | "bebe"
+  | "abuela"
+  | "sabio"
+  | "freddy"
+  | "foxy"
+  | "bonnie"
+  | "chica"
+  | "hada"
+  | "panadero"
+  | "croissant"
+  | "lodo"
+  | "exploradora"
+  | "llanta"
+  | "cthulhu"
+  | "pennywise"
+  | "bodoque"
+  | "juana"
+  | "huachimingo";
+
+export type SkinRarity = "Común" | "Raro" | "Épico" | "Legendario" | "Mítica" | "Feo";
+export type SkinCategory =
+  | "Clásico"
+  | "Jujutsu"
+  | "Monster High"
+  | "Princesa"
+  | "Héroes"
+  | "Poppy"
+  | "Star Wars"
+  | "Minecraft"
+  | "Disfraz"
+  | "FNAF"
+  | "Pokémon"
+  | "Familia"
+  | "Feo"
+  | "Secreto"
+  | "Horror"
+  | "31 Minutos"
+  | "Mítica";
+
+export type SkinUnlock = "shop" | "bigotes" | "secret";
 
 export interface Skin {
   id: SkinId;
   name: string;
   tag: string;
   price: number;
-  rarity: "Común" | "Raro" | "Épico" | "Legendario";
+  rarity: SkinRarity;
+  category: SkinCategory;
   blurb: string;
+  unlock: SkinUnlock;
 }
 
 export const SKINS: Skin[] = [
-  { id: "default", name: "Maxine", tag: "Pañuelito rojo", price: 0, rarity: "Común", blurb: "La clásica. Hambre infinita y cola inquieta." },
-  { id: "bow", name: "Moño Rosa", tag: "Coqueta", price: 120, rarity: "Común", blurb: "Un lazo enorme para ocasiones muy hambrientas." },
-  { id: "lime", name: "Polerita Lima", tag: "Sport", price: 180, rarity: "Común", blurb: "Verde neón para cavar más rápido que la vista." },
-  { id: "harness", name: "Arnés Rosado", tag: "Paseo épico", price: 220, rarity: "Raro", blurb: "Correas acolchadas. Lista para la aventura." },
-  { id: "santa", name: "Santa Claws", tag: "Navidad", price: 350, rarity: "Raro", blurb: "Gorro con pompón y barrita de pan de jengibre." },
-  { id: "vampire", name: "Condesa Colmillo", tag: "Noche", price: 420, rarity: "Raro", blurb: "Capa negra, colmillos tiernos. Solo muerde pancitos." },
-  { id: "princess", name: "Princesa Pan", tag: "Realeza", price: 500, rarity: "Épico", blurb: "Tiara dorada y vestido de merengue." },
-  { id: "yuta", name: "Yuta Okkotsu", tag: "Hechicero", price: 700, rarity: "Épico", blurb: "Uniforme de Jujutsu y katana al hombro. Rika aprueba." },
-  { id: "kissy", name: "Kissy Missy", tag: "Poppy", price: 850, rarity: "Épico", blurb: "Brazos largos rosados y sonrisa traviesa." },
-  { id: "yarnaby", name: "Yarnaby", tag: "Arcoíris", price: 1200, rarity: "Legendario", blurb: "Melena de flecos arcoíris. La piel más rara de la panadería." },
-  { id: "pochacco", name: "Pochacco", tag: "Sanrio", price: 550, rarity: "Épico", blurb: "Perrito blanco con orejas negras y polera magenta. Puro estilo." },
-  { id: "mahoraga", name: "Mahoraga", tag: "Shikigami", price: 900, rarity: "Legendario", blurb: "La rueda de los ocho mangos gira sobre su cabeza cada pocos segundos." },
-  { id: "jockey", name: "Jockey", tag: "Hípica", price: 480, rarity: "Raro", blurb: "Un jinete en miniatura monta a Maxine como si fuera pura sangre." },
-  { id: "catto", name: "Gatito Café con Leche", tag: "Miau", price: 360, rarity: "Raro", blurb: "Orejas triangulares, cola larga y nariz rosa. Sigue siendo Maxine por dentro." },
-  // V2 Jujutsu
-  { id: "gojo", name: "Gojo-schnauzer", tag: "Jujutsu · Infinito", price: 850, rarity: "Legendario", blurb: "Parche negro y pelo blanco plateado. El más fuerte del salón." },
-  { id: "nobara", name: "Nobara Kugisaki", tag: "Jujutsu · Clavos", price: 780, rarity: "Épico", blurb: "Delantal con clavos de dulce y martillo. ¡Resonancia!" },
-  { id: "megumi", name: "Megumi Schnauzenji", tag: "Jujutsu · Sombras", price: 800, rarity: "Épico", blurb: "Sombrías técnicas de diez sombras. Lobo divino al hombro." },
-  { id: "sukuna", name: "Sukuna Schnauzer", tag: "Jujutsu · Rey", price: 1300, rarity: "Legendario", blurb: "Cuatro marcas rojas, ojos dorados y sonrisa maldita." },
-  // V2 Monster High
-  { id: "draculaura", name: "Draculaura Schnauzer", tag: "Monster High", price: 650, rarity: "Épico", blurb: "Rosado vampiro, colmillitos y murciélago en lomo. 1600 años y tierna." },
-  { id: "frankie", name: "Frankie Stein", tag: "Monster High", price: 620, rarity: "Épico", blurb: "Remaches, tornillos en cuello y costuras. ¡Viva la ciencia!" },
-  // V2 Princess
-  { id: "schnauzarella", name: "Schnauzarella", tag: "Princesa", price: 540, rarity: "Épico", blurb: "Vestido azul celeste, lazo y ratoncitos ayudantes." },
-  { id: "ariel", name: "Ariel Schnauzerina", tag: "Princesa · Mar", price: 700, rarity: "Épico", blurb: "Cola de sirena brillante y concha en pecho. Bajo el mar." },
-  // V2 Heroes
-  { id: "captain", name: "Captain Schnauzerica", tag: "Super", price: 680, rarity: "Épico", blurb: "Traje rojo-azul-blanco y escudo de vibranio panadero." },
-  { id: "bat", name: "Bat-schnauzer", tag: "Super", price: 720, rarity: "Épico", blurb: "Capa negra, máscara y emblema murciélago. ¡Justicia nocturna!" },
-  // V2 Poppy
-  { id: "huggy", name: "Huggy Schnauzery", tag: "Poppy · Azul", price: 880, rarity: "Legendario", blurb: "Pelaje azul eléctrico y sonrisa permanente. Abrazo mortal." },
-  { id: "catnap", name: "CatNap Schnauzer", tag: "Poppy · Sueño", price: 900, rarity: "Legendario", blurb: "Púrpura con collar de luna, ojos cerrados y gas somnífero." },
-  // V2 Stranger
-  { id: "eleven", name: "Eleven Schnauzer", tag: "Stranger", price: 750, rarity: "Épico", blurb: "Vestido rosa, nariz con sangre y caja de waffles." },
-  // V2 BTS
-  { id: "rm", name: "RM Schnauzer", tag: "BTS · Líder", price: 600, rarity: "Raro", blurb: "Gorro, chaqueta cuero y libro de líder." },
-  // V2 Minecraft
-  { id: "steve", name: "Steve Schnauzer", tag: "Minecraft", price: 500, rarity: "Raro", blurb: "Camisa azul, pantalón pardo y pico de hierro en mano." },
-  { id: "creeper", name: "Creeper-schnauzer", tag: "Minecraft", price: 580, rarity: "Raro", blurb: "Pelaje verde pixelado y cara de 'sss...' Explosivo." },
-  { id: "darth", name: "Darth Schnauzer", tag: "Star Wars · Sith", price: 850, rarity: "Legendario", blurb: "Casco negro brillante, capa negra y ojos rojos intensos. El lado oscuro de la panadería." },
-  // V2 Disfraces
-  { id: "unicornio", name: "Schnauzer Unicornio", tag: "Fantasía", price: 620, rarity: "Épico", blurb: "Cuerno arcoíris y melena multicolor brillante." },
-  { id: "pirata", name: "Schnauzer Pirata", tag: "Ahoy!", price: 540, rarity: "Raro", blurb: "Parche, pañuelo rojo y garfio crujiente." },
-  { id: "astronauta", name: "Schnauzer Astronauta", tag: "Espacio", price: 800, rarity: "Épico", blurb: "Traje blanco y casco transparente. ¡Al infinito!" },
-  { id: "zombie", name: "Schnauzer Zombie", tag: "Terror", price: 420, rarity: "Raro", blurb: "Verde, heridas y ropa rota. Cerebro... ¿pan?" },
-  { id: "ninja", name: "Schnauzer Ninja", tag: "Sigilo", price: 700, rarity: "Épico", blurb: "Máscara negra, espada y estrellas de masa." },
-  { id: "mago", name: "Schnauzer Mago", tag: "Hechicero", price: 680, rarity: "Épico", blurb: "Sombrero puntiagudo, varita y libro de pan-conjuros." },
-  { id: "payaso", name: "Schnauzer Payaso", tag: "Circo", price: 460, rarity: "Raro", blurb: "Peluca naranja, nariz roja y sonrisa pintada." },
-  { id: "clawdeen", name: "Clawdeen Wolf", tag: "Monster High", price: 640, rarity: "Épico", blurb: "Peluca morada con mechas, orejas lobo y luna." },
-  { id: "cleo", name: "Cleo de Nile", tag: "Monster High", price: 660, rarity: "Épico", blurb: "Vendajes dorados y tiara faraona." },
-  { id: "ghoulia", name: "Ghoulia Yelps", tag: "Monster High", price: 620, rarity: "Épico", blurb: "Piel pálida azulada, gafas y gorrito cerebro." },
-  { id: "bella", name: "Bella Schnauzer", tag: "Princesa", price: 560, rarity: "Épico", blurb: "Vestido amarillo satinado con rosa encantada." },
-  { id: "jasmine", name: "Jasmine Schnauzer", tag: "Princesa", price: 580, rarity: "Épico", blurb: "Top turquesa y pantalón harem con joya." },
-  { id: "tiana", name: "Tiana Schnauzer", tag: "Princesa", price: 600, rarity: "Épico", blurb: "Vestido verde con corona de lirios." },
-  { id: "widow", name: "Widow Schnauzer", tag: "Super", price: 700, rarity: "Épico", blurb: "Traje negro ajustado con reloj rojo." },
-  { id: "spider", name: "Spider-schnauzer", tag: "Super", price: 720, rarity: "Épico", blurb: "Traje rojo-azul con telaraña en pecho." },
-  { id: "wonder", name: "Wonder Schnauzer", tag: "Super", price: 740, rarity: "Épico", blurb: "Tiara dorada, lazo y brazaletes." },
-  { id: "dogday", name: "DogDay Schnauzer", tag: "Poppy", price: 860, rarity: "Épico", blurb: "Naranja radiante, collar dorado y sonrisa." },
-  { id: "craftycorn", name: "CraftyCorn Schnauzer", tag: "Poppy", price: 880, rarity: "Épico", blurb: "Azul cielo, cuerno unicornio y arcoíris." },
-  { id: "alex", name: "Alex Schnauzer", tag: "Minecraft", price: 520, rarity: "Raro", blurb: "Camisa naranja, pelo naranja y brazalete." },
-  { id: "ender", name: "Ender-schnauzer", tag: "Minecraft", price: 600, rarity: "Raro", blurb: "Negro con ojos violeta y teletransporte." },
+  { id: "default", name: "Maxine", tag: "Pañuelito rojo", price: 0, rarity: "Común", category: "Clásico", unlock: "shop", blurb: "La clásica. Hambre infinita y cola inquieta." },
+  { id: "bow", name: "Moño Rosa", tag: "Coqueta", price: 120, rarity: "Común", category: "Clásico", unlock: "shop", blurb: "Un lazo enorme para ocasiones muy hambrientas." },
+  { id: "lime", name: "Polerita Lima", tag: "Sport", price: 180, rarity: "Común", category: "Clásico", unlock: "shop", blurb: "Verde neón para cavar más rápido que la vista." },
+  { id: "harness", name: "Arnés Rosado", tag: "Paseo épico", price: 220, rarity: "Raro", category: "Clásico", unlock: "shop", blurb: "Correas acolchadas. Lista para la aventura." },
+  { id: "santa", name: "Santa Claws", tag: "Navidad", price: 350, rarity: "Raro", category: "Disfraz", unlock: "shop", blurb: "Gorro con pompón y barba de nata montada." },
+  { id: "vampire", name: "Condesa Colmillo", tag: "Noche", price: 420, rarity: "Raro", category: "Disfraz", unlock: "shop", blurb: "Capa negra, colmillos tiernos. Solo muerde pancitos." },
+  { id: "princess", name: "Princesa Pan", tag: "Realeza", price: 500, rarity: "Épico", category: "Princesa", unlock: "shop", blurb: "Tiara dorada y vestido de merengue." },
+  { id: "yuta", name: "Yuta Okkotsu", tag: "Hechicero", price: 700, rarity: "Épico", category: "Jujutsu", unlock: "shop", blurb: "Uniforme blanco, pelo negro revuelto y katana al hombro. Rika aprueba." },
+  { id: "yuji", name: "Yuji Itadori", tag: "Recipiente", price: 820, rarity: "Épico", category: "Jujutsu", unlock: "shop", blurb: "Pelo rosa puntiagudo, hoodie rojo y chaqueta de Tokio Jujutsu. ¡Divergente puño!" },
+  { id: "kissy", name: "Kissy Missy", tag: "Poppy", price: 850, rarity: "Épico", category: "Poppy", unlock: "shop", blurb: "Brazos largos rosados, lazo azul y sonrisa traviesa." },
+  { id: "yarnaby", name: "Yarnaby", tag: "Arcoíris", price: 1200, rarity: "Legendario", category: "Poppy", unlock: "shop", blurb: "Melena de lana arcoíris. La piel más rara de la panadería." },
+  { id: "pochacco", name: "Pochacco", tag: "Sanrio", price: 550, rarity: "Épico", category: "Disfraz", unlock: "shop", blurb: "Perrito blanco con orejas negras y polera magenta." },
+  { id: "mahoraga", name: "Mahoraga", tag: "Shikigami", price: 900, rarity: "Legendario", category: "Jujutsu", unlock: "shop", blurb: "La rueda de los ocho mangos gira sobre su cabeza." },
+  { id: "jockey", name: "Jockey", tag: "Hípica", price: 480, rarity: "Raro", category: "Disfraz", unlock: "shop", blurb: "Un jinete en miniatura monta a Maxine como si fuera pura sangre." },
+  { id: "catto", name: "Gatito Café con Leche", tag: "Miau", price: 360, rarity: "Raro", category: "Disfraz", unlock: "shop", blurb: "Orejas triangulares, cola larga y nariz rosa." },
+  { id: "gojo", name: "Satoru Gojo", tag: "Infinito", price: 850, rarity: "Legendario", category: "Jujutsu", unlock: "shop", blurb: "Pelo blanco, venda negra y uniforme de hechicero. El más fuerte del salón." },
+  { id: "nobara", name: "Nobara Kugisaki", tag: "Clavos", price: 780, rarity: "Épico", category: "Jujutsu", unlock: "shop", blurb: "Bob castaño, abrigo marrón y martillo de resonancia." },
+  { id: "megumi", name: "Megumi Fushiguro", tag: "Sombras", price: 800, rarity: "Épico", category: "Jujutsu", unlock: "shop", blurb: "Flequillo negro, uniforme oscuro y lobo divino al hombro." },
+  { id: "sukuna", name: "Ryomen Sukuna", tag: "Rey", price: 1300, rarity: "Legendario", category: "Jujutsu", unlock: "shop", blurb: "Marcas negras, kimono abierto y sonrisa maldita." },
+  { id: "draculaura", name: "Draculaura", tag: "Monster High", price: 650, rarity: "Épico", category: "Monster High", unlock: "shop", blurb: "Coletas negras, vestido rosa y murciélago en el lomo." },
+  { id: "frankie", name: "Frankie Stein", tag: "Monster High", price: 620, rarity: "Épico", category: "Monster High", unlock: "shop", blurb: "Mechas blancas y negras, tornillos en el cuello y costuras." },
+  { id: "schnauzarella", name: "Cenicienta", tag: "Princesa", price: 540, rarity: "Épico", category: "Princesa", unlock: "shop", blurb: "Vestido azul celeste, lazo y zapatito de cristal." },
+  { id: "ariel", name: "Ariel", tag: "Mar", price: 700, rarity: "Épico", category: "Princesa", unlock: "shop", blurb: "Pelo rojo, cola de sirena y concha perlada." },
+  { id: "captain", name: "Capitana América", tag: "Super", price: 680, rarity: "Épico", category: "Héroes", unlock: "shop", blurb: "Traje rojo-azul-blanco y escudo estrellado." },
+  { id: "bat", name: "Bat-schnauzer", tag: "Super", price: 720, rarity: "Épico", category: "Héroes", unlock: "shop", blurb: "Capa, máscara de orejas y emblema de murciélago." },
+  { id: "huggy", name: "Huggy Wuggy", tag: "Poppy", price: 880, rarity: "Legendario", category: "Poppy", unlock: "shop", blurb: "Pelaje azul, boca cremallera y brazos larguísimos." },
+  { id: "catnap", name: "CatNap", tag: "Sueño", price: 900, rarity: "Legendario", category: "Poppy", unlock: "shop", blurb: "Púrpura, collar de luna y ojos soñolientos." },
+  { id: "eleven", name: "Eleven", tag: "Hawkins", price: 750, rarity: "Épico", category: "Disfraz", unlock: "shop", blurb: "Pelo corto castaño, vestido rosa y waffle Eggo." },
+  { id: "rm", name: "RM", tag: "BTS", price: 600, rarity: "Raro", category: "Disfraz", unlock: "shop", blurb: "Gorro de cubo, chaqueta de cuero y libreta de líder." },
+  { id: "steve", name: "Steve", tag: "Minecraft", price: 500, rarity: "Raro", category: "Minecraft", unlock: "shop", blurb: "Pelo castaño pixel, camisa cyan y pico de hierro." },
+  { id: "creeper", name: "Creeper", tag: "Minecraft", price: 580, rarity: "Raro", category: "Minecraft", unlock: "shop", blurb: "Verde pixelado y hocico de sss… ¿pan?" },
+  { id: "darth", name: "Darth Vader", tag: "Sith", price: 950, rarity: "Legendario", category: "Star Wars", unlock: "shop", blurb: "Casco de tres aletas, capa, panel de pecho y sable rojo. El lado oscuro del hojaldre." },
+  { id: "padme", name: "Padmé Amidala", tag: "Senado", price: 880, rarity: "Legendario", category: "Star Wars", unlock: "shop", blurb: "Moños de Naboo, vestido burdeos y joyas doradas. Reina de la masa madre." },
+  { id: "unicornio", name: "Unicornio", tag: "Fantasía", price: 620, rarity: "Épico", category: "Disfraz", unlock: "shop", blurb: "Cuerno nacarado y melena arcoíris." },
+  { id: "pirata", name: "Pirata", tag: "Ahoy", price: 540, rarity: "Raro", category: "Disfraz", unlock: "shop", blurb: "Pañuelo rojo, parche y garfio de hojaldre." },
+  { id: "astronauta", name: "Astronauta", tag: "Espacio", price: 800, rarity: "Épico", category: "Disfraz", unlock: "shop", blurb: "Traje blanco y visor dorado. Al infinito y al horno." },
+  { id: "zombie", name: "Zombie", tag: "Terror", price: 420, rarity: "Raro", category: "Disfraz", unlock: "shop", blurb: "Piel verdosa, ropa rota. ¿Cerebro… o pan?" },
+  { id: "ninja", name: "Ninja", tag: "Sigilo", price: 700, rarity: "Épico", category: "Disfraz", unlock: "shop", blurb: "Máscara, shurikens de masa y katana corta." },
+  { id: "mago", name: "Mago", tag: "Hechizos", price: 680, rarity: "Épico", category: "Disfraz", unlock: "shop", blurb: "Sombrero puntiagudo, túnica y varita de baguette." },
+  { id: "payaso", name: "Payaso", tag: "Circo", price: 460, rarity: "Raro", category: "Disfraz", unlock: "shop", blurb: "Peluca naranja, nariz roja y lunares." },
+  { id: "clawdeen", name: "Clawdeen Wolf", tag: "Monster High", price: 640, rarity: "Épico", category: "Monster High", unlock: "shop", blurb: "Melena morada con mechas, orejas de lobo y luna." },
+  { id: "cleo", name: "Cleo de Nile", tag: "Monster High", price: 660, rarity: "Épico", category: "Monster High", unlock: "shop", blurb: "Pelo negro con mecha dorada y tiara de faraona." },
+  { id: "ghoulia", name: "Ghoulia Yelps", tag: "Monster High", price: 620, rarity: "Épico", category: "Monster High", unlock: "shop", blurb: "Coleta roja, gafas y gorrito de cerebro." },
+  { id: "bella", name: "Bella", tag: "Princesa", price: 560, rarity: "Épico", category: "Princesa", unlock: "shop", blurb: "Moño castaño, vestido amarillo y rosa encantada." },
+  { id: "jasmine", name: "Jasmín", tag: "Princesa", price: 580, rarity: "Épico", category: "Princesa", unlock: "shop", blurb: "Coleta alta, top turquesa y joya de frente." },
+  { id: "tiana", name: "Tiana", tag: "Princesa", price: 600, rarity: "Épico", category: "Princesa", unlock: "shop", blurb: "Moño con tiara de lirios y vestido verde de gala." },
+  { id: "widow", name: "Viuda Negra", tag: "Super", price: 700, rarity: "Épico", category: "Héroes", unlock: "shop", blurb: "Traje táctico, reloj de hora roja y coleta." },
+  { id: "spider", name: "Spider-Max", tag: "Super", price: 720, rarity: "Épico", category: "Héroes", unlock: "shop", blurb: "Máscara de lentes blancos y telaraña en el pecho." },
+  { id: "wonder", name: "Wonder Woman", tag: "Super", price: 740, rarity: "Épico", category: "Héroes", unlock: "shop", blurb: "Tiara con estrella, lazo dorado y brazaletes." },
+  { id: "dogday", name: "DogDay", tag: "Poppy", price: 860, rarity: "Épico", category: "Poppy", unlock: "shop", blurb: "Naranja soleado, collar dorado y sonrisa de sol." },
+  { id: "craftycorn", name: "CraftyCorn", tag: "Poppy", price: 880, rarity: "Épico", category: "Poppy", unlock: "shop", blurb: "Azul cielo, cuerno pastel y mancha arcoíris." },
+  { id: "alex", name: "Alex", tag: "Minecraft", price: 520, rarity: "Raro", category: "Minecraft", unlock: "shop", blurb: "Pelo naranja pixel y camisa de exploradora." },
+  { id: "ender", name: "Enderman", tag: "Minecraft", price: 600, rarity: "Raro", category: "Minecraft", unlock: "shop", blurb: "Alto, oscuro y con ojos violeta. No lo mires." },
+  { id: "boxer", name: "Boxeadora", tag: "Ring", price: 640, rarity: "Épico", category: "Disfraz", unlock: "shop", blurb: "Guantes rojos, cinta en la frente y cinturón de campeona." },
+  { id: "laufey", name: "Laufey", tag: "Jazz", price: 760, rarity: "Épico", category: "Disfraz", unlock: "shop", blurb: "Flequillo de cortina, vestido vintage y micrófono de oro. Baller de la panadería." },
+  { id: "penguin", name: "Pingüino", tag: "Ártico", price: 520, rarity: "Raro", category: "Disfraz", unlock: "shop", blurb: "Esmoquin natural, pico naranja y aletas para deslizarse." },
+  { id: "bigotes", name: "Bigotes el Feo", tag: "Solo al derrotarlo", price: 0, rarity: "Feo", category: "Feo", unlock: "bigotes", blurb: "Parche, collar de pinchos y dientes chuecos. Se pone la piel del villano… si sobrevive a él." },
+  { id: "eevee", name: "Eevee", tag: "Pokémon", price: 640, rarity: "Épico", category: "Pokémon", unlock: "shop", blurb: "Melena crema, collar de pelusa y orejitas marrones. Evoluciona… en pancito." },
+  { id: "kira", name: "Kira", tag: "Pastora", price: 580, rarity: "Raro", category: "Familia", unlock: "shop", blurb: "Pastora alemana: silla negra, capa fuego y mirada de guardiana." },
+  { id: "spooky", name: "Spooky", tag: "Gato negro", price: 420, rarity: "Raro", category: "Disfraz", unlock: "shop", blurb: "Gato negro de medianoche, ojos amarillos y cola de bruja." },
+  { id: "matrona", name: "Matrona", tag: "Obstetricia", price: 700, rarity: "Épico", category: "Familia", unlock: "shop", blurb: "Uniforme rojo de matrona chilena, cruz blanca y estetoscopio. A cuidar pancitos." },
+  { id: "subzero", name: "Sub-Zero", tag: "Lin Kuei", price: 860, rarity: "Legendario", category: "Héroes", unlock: "shop", blurb: "Máscara azul, hielo en las patas y klon-clone de harina." },
+  { id: "barbie", name: "Barbie", tag: "Malibú", price: 720, rarity: "Épico", category: "Princesa", unlock: "shop", blurb: "Moño rubio, vestido rosa y estrella. Puedes ser lo que quieras hornear." },
+  { id: "bebe", name: "Maxine Bebé", tag: "Familia", price: 300, rarity: "Común", category: "Familia", unlock: "shop", blurb: "Chiquitita, ojitos de tapioca y un calcetín. Todavía no cava, pero lo intenta." },
+  { id: "abuela", name: "Maxine Abuelita", tag: "Familia", price: 480, rarity: "Raro", category: "Familia", unlock: "shop", blurb: "Gafas, chal de lana y canas. Hornea desde 1978." },
+  { id: "sabio", name: "Maxine Sabia", tag: "Familia", price: 900, rarity: "Legendario", category: "Familia", unlock: "shop", blurb: "Barba larga, báculo de baguette y halo de migas. Conoce la receta secreta." },
+  { id: "freddy", name: "Freddy", tag: "FNAF", price: 780, rarity: "Épico", category: "FNAF", unlock: "shop", blurb: "Sombrero de copa, micrófono y corbatín. La pizzería abre a medianoche." },
+  { id: "foxy", name: "Foxy", tag: "FNAF", price: 800, rarity: "Épico", category: "FNAF", unlock: "shop", blurb: "La más tierna del muelle: parche rosa, cola esponjosa y garrito de caramelo." },
+  { id: "bonnie", name: "Bonnie", tag: "FNAF", price: 760, rarity: "Épico", category: "FNAF", unlock: "shop", blurb: "Conejo violeta, guitarra roja y orejas enormes." },
+  { id: "chica", name: "Chica", tag: "FNAF", price: 760, rarity: "Épico", category: "FNAF", unlock: "shop", blurb: "Babero LET'S EAT y cupcake. Pico de pollito, corazón de hojaldre." },
+  { id: "hada", name: "Hada del trigal", tag: "Secreta", price: 0, rarity: "Legendario", category: "Secreto", unlock: "secret", blurb: "Alas de harina. Solo aparece si husmeás el claro del campo." },
+  { id: "panadero", name: "Panadero", tag: "Oficio", price: 440, rarity: "Raro", category: "Clásico", unlock: "shop", blurb: "Gorro alto, delantal y bigote de harina. A hornear." },
+  { id: "croissant", name: "Croissant", tag: "Hojaldre", price: 520, rarity: "Épico", category: "Disfraz", unlock: "shop", blurb: "Capas de mantequilla. Se deshace si la abrazás." },
+  { id: "lodo", name: "Maxine Lodosa", tag: "Secreta", price: 0, rarity: "Raro", category: "Secreto", unlock: "secret", blurb: "Barro hasta las cejas. El campo la adoptó." },
+  { id: "exploradora", name: "Exploradora", tag: "Secreta", price: 0, rarity: "Épico", category: "Secreto", unlock: "secret", blurb: "Sombrero de paja y mochila de migas. Lista para el mapa." },
+  { id: "llanta", name: "Neumático", tag: "Secreta", price: 0, rarity: "Épico", category: "Secreto", unlock: "secret", blurb: "Una llanta le queda de collar. Corre como kart de patio." },
+  { id: "cthulhu", name: "Cthulhu", tag: "R'lyeh", price: 1180, rarity: "Legendario", category: "Horror", unlock: "shop", blurb: "Tentáculos de masa madre. Ph'nglui mglw'nafh… ¿pan?" },
+  { id: "pennywise", name: "Pennywise", tag: "IT", price: 980, rarity: "Legendario", category: "Horror", unlock: "shop", blurb: "Globo rojo, peluca naranja. Flota… si hay hojaldre abajo." },
+  { id: "bodoque", name: "Juan Carlos Bodoque", tag: "31 Minutos", price: 860, rarity: "Épico", category: "31 Minutos", unlock: "shop", blurb: "Periodista de Nota Verde. Micrófono, camisa amarilla y furia editorial." },
+  { id: "juana", name: "Juana Carla", tag: "31 Minutos", price: 860, rarity: "Épico", category: "31 Minutos", unlock: "shop", blurb: "La misma Bodoque, pero rosa. Sigue cubriendo el horno en llamas." },
+  { id: "huachimingo", name: "Huachimingo", tag: "Mítica", price: 3100, rarity: "Mítica", category: "Mítica", unlock: "shop", blurb: "H. H. Huachimingo. Gris leopardo, dos antenas y boca roja. Colecciona pelusas desde hace 1500 años. Les juro que es verdad." },
 ];
 
-
-export const RARITY_COLOR: Record<Skin["rarity"], string> = {
+export const RARITY_COLOR: Record<SkinRarity, string> = {
   "Común": "#cfe8a8",
   "Raro": "#7fd0ff",
   "Épico": "#d9a6ff",
   "Legendario": "#ffd27a",
+  "Mítica": "#7fffd4",
+  "Feo": "#c07040",
 };
+
+export const CATEGORIES: SkinCategory[] = [
+  "Clásico",
+  "Familia",
+  "FNAF",
+  "Pokémon",
+  "Jujutsu",
+  "Monster High",
+  "Princesa",
+  "Héroes",
+  "Poppy",
+  "Star Wars",
+  "Minecraft",
+  "Disfraz",
+  "Feo",
+  "Secreto",
+  "Horror",
+  "31 Minutos",
+  "Mítica",
+];
+
+export const SKIN_MAP: Record<SkinId, Skin> = Object.fromEntries(SKINS.map((s) => [s.id, s])) as Record<SkinId, Skin>;
+
+/** Skins that recolor Maxine's whole body (not just a costume). */
+export const BODY_TRANSFORM: readonly SkinId[] = [
+  "kissy", "pochacco", "mahoraga", "yarnaby", "huggy", "catnap", "dogday", "craftycorn",
+  "creeper", "zombie", "penguin", "bigotes", "catto", "ender", "unicornio", "eevee",
+  "kira", "spooky", "freddy", "foxy", "bonnie", "chica", "croissant",
+  "cthulhu", "bodoque", "juana", "huachimingo",
+];
+
+export function isBodyTransform(id: SkinId): boolean {
+  return BODY_TRANSFORM.includes(id);
+}
+
+export function isHiddenUntilOwned(s: Skin, owned: readonly SkinId[]): boolean {
+  return s.unlock === "secret" && !owned.includes(s.id);
+}
+
+export function isUglyLocked(s: Skin, owned: readonly SkinId[], storyWon: boolean): boolean {
+  return s.unlock === "bigotes" && !storyWon && !owned.includes(s.id);
+}
+
+export function canBuySkin(s: Skin, owned: readonly SkinId[], crumbs: number, storyWon: boolean): boolean {
+  if (owned.includes(s.id)) return false;
+  if (s.unlock === "secret" || isUglyLocked(s, owned, storyWon)) return false;
+  return crumbs >= s.price;
+}
+
+export function visibleShopSkins(owned: readonly SkinId[]): Skin[] {
+  return SKINS.filter((s) => !isHiddenUntilOwned(s, owned));
+}

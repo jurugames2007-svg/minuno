@@ -1,4 +1,4 @@
-export type ToolId = "palito" | "sam" | "calcetin" | "pulpito" | "pelota" | "kissy" | "javiera" | "zapatitos" | "guyu" | "dixie" | "rodillo" | "batidora" | "sarten" | "cuchilla" | "sacabocados" | "delantal" | "guantes" | "gorro" | "mandil" | "tabla" | "propeler" | "cinturon" | "capa" | "linterna" | "iman" | "bolsa" | "termometro" | "escala" | "botas" | "zapatos";
+export type ToolId = "palito" | "sam" | "calcetin" | "pulpito" | "pelota" | "kissy" | "javiera" | "zapatitos" | "guyu" | "dixie" | "rodillo" | "batidora" | "sarten" | "cuchilla" | "sacabocados" | "delantal" | "guantes" | "gorro" | "mandil" | "tabla" | "propeler" | "cinturon" | "capa" | "linterna" | "iman" | "bolsa" | "termometro" | "escala" | "botas" | "zapatos" | "hueso" | "pico" | "casco";
 
 export interface ToolDef {
   id: ToolId;
@@ -16,6 +16,7 @@ export interface ToolDef {
   healOnDig?: boolean;  // small chance to heal when breaking
   spikeImmune?: boolean;// walk over spikes safely, breaking them
   footwear?: boolean;   // drawn on Maxine's feet instead of in her mouth
+  unlock?: "shop" | "secret";
   color: string;
 }
 
@@ -66,6 +67,9 @@ export const TOOLS: ToolDef[] = [
   { id: "escala",    name: "Escala Caramelo", tag: "trepar",            desc: "Escala pared temporal. Reach.",                                            priceBread: 85,  priceCrowns: 0, metaPrice: 7, speedMul: 1.2, reach: true, color: "#ff8fb6" },
   { id: "botas",     name: "Botas Antides.", tag: "antidesliz",          desc: "Previene resbalón en hielo/masa. SpikeImmune.",                           priceBread: 80,  priceCrowns: 0, metaPrice: 6, speedMul: 1.1, spikeImmune: true, color: "#5a3410" },
   { id: "zapatos",   name: "Zapatos Levadura", tag: "doble salto+",      desc: "Doble salto mejorado con levadura. Bounce + speed.",                       priceBread: 90,  priceCrowns: 0, metaPrice: 8, speedMul: 1.3, bounce: true, color: "#a8e880" },
+  { id: "hueso",     name: "Hueso enterrado", tag: "secreto · patio",   desc: "Desenterrado en el campo. Alcance de dos tiles y olor a patio.",           priceBread: 0, priceCrowns: 0, metaPrice: 0, speedMul: 1.4, reach: true, unlock: "secret", color: "#f4efe0" },
+  { id: "pico",      name: "Pico oxidado",    tag: "secreto · mina",    desc: "Rompe piedra de un golpe. Lo escondió un albañil de hojaldre.",            priceBread: 0, priceCrowns: 0, metaPrice: 0, speedMul: 1.55, wide: true, unlock: "secret", color: "#8a8a8a" },
+  { id: "casco",     name: "Casco de obra",   tag: "secreto · gruta",   desc: "Amarillo de yema. Absorbe un golpe y cava más seguro.",                    priceBread: 0, priceCrowns: 0, metaPrice: 0, speedMul: 1.2, bounce: true, unlock: "secret", color: "#ffd027" },
 
 ];
 
@@ -320,5 +324,11 @@ function renderPlush(id: ToolId) {
       return (<g><path d="M8 18 Q8 12 12 12 H20 Q22 12 22 16 V22 H8 Z" fill="#5a3410" stroke="#1a0c04" strokeWidth="1"/><path d="M8 20 H22 V22 H8 Z" fill="#0a0402"/></g>);
     case "zapatos":
       return (<g><path d="M8 16 Q8 12 12 12 H20 Q22 12 22 16 V20 H8 Z" fill="#a8e880" stroke="#2a5a10" strokeWidth="1"/><circle cx="14" cy="15" r="0.7" fill="#fff"/><circle cx="17" cy="15" r="0.7" fill="#fff"/></g>);
+    case "hueso":
+      return (<g><path d="M8 12 q-3 -3 0 -6 q3 -1 4 2 l10 10 q2 3 -2 4 q-3 1 -4 -2 Z" fill="#f4efe0" stroke="#8a7a60" strokeWidth="1"/><circle cx="8" cy="8" r="3" fill="#f4efe0" stroke="#8a7a60" strokeWidth="0.8"/><circle cx="6" cy="12" r="2.4" fill="#f4efe0" stroke="#8a7a60" strokeWidth="0.8"/><circle cx="24" cy="22" r="3" fill="#f4efe0" stroke="#8a7a60" strokeWidth="0.8"/><circle cx="22" cy="26" r="2.4" fill="#f4efe0" stroke="#8a7a60" strokeWidth="0.8"/></g>);
+    case "pico":
+      return (<g><rect x="14" y="10" width="4" height="16" rx="1" fill="#6a4020"/><path d="M6 12 L16 6 L26 12 L16 16 Z" fill="#8a8a8a" stroke="#3a3a3a" strokeWidth="1"/><path d="M8 12 L16 8 L24 12" stroke="#c9c9c9" strokeWidth="0.8" fill="none"/></g>);
+    case "casco":
+      return (<g><path d="M8 18 Q8 8 16 6 Q24 8 24 18 Z" fill="#ffd027" stroke="#8a6a00" strokeWidth="1"/><rect x="6" y="17" width="20" height="4" rx="1" fill="#e8b820" stroke="#8a6a00" strokeWidth="0.8"/><rect x="14" y="10" width="4" height="6" fill="#fff" opacity="0.5"/></g>);
   }
 }

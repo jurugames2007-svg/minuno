@@ -8,16 +8,9 @@ declare global {
 }
 
 const rootEl = document.getElementById("root")!;
-try {
-  createRoot(rootEl).render(
-    <StrictMode>
-      <App />
-    </StrictMode>
-  );
-  // signal ready on next frame so the splash can fade
-  requestAnimationFrame(() => setTimeout(() => { try { window.hideSplash && window.hideSplash(); } catch { /* noop */ } }, 80));
-} catch (err) {
-  const msg = err instanceof Error ? (err.stack || err.message || String(err)) : String(err);
-  rootEl.innerHTML = `<pre style="color:#ff8fa0;padding:20px;font-family:monospace;white-space:pre-wrap;font-size:14px;background:#1a0c04;border:2px solid #ff8fa0">DEBUG ERROR MAXINE:\n${msg}</pre>`;
-  try { window.hideSplash && window.hideSplash(msg); } catch { /* noop */ }
-}
+createRoot(rootEl).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);
+try { window.hideSplash?.(); } catch { /* */ }

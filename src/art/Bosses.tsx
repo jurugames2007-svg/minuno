@@ -10,12 +10,14 @@ export interface Boss {
   frozen: number; charge: number;
   stun: number; telegraph: number; vulnerable: boolean; shieldFlash: number;
   parts: Part[]; phase2: boolean; vulnTimer: number;
+  atkX: number; atkY: number; atkW: number; atkH: number;
 }
 
 export interface Bullet {
   id: number; x: number; y: number; vx: number; vy: number;
   life: number; kind: "dust" | "pan" | "panback" | "ice" | "flame" | "crumb" | "shock" | "bark" | "splinter" | "hairball" | "button" | "wood" | "ecto" | "dough" | "can" | "book";
   grav?: number;
+  ally?: boolean;
 }
 
 export interface BossCtx {
@@ -27,13 +29,16 @@ export interface BossCtx {
 }
 
 export function bossForLevel(level: number): BossType {
-  // V2 chronological order 1-10, then loop + bigotes every 10
-  const order: BossType[] = ["escoba","gato","antisam","caballo","fantasma","cuchara","hornito","refriRey","alacena","bigotesGrande"];
-  if (level >=1 && level <=10) return order[level-1];
-  if (level >10 && level % 10 ===0) return "bigotesGrande";
-  // bonus rotation for checkpoints beyond 10
-  const loop: BossType[] = ["escoba","gato","antisam","caballo","fantasma"];
-  return loop[(level-11)%loop.length];
+  // 20 géneros distintos; nivel 20 (y cada 20) = Bigotes el Feo
+  const order: BossType[] = [
+    "escoba", "vacuum", "chef", "caballo", "alacena",
+    "espectro", "fantasma", "cuchara", "gato", "pastelero",
+    "duende", "reinaMigas", "oven", "maestroChoco", "hornito",
+    "fridge", "bread", "antisam", "refriRey", "bigotes",
+  ];
+  if (level < 1) return order[0];
+  if (level % 20 === 0) return "bigotes";
+  return order[(level - 1) % 20];
 }
 export const BOSS_NAME: Record<BossType, string> = {
   escoba: "ESCOBA MÁGICA", gato: "GATO ARCOÍRIS", antisam: "ANTI-SAM", caballo: "CABALLO DE MADERA",
@@ -113,10 +118,16 @@ export function spawnBoss(type: BossType, level: number, left: number, right: nu
     hp: maxHp, maxHp, t:0, cd:1.3, phase:0, flash:0,
     homeY: top+90, minX:left+40, maxX:right-40, frozen:0, charge:0,
     stun:0, telegraph:0, vulnerable:false, shieldFlash:0, parts, phase2:false, vulnTimer:0,
+    atkX:0, atkY:0, atkW:0, atkH:0,
   };
 }
 
 export function bossPartsWorld(b: Boss){ return b.parts.map(p=>({ ...p, x: b.x+p.ox, y:b.y+p.oy })); }
+
+function warn(b: Boss, x: number, y: number, w: number, h: number, t = 0.85) {
+  b.telegraph = Math.max(b.telegraph, t);
+  b.atkX = x; b.atkY = y; b.atkW = w; b.atkH = h;
+}
 
 export function stepBoss(b:Boss, dt:number, ctx:BossCtx){
   b.t+=dt; b.flash=Math.max(0,b.flash-dt); b.shieldFlash=Math.max(0,b.shieldFlash-dt);
@@ -134,13 +145,13 @@ export function stepBoss(b:Boss, dt:number, ctx:BossCtx){
     else {
       const cycle=b.t% (phase===3?2.2:3.0);
       const isTelegraph= cycle> (phase===3?1.2:2.0);
-      if(isTelegraph){ b.telegraph=0.05; b.vulnerable=true; b.vx*=0.85; }
+      if(isTelegraph){ b.vulnerable=true; b.vx*=0.85; warn(b, b.x-50, b.y-12, 100, 82, 0.95); }
       else { b.vulnerable=false; b.x+=b.vx*enraged*dt; if(b.x<b.minX){b.x=b.minX;b.vx=Math.abs(b.vx);} if(b.x>b.maxX){b.x=b.maxX;b.vx=-Math.abs(b.vx);} }
       b.y=b.homeY+Math.sin(b.t*1.2)*12;
       if(b.cd<=0 && !isTelegraph){
         b.cd= (phase===1?1.6: phase===2?1.2:0.9)/enraged;
         if(phase===1){ for(let i=-1;i<=1;i++) ctx.spawnBullet({x:b.x+i*16, y:b.y+18, vx:i*20, vy:90, life:3, kind:"dust", grav:20}); ctx.spawnBullet({x:b.x, y:b.y+30, vx:0, vy:0, life:0.8, kind:"shock"}); }
-        if(phase===2){ ctx.spawnBullet({x:b.x, y:b.y+10, vx:(Math.random()-0.5)*160, vy:180, life:2.5, kind:"splinter", grav:120}); }
+        if(phase===2){ for(let i=-2;i<=2;i++) ctx.spawnBullet({x:b.x, y:b.y+10, vx:i*55, vy:165, life:2.4, kind:"splinter", grav:130}); }
         if(phase===3){ b.charge=0.6; for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; ctx.spawnBullet({x:b.x, y:b.y, vx:Math.cos(a)*110, vy:Math.sin(a)*110, life:1.8, kind:"dust"});} ctx.shake(3); }
       }
     }
@@ -156,6 +167,7 @@ export function stepBoss(b:Boss, dt:number, ctx:BossCtx){
       if(b.cd<=0){
         b.cd=(phase===1?1.4: phase===2?1.3:1.8)/enraged;
         if(phase===1){ b.vy=-240; b.y+=b.vy*dt; // salto onda
+          warn(b, b.x-70, b.y+10, 140, 36, 0.7);
           ctx.spawnBullet({x:b.x, y:b.y+20, vx:90, vy:0, life:2, kind:"shock"});
           ctx.spawnBullet({x:b.x, y:b.y+20, vx:-90, vy:0, life:2, kind:"shock"});
           b.vulnTimer=0.6; ctx.shake(4);
@@ -175,8 +187,8 @@ export function stepBoss(b:Boss, dt:number, ctx:BossCtx){
     b.y=b.homeY+Math.sin(b.t*0.9)*8;
     if(b.cd<=0){
       b.cd=1.2/enraged;
-      if(b.phase%2===0){ ctx.spawnBullet({x:b.x, y:b.y, vx:(Math.random()<0.5?-1:1)*80, vy:100, life:3, kind:"button", grav:140}); }
-      else { ctx.spawnBullet({x:b.x, y:b.y+10, vx:0, vy:0, life:2, kind:"shock"}); /* telaraña */ b.frozen=0; }
+      if(b.phase%2===0){ warn(b, b.x-18, b.y-8, 36, 70, 0.7); ctx.spawnBullet({x:b.x, y:b.y, vx:(Math.random()<0.5?-1:1)*80, vy:100, life:3, kind:"button", grav:140}); }
+      else { warn(b, ctx.playerX-24, ctx.playerY-10, 48, 48, 0.65); ctx.spawnBullet({x:b.x, y:b.y+10, vx:0, vy:0, life:2, kind:"shock"}); }
       b.phase++;
       if(b.t>12 && !b.phase2){ b.phase2=true; b.vx*=1.4; }
     }
@@ -192,7 +204,7 @@ export function stepBoss(b:Boss, dt:number, ctx:BossCtx){
       b.y=b.homeY+Math.sin(b.t*1.8)*6;
       if(b.cd<=0){
         b.cd=2.0/enraged;
-        if(b.phase%3===0){ b.charge=0.9; b.telegraph=0.6; b.vx=(Math.random()<0.5?1:-1)*160; }
+        if(b.phase%3===0){ b.charge=0.9; b.telegraph=0.7; warn(b, b.minX, b.y-20, b.maxX-b.minX, 50, 0.7); b.vx=(Math.random()<0.5?1:-1)*160; }
         else if(b.phase%3===1){ for(let i=0;i<3;i++) ctx.spawnBullet({x:b.x + (Math.random()-0.5)*30, y:b.y-30, vx:0, vy:120, life:3, kind:"wood", grav:180}); }
         else { b.vy=-280; ctx.shake(5); ctx.spawnBullet({x:b.x-40, y:b.y+20, vx:0, vy:0, life:1, kind:"shock"}); ctx.spawnBullet({x:b.x+40, y:b.y+20, vx:0, vy:0, life:1, kind:"shock"}); }
         b.phase++;
@@ -208,8 +220,8 @@ export function stepBoss(b:Boss, dt:number, ctx:BossCtx){
       b.cd=1.4/enraged;
       if(intangible){ /* atraviesa paredes no colision */ }
       else {
-        if(b.phase===2) ctx.spawnBullet({x:b.x, y:b.y, vx:(Math.random()-0.5)*80, vy:70, life:4, kind:"ecto", grav:10});
-        if(b.phase===3){ for(let i=0;i<2;i++) ctx.spawnBullet({x:b.x+ (Math.random()-0.5)*20, y:b.y, vx:(Math.random()-0.5)*100, vy:-30, life:2, kind:"pan"}); }
+        if(b.phase===2){ warn(b, b.x-28, b.y-10, 56, 70, 0.7); ctx.spawnBullet({x:b.x, y:b.y, vx:(Math.random()-0.5)*80, vy:70, life:4, kind:"ecto", grav:10}); }
+        if(b.phase===3){ warn(b, ctx.playerX-22, ctx.playerY-22, 44, 44, 0.6); for(let i=0;i<2;i++) ctx.spawnBullet({x:b.x+ (Math.random()-0.5)*20, y:b.y, vx:(Math.random()-0.5)*100, vy:-30, life:2, kind:"pan"}); }
       }
     }
     if(stunned) b.vulnerable=true;
@@ -219,7 +231,7 @@ export function stepBoss(b:Boss, dt:number, ctx:BossCtx){
     if(stunned){ b.vulnerable=true; b.x+=Math.sin(b.t*30)*0.6; }
     else {
       const cycle=b.t%3.0;
-      if(cycle>2.0){ b.telegraph=0.05; b.vulnerable=true; b.vx*=0.9; }
+      if(cycle>2.0){ b.telegraph=1.0; b.vulnerable=true; b.vx*=0.9; warn(b, b.x-36, b.y-10, 72, 80, 1.0); }
       else { b.vulnerable=false; b.x+=b.vx*enraged*dt; if(b.x<b.minX){b.x=b.minX;b.vx=Math.abs(b.vx);} if(b.x>b.maxX){b.x=b.maxX;b.vx=-Math.abs(b.vx);} }
       b.y=b.homeY+Math.sin(b.t*1.2)*10;
       if(b.cd<=0 && cycle<2.0){
@@ -237,7 +249,7 @@ export function stepBoss(b:Boss, dt:number, ctx:BossCtx){
       b.vulnerable=false;
       b.x+=b.vx*0.8*dt; if(b.x<b.minX){b.x=b.minX;b.vx=Math.abs(b.vx);} if(b.x>b.maxX){b.x=b.maxX;b.vx=-Math.abs(b.vx);}
       b.y+=(b.homeY-b.y)*Math.min(1,dt*3);
-      if(b.cd<=0){ b.cd=2.4/enraged; b.charge=0.7; b.x=ctx.playerX; b.telegraph=0.5; }
+      if(b.cd<=0){ b.cd=2.4/enraged; b.charge=0.7; b.x=ctx.playerX; b.telegraph=0.7; warn(b, ctx.playerX-30, b.homeY, 60, 80, 0.7); }
     } else {
       b.vulnerable=false; b.charge-=dt; b.y+=460*dt;
       if(b.y>ctx.bottom-80){ b.y=ctx.bottom-80; b.charge=0; b.vulnTimer=1.1; ctx.shake(8);
@@ -253,6 +265,7 @@ export function stepBoss(b:Boss, dt:number, ctx:BossCtx){
     if(b.cd<=0){
       b.cd=1.2/enraged;
       const dir=b.phase%2===0?1:-1; b.phase++;
+      warn(b, dir>0? b.x: b.minX, b.y-16, dir>0? b.maxX-b.x: b.x-b.minX, 36, 0.7);
       ctx.spawnBullet({x:b.x+dir*24, y:b.y, vx:dir*170, vy:0, life:3, kind:"ice"});
       ctx.spawnBullet({x:b.x, y:b.y-10, vx:0, vy:90, life:3, kind:"ice"});
       if(b.phase%4===0) b.frozen=1.2;
@@ -281,7 +294,7 @@ export function stepBoss(b:Boss, dt:number, ctx:BossCtx){
         b.telegraph= b.vulnerable?0.05:0;
       } else {
         const cyc=b.t%(2.6/sp);
-        if(cyc<0.55){ b.vulnerable=false; b.x+=(b.vx>0?1:-1)*260*sp*dt; }
+        if(cyc<0.55){ b.vulnerable=false; warn(b, b.minX, b.y-22, b.maxX-b.minX, 50, 0.55); b.x+=(b.vx>0?1:-1)*260*sp*dt; }
         else { b.vulnerable=true; b.x+=b.vx*0.7*dt; }
       }
       if(b.x<b.minX){b.x=b.minX;b.vx=Math.abs(b.vx);} if(b.x>b.maxX){b.x=b.maxX;b.vx=-Math.abs(b.vx);}
@@ -295,7 +308,7 @@ export function stepBoss(b:Boss, dt:number, ctx:BossCtx){
     }
   } else if(b.type==="vacuum"){
     if(stunned){ b.vulnerable=true; b.x+=Math.sin(b.t*30)*0.6; }
-    else { const cyc=b.t%3.1; if(cyc>2.2){ b.telegraph=0.05; b.vulnerable=true; b.vx*=0.85; } else { b.vulnerable=false; b.x+=b.vx*enraged*dt; if(b.x<b.minX){b.x=b.minX;b.vx=Math.abs(b.vx);} if(b.x>b.maxX){b.x=b.maxX;b.vx=-Math.abs(b.vx);} } b.y=b.homeY+Math.sin(b.t*1.4)*14; if(b.cd<=0 && cyc<2.2){ b.cd=2.0/enraged; for(let i=-1;i<=1;i++) ctx.spawnBullet({x:b.x+i*14,y:b.y+22,vx:i*30,vy:140,life:3,kind:"dust",grav:40}); } }
+    else { const cyc=b.t%3.1; if(cyc<0.85){ b.telegraph=0.85-cyc; b.vulnerable=true; b.vx*=0.85; warn(b, b.x-40, b.y, 80, 70, 0.85-cyc); } else { b.vulnerable=false; b.x+=b.vx*enraged*dt; if(b.x<b.minX){b.x=b.minX;b.vx=Math.abs(b.vx);} if(b.x>b.maxX){b.x=b.maxX;b.vx=-Math.abs(b.vx);} } b.y=b.homeY+Math.sin(b.t*1.4)*14; if(b.cd<=0 && cyc>=0.85){ b.cd=2.0/enraged; for(let i=-1;i<=1;i++) ctx.spawnBullet({x:b.x+i*14,y:b.y+22,vx:i*30,vy:140,life:3,kind:"dust",grav:40}); } }
   } else if(b.type==="chef"){
     b.vulnerable=stunned||b.vulnTimer>0;
     if(!stunned){
@@ -456,7 +469,7 @@ function Caballo({t, charge}:{t:number, charge:number}){
     </g>
   );
 }
-function Fantasma({t, vulnerable}:{t:number, vulnerable:boolean}){
+function Fantasma({t:_t, vulnerable}:{t:number, vulnerable:boolean}){
   return(
     <g opacity={vulnerable?1:0.45}>
       <path d="M30 50 Q30 32 50 32 Q70 32 70 50 Q70 70 60 74 Q54 78 50 74 Q46 78 40 74 Q30 70 30 50 Z" fill="#f4f1e6" stroke="#7a7060" strokeWidth="1.2"/>
@@ -467,8 +480,8 @@ function Fantasma({t, vulnerable}:{t:number, vulnerable:boolean}){
     </g>
   );
 }
-function Cuchara({t}:{t:number}){
-  const rot=Math.sin(t*1.2)*6;
+function Cuchara({t:_t}:{t:number}){
+  const rot=Math.sin(_t*1.2)*6;
   return(
     <g transform={`rotate(${rot} 50 50)`}>
       <rect x="48" y="40" width="4" height="30" rx="2" fill="#d7d2c4" stroke="#6a6555" strokeWidth="1.2"/>
@@ -477,7 +490,7 @@ function Cuchara({t}:{t:number}){
     </g>
   );
 }
-function Hornito({t, charge, open}:{t:number, charge:number, open:boolean}){
+function Hornito({t, charge:_charge, open}:{t:number, charge:number, open:boolean}){
   const glow=0.6+Math.sin(t*6)*0.3;
   return(
     <g>
@@ -489,7 +502,7 @@ function Hornito({t, charge, open}:{t:number, charge:number, open:boolean}){
     </g>
   );
 }
-function RefriRey({t}:{t:number}){
+function RefriRey({t:_t}:{t:number}){
   return(
     <g>
       <rect x="20" y="14" width="60" height="72" rx="8" fill="#e8f4fa" stroke="#4a8aa8" strokeWidth="2"/>
@@ -501,7 +514,7 @@ function RefriRey({t}:{t:number}){
     </g>
   );
 }
-function Alacena({t}:{t:number}){
+function Alacena({t:_t}:{t:number}){
   return(
     <g>
       <rect x="16" y="18" width="68" height="66" rx="4" fill="#6a3a10" stroke="#3a2010" strokeWidth="1.6"/>
@@ -635,11 +648,11 @@ function Bigotes({ t, phase2, charging }: { t: number; phase2: boolean; charging
     </g>
   );
 }
-function Pastelero({t}:{t:number}){ return <g><ellipse cx="50" cy="88" rx="24" ry="4" fill="#000" opacity="0.2"/><rect x="26" y="36" width="48" height="32" rx="6" fill="#ffd27a" stroke="#7a4a1a" strokeWidth="1.2"/><circle cx="50" cy="28" r="10" fill="#ff8fa0" stroke="#7a1430" strokeWidth="1"/><circle cx="46" cy="26" r="1" fill="#000"/><circle cx="54" cy="26" r="1" fill="#000"/></g>;}
-function Duende({t}:{t:number}){ return <g><circle cx="50" cy="44" r="14" fill="#7fc24a" stroke="#2a5a10" strokeWidth="1.2"/><rect x="44" y="30" width="12" height="8" rx="2" fill="#d44a6a"/><circle cx="46" cy="44" r="2" fill="#000"/><circle cx="54" cy="44" r="2" fill="#000"/></g>;}
-function ReinaMigas({t}:{t:number}){ return <g><ellipse cx="50" cy="88" rx="22" ry="4" fill="#000" opacity="0.2"/><ellipse cx="50" cy="58" rx="18" ry="12" fill="#5a2a0a" stroke="#1a0c04" strokeWidth="1"/><circle cx="50" cy="38" r="10" fill="#ffd27a" stroke="#7a4a1a" strokeWidth="1"/><path d="M44 56 q6 4 12 0" stroke="#000" strokeWidth="1" fill="none"/></g>;}
-function MaestroChoco({t}:{t:number}){ return <g><rect x="28" y="36" width="44" height="30" rx="4" fill="#5a2a0a" stroke="#1a0c04" strokeWidth="1.2"/><rect x="32" y="20" width="36" height="18" rx="3" fill="#fff" stroke="#1a0c04" strokeWidth="1"/><circle cx="46" cy="28" r="1.2" fill="#000"/><circle cx="54" cy="28" r="1.2" fill="#000"/></g>;}
-function Espectro({t}:{t:number}){ return <g opacity="0.85"><path d="M30 50 Q30 30 50 30 Q70 30 70 50 Q70 70 60 74 Q50 78 40 74 Q30 70 30 50 Z" fill="#d8f4ff" stroke="#4a8aa8" strokeWidth="1"/><circle cx="44" cy="48" r="2" fill="#4a8aa8"/><circle cx="56" cy="48" r="2" fill="#4a8aa8"/><path d="M46 56 q4 3 8 0" stroke="#4a8aa8" strokeWidth="1" fill="none"/></g>;}
+function Pastelero({t:_t}:{t:number}){ return <g><ellipse cx="50" cy="88" rx="24" ry="4" fill="#000" opacity="0.2"/><rect x="26" y="36" width="48" height="32" rx="6" fill="#ffd27a" stroke="#7a4a1a" strokeWidth="1.2"/><circle cx="50" cy="28" r="10" fill="#ff8fa0" stroke="#7a1430" strokeWidth="1"/><circle cx="46" cy="26" r="1" fill="#000"/><circle cx="54" cy="26" r="1" fill="#000"/></g>;}
+function Duende({t:_t}:{t:number}){ return <g><circle cx="50" cy="44" r="14" fill="#7fc24a" stroke="#2a5a10" strokeWidth="1.2"/><rect x="44" y="30" width="12" height="8" rx="2" fill="#d44a6a"/><circle cx="46" cy="44" r="2" fill="#000"/><circle cx="54" cy="44" r="2" fill="#000"/></g>;}
+function ReinaMigas({t:_t}:{t:number}){ return <g><ellipse cx="50" cy="88" rx="22" ry="4" fill="#000" opacity="0.2"/><ellipse cx="50" cy="58" rx="18" ry="12" fill="#5a2a0a" stroke="#1a0c04" strokeWidth="1"/><circle cx="50" cy="38" r="10" fill="#ffd27a" stroke="#7a4a1a" strokeWidth="1"/><path d="M44 56 q6 4 12 0" stroke="#000" strokeWidth="1" fill="none"/></g>;}
+function MaestroChoco({t:_t}:{t:number}){ return <g><rect x="28" y="36" width="44" height="30" rx="4" fill="#5a2a0a" stroke="#1a0c04" strokeWidth="1.2"/><rect x="32" y="20" width="36" height="18" rx="3" fill="#fff" stroke="#1a0c04" strokeWidth="1"/><circle cx="46" cy="28" r="1.2" fill="#000"/><circle cx="54" cy="28" r="1.2" fill="#000"/></g>;}
+function Espectro({t:_t}:{t:number}){ return <g opacity="0.85"><path d="M30 50 Q30 30 50 30 Q70 30 70 50 Q70 70 60 74 Q50 78 40 74 Q30 70 30 50 Z" fill="#d8f4ff" stroke="#4a8aa8" strokeWidth="1"/><circle cx="44" cy="48" r="2" fill="#4a8aa8"/><circle cx="56" cy="48" r="2" fill="#4a8aa8"/><path d="M46 56 q4 3 8 0" stroke="#4a8aa8" strokeWidth="1" fill="none"/></g>;}
 
 export function BulletView({ b }: { b: Bullet }) {
   if (b.kind === "dust") return <div className="absolute rounded-full" style={{ left: b.x - 5, top: b.y - 5, width: 10, height: 10, background: "radial-gradient(circle,#d9c39a,#7a5a2c)", boxShadow: "0 0 6px #d9c39a88" }} />;

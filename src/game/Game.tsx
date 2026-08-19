@@ -1,13 +1,17 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactElement } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import Maxine, { type Pose } from "../art/Maxine";
 import { Plushie, TOOL_MAP, TOOLS, type ToolId } from "../art/Plushie";
 import { Bread, type BreadType, Heart, Crown, PowerIcon, Flour, zoneOf, ZONE_NAME } from "../art/Decor";
-import { type Boss, type Bullet, type BossCtx, spawnBoss, stepBoss, bossForLevel, BossView, BulletView, BOSS_NAME, BOSS_TAUNT, bossPartsWorld } from "../art/Bosses";
+import { type Boss, type Bullet, type BossCtx, spawnBoss, stepBoss, bossForLevel, BossView, BulletView, bossPartsWorld } from "../art/Bosses";
 import type { SkinId } from "../data/skins";
 import * as Audio from "./AudioEngine";
+import BossStage from "./BossStage";
+import { COLS, TILE, LEVEL_LEN, GATE_H, REST_H, CYCLE } from "../data/world";
+import PawButton from "../ui/PawButton";
+import MagicButton from "../ui/MagicButton";
+import ChromeBtn from "../ui/ChromeBtn";
+import { spellForBoss, type SpellId } from "../data/spells";
 
-const COLS = 8;
-const TILE = 45;
 const STAGE_W = COLS * TILE;
 const STAGE_H = 640;
 const PW = TILE * 0.6;
@@ -16,13 +20,9 @@ const G = 1400;
 const JUMP_V = 470;
 const MAX_FALL = 540;
 const MOVE = 175;
+const ARENA_H = GATE_H;
 
-const LEVEL_LEN = 32;
-const ARENA_H = 9;
-const REST_H = 4;
-const CYCLE = LEVEL_LEN + ARENA_H + REST_H + 2; // +door +floor
-
-type Cell = 0 | 1 | 2 | 3 | 4 | 5 | 6; // 6=PLATFORM flotante
+type Cell = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7; // 6=PLATFORM flotante, 7=mena de migas
 type EnemyType = "spoon" | "mouse" | "whisk" | "bubble" | "spatula";
 interface Enemy { id: number; x: number; y: number; vx: number; vy: number; minX: number; maxX: number; type: EnemyType; hp: number; hitCd: number; homeY: number; stateT: number; active: boolean; }
 interface BreadItem { id: number; x: number; y: number; type: BreadType; taken: boolean; phase: number; }
@@ -30,7 +30,8 @@ interface PowerItem { id: number; x: number; y: number; kind: string; taken: boo
 interface Particle { x: number; y: number; vx: number; vy: number; life: number; max: number; color: string; size: number; }
 
 interface World { rows: Record<number, Cell[]>; enemies: Enemy[]; breads: BreadItem[]; powers: PowerItem[]; bullets: Bullet[]; isRest: Record<number, boolean>; isBoss: Record<number, boolean>; doorRow: Record<number, number>; }
-interface Player { x: number; y: number; prevY: number; vx: number; vy: number; onGround: boolean; facing: 1 | -1; invuln: number; hurtTimer: number; digTimer: number; attackTimer: number; attackCd: number; coyote: number; jumpBuf: number; usedDouble: boolean; wallSlide: number; wallDir: 0|1|-1; }
+interface Ghost { x: number; y: number; life: number; face: 1 | -1 }
+interface Player { x: number; y: number; prevY: number; vx: number; vy: number; onGround: boolean; facing: 1 | -1; invuln: number; hurtTimer: number; digTimer: number; attackTimer: number; attackCd: number; coyote: number; jumpBuf: number; usedDouble: boolean; wallSlide: number; wallDir: 0|1|-1; dash: number; dashCd: number; charge: number; }
 interface Active { shield: number; magnet: number; speed: number; yeast: number; frozen: number; bounceUsed: boolean; boost: number; }
 
 function mulberry32(seed: number) {
@@ -53,10 +54,15 @@ interface Props {
   startTool: ToolId;
   ownedMeta: ToolId[];
   startLevel?: number;
+  storyWon?: boolean;
+  spells?: SpellId[];
+  spell?: SpellId | null;
+  onCycleSpell?: () => void;
+  onUnlockSpell?: (id: SpellId) => void;
 }
 
-export default function Game({ skin, onExit, onVictory, best, startTool, ownedMeta, startLevel=1 }: Props) {
-  const startRow = 3 + ((startLevel||1)-1)*47;
+export default function Game({ skin, onExit, onVictory, best, startTool, ownedMeta, startLevel=1, storyWon=false, spells=[], spell=null, onCycleSpell, onUnlockSpell }: Props) {
+  const startRow = 3 + ((startLevel||1)-1)*CYCLE;
   const stageRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const [, setTick] = useState(0);
@@ -66,6 +72,9 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
   const [resting, setResting] = useState(false);
   const restingRef = useRef(false);
   useEffect(() => { restingRef.current = resting; }, [resting]);
+  const [gate, setGate] = useState(false);
+  const gateRef = useRef(false);
+  useEffect(() => { gateRef.current = gate; }, [gate]);
 
   useLayoutEffect(() => {
     const el = stageRef.current?.parentElement; if (!el) return;
@@ -74,7 +83,8 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
   }, []);
 
   const world = useRef<World>({ rows: {}, enemies: [], breads: [], powers: [], bullets: [], isRest: {}, isBoss: {}, doorRow: {} });
-  const player = useRef<Player>({ x: 3 * TILE + TILE / 2 - PW / 2, y: startRow * TILE, prevY: startRow * TILE, vx: 0, vy: 0, onGround: false, facing: 1, invuln: 0, hurtTimer: 0, digTimer: 0, attackTimer: 0, attackCd: 0, coyote: 0, jumpBuf: 0, usedDouble: false, wallSlide: 0, wallDir: 0 });
+  const player = useRef<Player>({ x: 3 * TILE + TILE / 2 - PW / 2, y: startRow * TILE, prevY: startRow * TILE, vx: 0, vy: 0, onGround: false, facing: 1, invuln: 0, hurtTimer: 0, digTimer: 0, attackTimer: 0, attackCd: 0, coyote: 0, jumpBuf: 0, usedDouble: false, wallSlide: 0, wallDir: 0, dash: 0, dashCd: 0, charge: 0 });
+  const ghosts = useRef<Ghost[]>([]);
   const active = useRef<Active>({ shield: 0, magnet: 0, speed: 0, yeast: 0, frozen: 0, bounceUsed: false, boost: 0 });
   const cameraY = useRef(0);
   const hearts = useRef(3);
@@ -83,9 +93,9 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
   const crownsRun = useRef(0);
   const breadCount = useRef(0);
   const startY = useRef(startRow * TILE);
-  const maxDepth = useRef((startLevel||1)>1? (startLevel-1)*47:0);
+  const maxDepth = useRef((startLevel||1)>1? (startLevel-1)*CYCLE:0);
   const ids = useRef(1);
-  const input = useRef({ left: false, right: false, digEdge: false, jumpEdge: false, attackEdge: false, lastHoriz: 0 });
+  const input = useRef({ left: false, right: false, down: false, digEdge: false, jumpEdge: false, attackEdge: false, dashEdge: false, attackHold: false });
   const aim = useRef<{ x: number; y: number }>({ x: 0, y: 1 });
   const over = useRef(false);
   const elapsed = useRef(0);
@@ -106,12 +116,17 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
     const w = world.current; if (w.rows[r]) return;
     const R = rng.current; const off = offOf(r);
     if (r < 3) { w.rows[r] = new Array(COLS).fill(0); return; }
-    // ARENA
+    // ARENA — torre de estantes (irrompibles, un sentido) para subir y bajar fácil
     if (off >= LEVEL_LEN && off < LEVEL_LEN + ARENA_H) {
       const row = new Array(COLS).fill(0) as Cell[]; row[0] = 2; row[COLS - 1] = 2;
       const local = off - LEVEL_LEN;
-      if (local === 3) { row[1] = 2; row[2] = 2; row[COLS - 3] = 2; row[COLS - 2] = 2; }
-      if (local === 6) { row[3] = 2; row[4] = 2; }
+      if (local === ARENA_H - 1) { for (let c = 1; c < COLS - 1; c++) row[c] = 2; }
+      else if (local === 7) { row[1] = 6; row[2] = 6; }
+      else if (local === 6) { row[3] = 6; row[4] = 6; }
+      else if (local === 5) { row[4] = 6; row[5] = 6; row[6] = 6; }
+      else if (local === 3) { row[1] = 6; row[2] = 6; row[3] = 6; }
+      else if (local === 2) { row[3] = 6; }
+      else if (local === 1) { row[4] = 6; row[5] = 6; row[6] = 6; }
       w.rows[r] = row; w.isBoss[r] = true; return;
     }
     // DOOR
@@ -138,7 +153,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
     if (veinCol.current < 1) veinCol.current = 1; if (veinCol.current > COLS - 2) veinCol.current = COLS - 2;
     const v = veinCol.current; cells[v] = 0; cells[v + 1] = 0;
     // V2: fila de plataforma flotante (torre) — 30% prob cada 3 filas
-    const isPlatformRow = R() < 0.32 && (r % 3 === 0) && off > 3 && off < LEVEL_LEN - 2;
+    const isPlatformRow = R() < 0.48 && (r % 2 === 0) && off > 2 && off < LEVEL_LEN - 2;
     if (isPlatformRow) {
       // Convertir a fila de plataformas: vacía con muros laterales y plataformas flotantes 6
       for(let c=1;c<COLS-1;c++) cells[c]=0;
@@ -171,6 +186,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       else if (!nearVein && x < (easy ? 0.20 : 0.29)) cells[c] = 3;
       else if (x < 0.34) cells[c] = R() < 0.5 ? 4 : 5;
       if (cells[c] === 2) { stoneRun++; if (stoneRun > 2) { cells[c] = 1; stoneRun = 0; } } else stoneRun = 0; // no stone slab wider than 2
+      if (cells[c] === 1 && R() < 0.045) cells[c] = 7;
     }
     // hard guarantee: the vein and its shoulders are never spike/stone -> a soft-lock is impossible
     for (const c of [v - 1, v, v + 1, v + 2]) if (c > 0 && c < COLS - 1 && (cells[c] === 2 || cells[c] === 3)) cells[c] = 1;
@@ -215,7 +231,9 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
     return false;
   }
 
-  const solid = (c: Cell) => c === 1 || c === 2 || c === 3 || c === 6;
+  const solid = (c: Cell) => c === 1 || c === 2 || c === 3 || c === 7;
+  const isPlat = (c: Cell) => c === 6;
+  const PLAT_TOP = 18;
 
   const particles = useRef<Particle[]>([]);
   function spawnDust(x: number, y: number, color: string, n = 8) { for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2; const sp = 30 + Math.random() * 110; particles.current.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 40, life: 0.5, max: 0.5, color, size: 2 + Math.random() * 3 }); } }
@@ -248,9 +266,9 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
     for (const [rr, cc] of targets) {
       if (cc < 1 || cc > COLS - 2) continue; // border walls are indestructible — you can never dig out of the kitchen
       const cyc = cycleOf(rr); const lockedDoor = world.current.doorRow[cyc] === rr && !bossDefeated.current[cyc + 1];
-      if (lockedDoor) { spawnDust(cc * TILE + TILE / 2, rr * TILE + TILE / 2, "#9aa0a8", 4); continue; } // the gate won't budge until the boss falls
+      if (lockedDoor || world.current.isBoss[rr]) { spawnDust(cc * TILE + TILE / 2, rr * TILE + TILE / 2, "#9aa0a8", 4); continue; }
       const cell = getCell(rr, cc);
-      if (cell === 1 || cell === 4 || cell === 5 || cell === 6) { setCell(rr, cc, 0); broke = true; const col = cell===6? "#d7c9a0": cell === 1 ? "#caa06a" : "#e3a35a"; spawnDust(cc * TILE + TILE / 2, rr * TILE + TILE / 2, col, 10); score.current += 2; if (t.healOnDig && Math.random() < 0.14 && hearts.current < 5) { hearts.current++; spawnDust(p.x + PW / 2, p.y, "#ff8fa0", 10); } }
+      if (cell === 1 || cell === 4 || cell === 5 || cell === 6 || cell === 7) { setCell(rr, cc, 0); broke = true; const col = cell===7? "#ffd27a": cell===6? "#d7c9a0": cell === 1 ? "#caa06a" : "#e3a35a"; spawnDust(cc * TILE + TILE / 2, rr * TILE + TILE / 2, col, cell===7? 16:10); score.current += cell===7? 14:2; if (cell===7) { breadRun.current += 2; crownsRun.current += 1; } if (t.healOnDig && Math.random() < 0.14 && hearts.current < 5) { hearts.current++; spawnDust(p.x + PW / 2, p.y, "#ff8fa0", 10); } }
       else if (cell === 2) { const key = `${rr},${cc}`; const need = t.speedMul >= 1.3 ? 1 : 2; const have = (stoneHits.current.get(key) ?? 0) + 1; if (have >= need) { setCell(rr, cc, 0); stoneHits.current.delete(key); broke = true; spawnDust(cc * TILE + TILE / 2, rr * TILE + TILE / 2, "#d7d2c4", 12); score.current += 3; } else { stoneHits.current.set(key, have); spawnDust(cc * TILE + TILE / 2, rr * TILE + TILE / 2, "#ffffff", 5); } }
     }
     if (broke) { p.digTimer = 0.18 / t.speedMul; Audio.playDig(); if (ax !== 0 && ay === 0) { const targetX = (pc + ax) * TILE + (ax > 0 ? 2 : TILE - PW - 2); p.x += (targetX - p.x) * 0.6; p.facing = ax as 1 | -1; } if (ay === 1) p.onGround = false; }
@@ -264,12 +282,26 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
     return { x: cx + dx * TILE * 0.6 - (dx === 0 ? w / 2 : 0) - (dx > 0 ? 0 : w * 0.3), y: cy + dy * TILE * 0.5 - h / 2, w, h, dx, dy };
   }
 
-  function doAttack() {
+  function doAttack(charged = false) {
     const p = player.current; if (p.attackCd > 0) return;
-    p.attackCd = 0.32; p.attackTimer = 0.18;
-    const t = TOOL_MAP[tool.current]; const dmg = 1 + (t.speedMul >= 1.45 ? 1 : 0) + (t.healOnDig ? 1 : 0);
+    p.attackCd = charged ? 0.42 : 0.28; p.attackTimer = charged ? 0.26 : 0.18;
+    const t = TOOL_MAP[tool.current]; const dmg = 1 + (t.speedMul >= 1.45 ? 1 : 0) + (t.healOnDig ? 1 : 0) + (charged ? 2 : 0);
     const arc = attackArc();
-    spawnDust(arc.x + arc.w / 2, arc.y + arc.h / 2, "#fff3d6", 6); Audio.playAttack();
+    if (charged) { arc.w += 18; arc.h += 10; arc.x -= 6; shake.current = Math.max(shake.current, 5); Audio.playCharge(); }
+    spawnDust(arc.x + arc.w / 2, arc.y + arc.h / 2, charged ? "#7fd0ff" : "#fff3d6", charged ? 14 : 6); Audio.playAttack();
+    if (spell) {
+      const cx = p.x + PW / 2, cy = p.y + PH / 2, f = p.facing;
+      if (spell === "barrido") { for (let i = -1; i <= 1; i++) world.current.bullets.push({ id: ids.current++, x: cx + f * 10, y: cy, vx: f * 180, vy: i * 70, life: 0.7, kind: "dust", ally: true }); }
+      if (spell === "arcoiris") { p.invuln = Math.max(p.invuln, 0.55); p.vx = f * 260; p.x += f * 18; }
+      if (spell === "costura") { active.current.shield = Math.max(active.current.shield, 4); }
+      if (spell === "carga") { p.vx = f * 320; p.x += f * 28; }
+      if (spell === "espectro") { p.invuln = Math.max(p.invuln, 0.9); }
+      if (spell === "masa") { world.current.bullets.push({ id: ids.current++, x: cx, y: cy, vx: f * 140, vy: -160, life: 2, kind: "dough", grav: 280, ally: true }); }
+      if (spell === "llama") { world.current.bullets.push({ id: ids.current++, x: cx, y: cy, vx: f * 240, vy: 0, life: 1.2, kind: "flame", ally: true }); }
+      if (spell === "hielo") { active.current.frozen = 0; for (const e of world.current.enemies) { if (Math.hypot(e.x - cx, e.y - cy) < 90) { e.vx *= 0.2; e.hitCd = 0.8; } } }
+      if (spell === "iman") { active.current.magnet = Math.max(active.current.magnet, 10); }
+      if (spell === "ladrido") { for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; world.current.bullets.push({ id: ids.current++, x: cx, y: cy, vx: Math.cos(a) * 180, vy: Math.sin(a) * 180, life: 0.8, kind: "bark", ally: true }); } }
+    }
     for (const e of world.current.enemies) {
       if (e.hp >= 999) continue;
       if (e.x > arc.x && e.x < arc.x + arc.w && e.y > arc.y && e.y < arc.y + arc.h) {
@@ -311,7 +343,11 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
     const b = boss.current; if (!b) return;
     const L = level.current; bossDefeated.current[L] = true; bossActive.current = false;
     spawnDust(b.x, b.y, "#ffd27a", 40); shake.current = 14; score.current += 200; crownsRun.current += 3; Audio.playBossDefeat();
-    if (b.type === "bigotes" && L === 5) { boss.current = null; setTimeout(() => onVictory({ depth: maxDepth.current, score: score.current, bread: breadCount.current, crowns: crownsRun.current }), 750); return; }
+    if ((b.type === "bigotes" || b.type === "bigotesGrande") && !storyWon) {
+      boss.current = null;
+      setTimeout(() => onVictory({ depth: maxDepth.current, score: score.current, bread: breadCount.current, crowns: crownsRun.current }), 750);
+      return;
+    }
     const cyc = cycleOf(Math.floor(player.current.y / TILE));
     let dr = world.current.doorRow[cyc];
     if (dr == null) { const rr = 3 + cyc * CYCLE + LEVEL_LEN + ARENA_H; ensureRow(rr); dr = world.current.doorRow[cyc]; } // make sure the gate exists even if the camera hadn't generated it yet
@@ -335,22 +371,48 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       raf = requestAnimationFrame(step);
       let dt = (now - last) / 1000; last = now; if (dt > 0.05) dt = 0.05;
       shake.current = Math.max(0, shake.current - dt * 30);
-      if (pausedRef.current || over.current || restingRef.current) { setTick((t) => (t + 1) & 0xffff); return; }
+      if (pausedRef.current || over.current || restingRef.current || gateRef.current) { setTick((t) => (t + 1) & 0xffff); return; }
       elapsed.current += dt;
       const p = player.current; const a = active.current; const t = TOOL_MAP[tool.current];
       a.shield = Math.max(0, a.shield - dt); a.magnet = Math.max(0, a.magnet - dt); a.speed = Math.max(0, a.speed - dt); a.yeast = Math.max(0, a.yeast - dt); a.frozen = Math.max(0, a.frozen - dt); a.boost = Math.max(0, a.boost - dt);
       p.invuln = Math.max(0, p.invuln - dt); p.hurtTimer = Math.max(0, p.hurtTimer - dt); p.digTimer = Math.max(0, p.digTimer - dt); p.attackTimer = Math.max(0, p.attackTimer - dt); p.attackCd = Math.max(0, p.attackCd - dt);
+      p.dash = Math.max(0, p.dash - dt); p.dashCd = Math.max(0, p.dashCd - dt);
       p.prevY = p.y;
 
-      if (input.current.left) { aim.current = { x: -1, y: 0 }; input.current.lastHoriz = now; }
-      else if (input.current.right) { aim.current = { x: 1, y: 0 }; input.current.lastHoriz = now; }
-      else if (now - input.current.lastHoriz > 180) aim.current = { x: 0, y: 1 };
+      if (input.current.left) aim.current = { x: -1, y: 0 };
+      else if (input.current.right) aim.current = { x: 1, y: 0 };
+      else if (input.current.down) aim.current = { x: 0, y: 1 };
+      else aim.current = { x: p.facing, y: 0 };
+
+      if (input.current.attackHold) p.charge = Math.min(1, p.charge + dt / 0.55);
+      else if (p.charge > 0) {
+        const charged = p.charge >= 1;
+        p.charge = 0;
+        doAttack(charged);
+      }
+
+      if (input.current.dashEdge && p.dashCd <= 0) {
+        input.current.dashEdge = false;
+        p.dash = 0.16; p.dashCd = 0.42; p.invuln = Math.max(p.invuln, 0.16);
+        p.vy = Math.min(p.vy, 40);
+        Audio.playDash();
+        spawnDust(p.x + PW / 2, p.y + PH / 2, "#7fd0ff", 10);
+      } else input.current.dashEdge = false;
 
       const frozenMul = a.frozen > 0 ? 0.4 : 1;
       const speedMul = (a.speed > 0 ? 1.4 : 1) * frozenMul;
       const dir = (input.current.right ? 1 : 0) - (input.current.left ? 1 : 0);
-      if (dir !== 0) p.facing = dir as 1 | -1;
-      p.vx = dir * MOVE * speedMul;
+      if (dir !== 0 && p.dash <= 0) p.facing = dir as 1 | -1;
+      if (p.dash > 0) {
+        p.vx = p.facing * 430;
+        if (Math.floor(elapsed.current * 40) % 2 === 0) ghosts.current.push({ x: p.x, y: p.y, life: 0.18, face: p.facing });
+      } else {
+        p.vx = dir * MOVE * speedMul;
+      }
+      for (let i = ghosts.current.length - 1; i >= 0; i--) {
+        ghosts.current[i].life -= dt;
+        if (ghosts.current[i].life <= 0) ghosts.current.splice(i, 1);
+      }
 
       const pc = Math.floor((p.x + PW / 2) / TILE); const pr = Math.floor((p.y + PH / 2) / TILE);
       if (getCell(pr, pc) === 4) p.vx *= 0.45;
@@ -376,7 +438,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       p.x = Math.max(TILE, Math.min(p.x, (COLS - 1) * TILE - PW));
 
       if (input.current.digEdge) { input.current.digEdge = false; tryDig(); }
-      if (input.current.attackEdge) { input.current.attackEdge = false; doAttack(); }
+      if (input.current.attackEdge && !input.current.attackHold) { input.current.attackEdge = false; doAttack(false); }
 
       // ——— JUMP: coyote + buffer + DOUBLE JUMP + WALL JUMP ———
       p.coyote = p.onGround ? 0.12 : Math.max(0, p.coyote - dt);
@@ -412,10 +474,27 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       p.y += p.vy * dt; p.onGround = false;
       {
         const left = Math.floor(p.x / TILE); const right = Math.floor((p.x + PW - 1) / TILE);
-        // techo estricto
+        // techo: solo bloques macizos (las estanterías se atraviesan hacia arriba)
         if (p.vy < 0) { const hrow = Math.floor(p.y / TILE); for (let c = left; c <= right; c++) if (solid(getCell(hrow, c))) { p.y = (hrow + 1) * TILE + 0.5; p.vy = 0; break; } }
-        // suelo estricto + plataforma
-        if (p.vy >= 0) { const row = Math.floor((p.y + PH) / TILE); for (let c = left; c <= right; c++) { const cell = getCell(row, c); if (solid(cell)) { p.y = row * TILE - PH - 0.5; p.vy = 0; p.onGround = true; p.usedDouble = false; p.wallSlide=0; if (cell === 3) { if (TOOL_MAP[tool.current].spikeImmune) { setCell(row, c, 0); spawnDust(c * TILE + TILE / 2, row * TILE + TILE / 2, "#d7d2c4", 8); score.current += 1; } else hurt(); } break; } } }
+        // suelo + estantes de un sentido
+        if (p.vy >= 0) {
+          const row = Math.floor((p.y + PH) / TILE);
+          for (let c = left; c <= right; c++) {
+            const cell = getCell(row, c);
+            if (solid(cell)) {
+              p.y = row * TILE - PH - 0.5; p.vy = 0; p.onGround = true; p.usedDouble = false; p.wallSlide = 0;
+              if (cell === 3) { if (TOOL_MAP[tool.current].spikeImmune) { setCell(row, c, 0); spawnDust(c * TILE + TILE / 2, row * TILE + TILE / 2, "#d7d2c4", 8); score.current += 1; } else hurt(); }
+              break;
+            }
+            if (isPlat(cell)) {
+              const platTop = row * TILE + PLAT_TOP;
+              if (p.prevY + PH <= platTop + 3) {
+                p.y = platTop - PH - 0.5; p.vy = 0; p.onGround = true; p.usedDouble = false; p.wallSlide = 0;
+                break;
+              }
+            }
+          }
+        }
         // re-resolve horizontal post-caída para bordes sólidos
         { const t2 = Math.floor(p.y / TILE); const b2 = Math.floor((p.y + PH - 1) / TILE);
           if (p.vx >= 0) { const col = Math.floor((p.x + PW) / TILE); for (let r = t2; r <= b2; r++) if (solid(getCell(r, col))) { p.x = col * TILE - PW -0.1; p.vx = 0; if(p.vy>0) {p.wallSlide=0.3; p.wallDir=1;} break; } }
@@ -426,11 +505,11 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
         if (solid(getCell(eR, eC))) { let er = eR; while (er >= 0 && solid(getCell(er, eC))) er--; p.y = er * TILE - PH -1; p.vy = 0; p.onGround = true; p.usedDouble = false; p.wallSlide=0; p.invuln=Math.max(p.invuln,0.6); spawnDust(p.x+PW/2,p.y+PH/2,"#ffd27a",6); }
       }
 
-      // Garantía anti-soft-lock: asegurar camino descendente
-      if (!verifySafePath()) {
+      // Garantía anti-soft-lock: asegurar camino descendente (nunca en la arena)
+      if (!world.current.isBoss[Math.floor((p.y + PH / 2) / TILE)] && !verifySafePath()) {
         const safeRow = Math.floor((player.current.y + PH) / TILE) + 1;
         const safeCol = Math.floor((player.current.x + PW / 2) / TILE);
-        if (safeCol > 0 && safeCol < COLS - 1) {
+        if (safeCol > 0 && safeCol < COLS - 1 && !world.current.isBoss[safeRow]) {
           setCell(safeRow, safeCol, 0);
           setCell(safeRow, safeCol + 1, 0);
         }
@@ -444,17 +523,26 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
 
       // boss trigger
       const pRow = Math.floor(p.y / TILE);
-      if (world.current.isBoss[pRow] && !bossActive.current && !bossDefeated.current[level.current]) {
-        const cyc = cycleOf(pRow); const arenaTop = 3 + cyc * CYCLE + LEVEL_LEN;
-        boss.current = spawnBoss(bossForLevel(level.current), level.current, TILE, (COLS - 1) * TILE, arenaTop * TILE);
-        bossActive.current = true; lastBossLevel.current = level.current;
+      if (world.current.isBoss[pRow] && !bossDefeated.current[level.current] && !gateRef.current) {
+        lastBossLevel.current = level.current;
+        p.vy = 0; p.vx = 0;
+        setGate(true); gateRef.current = true;
       }
       // rest trigger
       if (world.current.isRest[pRow] && level.current > lastRestLevel.current && !bossActive.current) {
         level.current = Math.max(level.current, lastRestLevel.current + 1); lastRestLevel.current = level.current; p.vy = 0; setResting(true); Audio.playRest();
       }
 
-      const target = p.y - STAGE_H * 0.45; cameraY.current += (target - cameraY.current) * Math.min(1, dt * 6);
+      let target = p.y - STAGE_H * 0.45;
+      if (bossActive.current) {
+        const cyc = cycleOf(Math.floor(p.y / TILE));
+        const arenaTop = 3 + cyc * CYCLE + LEVEL_LEN;
+        const arenaBot = arenaTop + ARENA_H;
+        const maxCam = arenaBot * TILE - STAGE_H + TILE * 0.2;
+        const minCam = arenaTop * TILE - TILE * 1.2;
+        target = Math.max(minCam, Math.min(maxCam, target));
+      }
+      cameraY.current += (target - cameraY.current) * Math.min(1, dt * 8);
 
       // enemies AI
       for (const e of world.current.enemies) {
@@ -462,23 +550,41 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
         e.hitCd = Math.max(0, e.hitCd - dt); e.stateT += dt;
         const slowAura = t.slowAura && Math.hypot(e.x - (p.x + PW / 2), e.y - (p.y + PH / 2)) < TILE * 2.4 ? 0.35 : 1;
         if (e.type === "spoon") {
-          e.x += e.vx * slowAura * dt; if (e.x < e.minX) { e.x = e.minX; e.vx = Math.abs(e.vx); } if (e.x > e.maxX) { e.x = e.maxX; e.vx = -Math.abs(e.vx); }
+          const wind = e.stateT % 2.2;
+          if (wind < 1.4) {
+            e.x += e.vx * slowAura * dt; if (e.x < e.minX) { e.x = e.minX; e.vx = Math.abs(e.vx); } if (e.x > e.maxX) { e.x = e.maxX; e.vx = -Math.abs(e.vx); }
+          } else if (wind > 2.05 && e.stateT > 2) {
+            e.stateT = 0;
+            const dx = (p.x + PW / 2) - e.x, dy = (p.y + PH / 2) - e.y; const d = Math.hypot(dx, dy) || 1;
+            world.current.bullets.push({ id: ids.current++, x: e.x, y: e.y, vx: (dx / d) * 160, vy: (dy / d) * 160, life: 2.2, kind: "crumb" });
+          }
         } else if (e.type === "mouse") {
-          e.x += e.vx * slowAura * dt; if (e.x < e.minX) { e.x = e.minX; e.vx = Math.abs(e.vx); } if (e.x > e.maxX) { e.x = e.maxX; e.vx = -Math.abs(e.vx); }
-          e.vy += 700 * dt; e.y += e.vy * dt; if (e.y > e.homeY) { e.y = e.homeY; e.vy = 0; if (Math.random() < 0.01) e.vy = -220; }
+          const chase = Math.abs(e.x - (p.x + PW / 2)) < 110 && Math.abs(e.y - (p.y + PH / 2)) < 80;
+          if (chase && e.stateT > 0.9) {
+            e.stateT = 0; e.vy = -240; e.vx = ((p.x + PW / 2) > e.x ? 1 : -1) * 160;
+          } else {
+            e.x += e.vx * slowAura * dt; if (e.x < e.minX) { e.x = e.minX; e.vx = Math.abs(e.vx); } if (e.x > e.maxX) { e.x = e.maxX; e.vx = -Math.abs(e.vx); }
+          }
+          e.vy += 720 * dt; e.y += e.vy * dt; if (e.y > e.homeY) { e.y = e.homeY; e.vy = 0; }
         } else if (e.type === "whisk") {
-          if (e.stateT > 0.6) { e.stateT = 0; e.vx = (Math.random() - 0.5) * 120; e.vy = (Math.random() - 0.5) * 120; }
-          e.x += e.vx * slowAura * dt; e.y += e.vy * slowAura * dt;
-          if (e.x < e.minX) { e.x = e.minX; e.vx = Math.abs(e.vx); } if (e.x > e.maxX) { e.x = e.maxX; e.vx = -Math.abs(e.vx); }
-          if (e.y < e.homeY - 30) { e.y = e.homeY - 30; e.vy = Math.abs(e.vy); } if (e.y > e.homeY + 30) { e.y = e.homeY + 30; e.vy = -Math.abs(e.vy); }
+          const ang = e.stateT * 3.2;
+          e.x = (e.minX + e.maxX) / 2 + Math.cos(ang) * 28;
+          e.y = e.homeY + Math.sin(ang * 1.4) * 16;
+          if (e.stateT > 1.6) {
+            e.stateT = 0;
+            for (let k = 0; k < 4; k++) {
+              const a = (k / 4) * Math.PI * 2 + ang;
+              world.current.bullets.push({ id: ids.current++, x: e.x, y: e.y, vx: Math.cos(a) * 90, vy: Math.sin(a) * 90, life: 1.6, kind: "dust" });
+            }
+          }
         } else if (e.type === "bubble") {
-          e.y -= 18 * dt; e.x += Math.sin(e.stateT * 2) * 20 * dt;
+          e.y -= 22 * dt; e.x += Math.sin(e.stateT * 5) * 50 * dt;
           if (e.y < cameraY.current - 60) e.hp = 0;
-          // push player
-          if (Math.abs(e.x - (p.x + PW / 2)) < PW && Math.abs(e.y - (p.y + PH / 2)) < PH) { p.vx += (p.x + PW / 2 > e.x ? 1 : -1) * 200 * dt; p.vy -= 60 * dt; }
+          if (Math.abs(e.x - (p.x + PW / 2)) < PW && Math.abs(e.y - (p.y + PH / 2)) < PH) { p.vx += (p.x + PW / 2 > e.x ? 1 : -1) * 220 * dt; p.vy -= 80 * dt; }
         } else if (e.type === "spatula") {
-          const phase = e.stateT % 2.4; e.active = phase > 1.6 && phase < 2.1;
-          e.y = e.active ? e.homeY - 22 : e.homeY + 10;
+          const phase = e.stateT % 2.8;
+          e.active = phase > 1.9 && phase < 2.35;
+          e.y = e.active ? e.homeY - 28 : e.homeY + 12;
         }
       }
       world.current.enemies = world.current.enemies.filter((e) => e.hp > 0);
@@ -514,6 +620,24 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
         const b = world.current.bullets[i]; b.life -= dt; if (b.life <= 0) { world.current.bullets.splice(i, 1); continue; }
         if (b.grav) b.vy += b.grav * dt;
         b.x += b.vx * dt; b.y += b.vy * dt;
+        if (b.ally) {
+          let spent = false;
+          for (const e of world.current.enemies) {
+            if (e.hp < 999 && Math.abs(b.x - e.x) < 18 && Math.abs(b.y - e.y) < 18) {
+              e.hp -= 1; e.hitCd = 0.2; spawnDust(e.x, e.y, "#ffd27a", 6);
+              world.current.bullets.splice(i, 1); spent = true; break;
+            }
+          }
+          if (!spent && boss.current) {
+            const bo = boss.current;
+            if (Math.abs(b.x - bo.x) < 36 && Math.abs(b.y - bo.y) < 36) {
+              if (bo.vulnerable || bo.stun > 0) { bo.hp -= 1; bo.flash = 0.16; spawnDust(bo.x, bo.y, "#ffd27a", 8); if (bo.hp <= 0) onBossDefeated(); }
+              else { bo.shieldFlash = 0.18; }
+              world.current.bullets.splice(i, 1);
+            }
+          }
+          continue;
+        }
         if (b.kind === "panback") {
           const bo = boss.current;
           if (bo && Math.abs(b.x - bo.x) < 42 && Math.abs(b.y - bo.y) < 42) {
@@ -521,7 +645,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
             else { bo.shieldFlash = 0.2; }
             world.current.bullets.splice(i, 1); continue;
           }
-        } else if (Math.abs(b.x - (p.x + PW / 2)) < PW * 0.7 && Math.abs(b.y - (p.y + PH / 2)) < PH * 0.7) { hurt(); world.current.bullets.splice(i, 1); continue; }
+        } else if (!b.ally && Math.abs(b.x - (p.x + PW / 2)) < PW * 0.7 && Math.abs(b.y - (p.y + PH / 2)) < PH * 0.7) { hurt(); world.current.bullets.splice(i, 1); continue; }
       }
 
       // breads + powers
@@ -557,23 +681,26 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
         if (gp.buttons[0] && gp.buttons[0].pressed) { input.current.jumpEdge = true; }
         // Attack on button X (index 2)
         if (gp.buttons[2] && gp.buttons[2].pressed) { input.current.attackEdge = true; }
-        // Dig on button B (index 1)
         if (gp.buttons[1] && gp.buttons[1].pressed) { input.current.digEdge = true; }
+        if (gp.buttons[5] && gp.buttons[5].pressed) { input.current.dashEdge = true; }
       }
     }, 50);
 
     const kd = (e: KeyboardEvent) => {
-      if (e.repeat) return;
       if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") input.current.left = true;
       if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") input.current.right = true;
-      if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") { input.current.digEdge = true; e.preventDefault(); }
+      if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") { input.current.down = true; e.preventDefault(); }
+      if (e.repeat) return;
       if (e.key === " " || e.key === "ArrowUp" || e.key === "w" || e.key === "W") { input.current.jumpEdge = true; e.preventDefault(); }
-      if (e.key === "j" || e.key === "J" || e.key === "x" || e.key === "X" || e.key === "Shift") { input.current.attackEdge = true; }
+      if (e.key === "j" || e.key === "J" || e.key === "x" || e.key === "X") { input.current.attackHold = true; }
+      if (e.key === "k" || e.key === "K" || e.key === "Shift") { input.current.dashEdge = true; e.preventDefault(); }
       if (e.key === "p" || e.key === "P" || e.key === "Escape") setPaused((v) => !v);
     };
     const ku = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") input.current.left = false;
       if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") input.current.right = false;
+      if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") input.current.down = false;
+      if (e.key === "j" || e.key === "J" || e.key === "x" || e.key === "X") input.current.attackHold = false;
     };
     window.addEventListener("keydown", kd); window.addEventListener("keyup", ku);
     return () => { cancelAnimationFrame(raf); clearInterval(gamepadPoll); Audio.stopAmbientMusic(); window.removeEventListener("keydown", kd); window.removeEventListener("keyup", ku); };
@@ -591,11 +718,19 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
   for (let r = r0; r <= r1; r++) {
     ensureRow(r); const row = world.current.rows[r]; if (!row) continue;
     const z = zoneOf(Math.max(0, r - 3)); const isRest = world.current.isRest[r]; const isArena = world.current.isBoss[r];
+    const cyc = cycleOf(r);
+    const isDoor = world.current.doorRow[cyc] === r;
+    const doorLocked = isDoor && !bossDefeated.current[cyc + 1];
+    const restSealed = isRest && !bossDefeated.current[cyc + 1];
     for (let c = 0; c < COLS; c++) {
       const cell = row[c];
-      if (cell === 0) { if (isRest) tiles.push(<RestTile key={`r${r}-${c}`} c={c} r={r} level={level.current} />); else if (isArena) tiles.push(<ArenaTile key={`a${r}-${c}`} c={c} r={r} />); continue; }
-      tiles.push(<Tile key={`${r}-${c}`} c={c} r={r} cell={cell} zone={z} />);
-      if (isArena && (c === 0 || c === COLS - 1) && r % 3 === 0) tiles.push(<Torch key={`t${r}-${c}`} c={c} r={r} />);
+      if (cell === 0) {
+        if (isRest) tiles.push(<RestTile key={`r${r}-${c}`} c={c} r={r} level={level.current} sealed={restSealed} />);
+        else if (isArena) tiles.push(<ArenaTile key={`a${r}-${c}`} c={c} r={r} local={offOf(r) - LEVEL_LEN} />);
+        continue;
+      }
+      tiles.push(<Tile key={`${r}-${c}`} c={c} r={r} cell={cell} zone={z} arena={isArena} door={doorLocked} />);
+      if (isArena && (c === 0 || c === COLS - 1) && r % 2 === 0) tiles.push(<Torch key={`t${r}-${c}`} c={c} r={r} />);
     }
   }
 
@@ -651,8 +786,22 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
           {world.current.powers.filter((pw) => !pw.taken && pw.y > cam - 40 && pw.y < cam + STAGE_H + 40).map((pw) => (<div key={pw.id} className="absolute hop" style={{ left: pw.x - 15, top: pw.y - 15 }}><div className="rounded-full bg-white/20 p-1 border border-white/40" style={{ boxShadow: "0 0 10px #7fd0ff" }}><PowerIcon kind={pw.kind} size={22} /></div></div>))}
           {world.current.enemies.filter((e) => e.y > cam - 60 && e.y < cam + STAGE_H + 60).map((e) => (<div key={e.id} className="absolute" style={{ left: e.x - 20, top: e.y - 20, transform: `scaleX(${e.vx < 0 ? -1 : 1})`, opacity: e.hitCd > 0 ? 0.5 : 1, filter: e.hitCd > 0 ? "brightness(2)" : undefined }}><EnemyView type={e.type} active={e.active} /></div>))}
           {world.current.bullets.filter((b) => b.y > cam - 40 && b.y < cam + STAGE_H + 40).map((b) => <BulletView key={b.id} b={b} />)}
+          {ghosts.current.map((g, i) => (
+            <div key={`g${i}`} className="absolute pointer-events-none" style={{ left: g.x - 6, top: g.y - 14, opacity: g.life * 2, filter: "brightness(1.6) saturate(0.2)" }}>
+              <Maxine skin={skin} pose="fall" facing={g.face} size={PW + 18} animate={false} />
+            </div>
+          ))}
           {particles.current.map((q, i) => (<div key={i} className="absolute rounded-full" style={{ left: q.x, top: q.y, width: q.size, height: q.size, background: q.color, opacity: Math.max(0, q.life / q.max) }} />))}
 
+          {bossActive.current && boss.current && boss.current.telegraph > 0 && boss.current.atkW > 0 && (
+            <div className="absolute pointer-events-none" style={{
+              left: boss.current.atkX, top: boss.current.atkY, width: boss.current.atkW, height: boss.current.atkH,
+              border: "2px dashed #ff3060", background: "rgba(255,48,96,0.22)", borderRadius: 10,
+              boxShadow: "inset 0 0 16px #ff306066, 0 0 12px #ff306044",
+            }}>
+              <div className="absolute left-1/2 -translate-x-1/2 -top-7 font-display font-bold text-[28px] leading-none" style={{ color: "#ffd27a", textShadow: "0 0 10px #ff3030, 0 2px 0 #7a1410" }}>!</div>
+            </div>
+          )}
           {bossActive.current && boss.current && (
             <div className="absolute" style={{ left: boss.current.x - 55, top: boss.current.y - 55, pointerEvents: "none" }}>
               <BossView boss={boss.current} size={110} />
@@ -687,45 +836,38 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
             {!isFoot && tool.current !== "guyu" && tool.current !== "dixie" && <div className="absolute" style={{ left: p.facing === 1 ? PW - 2 + (p.attackTimer > 0 ? 6 : 0) : -12 - (p.attackTimer > 0 ? 6 : 0), top: PH * 0.48, zIndex: 2, transform: p.attackTimer > 0 ? `rotate(${p.facing * -25}deg)` : undefined, transition: "transform .08s" }}><Plushie id={tool.current} size={tool.current === "kissy" ? 26 : 22} flip={p.facing} /></div>}
             <Maxine skin={skin} pose={pose} facing={p.facing} size={PW + 18} />
             {/* Aura de escalada y boost */}
-            {(p.wallSlide > 0 || a.boost > 0) && <div className="absolute inset-0 rounded-full border-2 opacity-60" style={{ borderColor: p.wallSlide > 0 ? "#7fc24a" : "#ffd27a", boxShadow: p.wallSlide > 0 ? "0 0 12px #7fc24a" : "0 0 14px #ffd27a", animation: "glow-pulse 1.2s infinite" }} />}
+            {(p.wallSlide > 0 || active.current.boost > 0) && <div className="absolute inset-0 rounded-full border-2 opacity-60" style={{ borderColor: p.wallSlide > 0 ? "#7fc24a" : "#ffd27a", boxShadow: p.wallSlide > 0 ? "0 0 12px #7fc24a" : "0 0 14px #ffd27a", animation: "glow-pulse 1.2s infinite" }} />}
             {isFoot && <div className="absolute pointer-events-none" style={{ left: -2, top: PH * 0.82, width: PW + 12, height: 14, zIndex: 3 }}><Plushie id="zapatitos" size={PW + 12} /></div>}
           </div>
         </div>
 
-        {/* HUD */}
-        <div className="absolute top-2 left-2 flex gap-1 z-30">{Array.from({ length: Math.max(3, hearts.current) }).map((_, i) => <Heart key={i} filled={i < hearts.current} size={20} />)}</div>
-        <div className="absolute top-2 right-2 flex flex-col items-end gap-1 z-30">
-          <div className="flex items-center gap-1 bg-black/45 rounded-full px-2 py-0.5 border border-amber-300/30"><Crown size={12} /><span className="font-pixel text-[10px] text-amber-200">{crownsRun.current}</span></div>
-          <div className="flex items-center gap-1 bg-black/45 rounded-full px-2 py-0.5 border border-amber-300/30"><span className="text-[12px]">PAN</span><span className="font-pixel text-[10px] text-amber-100">{breadRun.current}</span></div>
-        </div>
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 text-center z-30 pointer-events-none">
-          <div className="font-pixel text-[8px] text-amber-200/80">NIVEL {level.current} · {ZONE_NAME[zone]}</div>
-          <div className="font-display font-bold text-amber-50 text-base leading-none" style={{ textShadow: "0 2px 0 #7a3410" }}>{depth} m</div>
-        </div>
-        <div className="absolute top-[58px] left-1/2 -translate-x-1/2 z-30 pointer-events-none flex items-center gap-1 bg-black/35 rounded-full px-2 py-0.5 border border-amber-300/20"><Plushie id={tool.current} size={14} /><span className="font-pixel text-[8px] text-amber-100">{TOOL_MAP[tool.current].name}</span></div>
-        {/* Tutorial contextual breve */}
-        <div className="absolute top-[86px] left-1/2 -translate-x-1/2 z-30 pointer-events-none text-center">
-          <div className="font-pixel text-[7px] text-amber-100/50 bg-black/30 rounded px-2 py-0.5">
-            {!p.onGround ? "ESPACIO = SALTO · SHIFT = ATAQUE" : p.vy > 0 ? "CAYENDO... · SALTA PARA SUBIR" : "← → MOVER · ↓ CAVAR"}
+        {/* HUD estilo Zero: barras de pips + corazones */}
+        <div className="absolute top-2 left-2 z-30 flex items-start gap-1.5 pointer-events-none">
+          <ZeroPips n={Math.max(3, hearts.current)} filled={hearts.current} color="#ff4d6d" label="HP" />
+          {spell && <ZeroPips n={8} filled={8} color={spell === "hielo" ? "#7fd0ff" : "#ffd27a"} label="MG" />}
+          <div className="flex flex-col gap-0.5 mt-0.5">
+            {Array.from({ length: Math.max(3, hearts.current) }).map((_, i) => <Heart key={i} filled={i < hearts.current} size={14} />)}
           </div>
         </div>
-
-        {bossActive.current && boss.current && (
-          <div className="absolute left-4 right-4 z-30 pointer-events-none" style={{ top: 86 }}>
-            <div className="text-center font-pixel text-[9px] text-rose-200 mb-0.5" style={{ textShadow: "0 0 6px #ff3060" }}>{BOSS_NAME[boss.current.type]}</div>
-            <div className="h-2.5 rounded-full border border-rose-300/50 bg-black/50 overflow-hidden">
-              <div className="h-full" style={{ width: `${Math.max(0, (boss.current.hp / boss.current.maxHp) * 100)}%`, background: "linear-gradient(90deg,#ff3060,#ffd27a)", transition: "width .15s", boxShadow: "0 0 8px #ff306088" }} />
-            </div>
-            <div className="flex items-center justify-center gap-1 mt-1">
-              {boss.current.stun > 0 ? <span className="font-pixel text-[7px] px-1.5 py-0.5 rounded-full bg-amber-300 text-amber-900">ATURDIDO</span>
-                : boss.current.vulnerable ? <span className="font-pixel text-[7px] px-1.5 py-0.5 rounded-full bg-lime-300 text-lime-900">VULNERABLE</span>
-                : <span className="font-pixel text-[7px] px-1.5 py-0.5 rounded-full bg-rose-400/80 text-white">PROTEGIDO</span>}
-              <span className="font-display italic text-[10px] text-amber-100/80">{BOSS_TAUNT[boss.current.type]}</span>
+        {p.charge > 0 && (
+          <div className="absolute left-1/2 -translate-x-1/2 z-30 pointer-events-none" style={{ top: 72, width: 80 }}>
+            <div className="h-1.5 overflow-hidden" style={{ background: "#1a0c04", border: "1px solid #000" }}>
+              <div className="h-full" style={{ width: `${p.charge * 100}%`, background: p.charge >= 1 ? "#7fd0ff" : "#ffd27a" }} />
             </div>
           </div>
         )}
+        <div className="absolute top-2 right-2 flex flex-col items-end gap-1 z-30">
+          <div className="flex items-center gap-1 bg-black/45 rounded-full px-2 py-0.5 border border-amber-300/30"><Crown size={12} /><span className="font-pixel text-[10px] text-amber-200">{crownsRun.current}</span></div>
+          <div className="flex items-center gap-1 bg-black/45 rounded-full px-2 py-0.5 border border-amber-300/30"><span className="font-display text-[11px] font-bold text-amber-200/80">Pan</span><span className="font-display font-bold text-[12px] text-amber-100">{breadRun.current}</span></div>
+        </div>
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 text-center z-30 pointer-events-none">
+          <div className="font-pixel text-[7px] text-amber-200/80">N{level.current} {ZONE_NAME[zone]}</div>
+          <div className="font-pixel text-[9px] text-amber-50 leading-none" style={{ textShadow: "2px 2px 0 #3a1808" }}>{depth}m</div>
+        </div>
+        <div className="absolute top-[58px] left-1/2 -translate-x-1/2 z-30 pointer-events-none flex items-center gap-1 bg-black/35 rounded-full px-2 py-0.5 border border-amber-300/20"><Plushie id={tool.current} size={14} /><span className="font-display font-semibold text-[11px] text-amber-100">{TOOL_MAP[tool.current].name}</span></div>
+        <div />
 
-        <button aria-label="Pausar juego" onClick={() => setPaused((v) => !v)} className="absolute top-10 right-2 z-40 bg-black/45 rounded-md px-2 py-1 font-pixel text-[9px] text-amber-100 border border-amber-300/30">{paused ? "▶" : "❚❚"}</button>
+        <button aria-label="Pausar juego" onClick={() => setPaused((v) => !v)} className="absolute top-10 right-2 z-40 bg-black/45 rounded-md px-2 py-1 font-display font-bold text-[12px] text-amber-100 border border-amber-300/30">{paused ? "▶" : "❚❚"}</button>
 
         {activeList.length > 0 && (
           <div className="absolute bottom-32 left-1/2 -translate-x-1/2 flex gap-2 z-30">
@@ -733,25 +875,42 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
           </div>
         )}
 
-        {/* controls */}
-        <div className="absolute bottom-3 left-3 flex gap-2 z-30">
-          <TouchBtn aria-label="Mover izquierda" label="◀" onDown={() => (input.current.left = true)} onUp={() => (input.current.left = false)} />
-          <TouchBtn aria-label="Mover derecha" label="▶" onDown={() => (input.current.right = true)} onUp={() => (input.current.right = false)} />
+        <TouchPad
+          onMove={(dir) => { input.current.left = dir < 0; input.current.right = dir > 0; }}
+          onDown={(v) => { input.current.down = v; }}
+          onJump={() => { input.current.jumpEdge = true; }}
+          onAttack={() => { input.current.attackEdge = true; }}
+          onDash={() => { input.current.dashEdge = true; }}
+        />
+        <div className="absolute z-[90]" style={{ right: 76, bottom: 86 }} onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+          <ChromeBtn onPress={() => { input.current.dashEdge = true; }} w={52} h={52} accent="#7fd0ff">DASH</ChromeBtn>
         </div>
-        <div className="absolute bottom-3 right-3 flex flex-col items-end gap-2 z-30">
-          <TouchBtn aria-label="Saltar" label="SALTO" color="jump" onDown={() => (input.current.jumpEdge = true)} onUp={() => {}} />
-          <div className="flex gap-2">
-            <TouchBtn aria-label="Atacar" label="👊" color="attack" onDown={() => (input.current.attackEdge = true)} onUp={() => {}} />
-            <TouchBtn aria-label="Cavar" label="CAVAR" color="dig" big onDown={() => (input.current.digEdge = true)} onUp={() => {}} />
-          </div>
-        </div>
+        <PawButton aim={aim.current} onPress={() => { input.current.digEdge = true; }} />
+        <MagicButton spell={spell} locked={spells.length === 0} onCycle={() => onCycleSpell?.()} />
+        {gate && (
+          <BossStage
+            type={bossForLevel(level.current)}
+            level={level.current}
+            skin={skin}
+            hearts={hearts.current}
+            onHurt={() => hurt()}
+            onWin={() => {
+              const fakeType = bossForLevel(level.current);
+              onUnlockSpell?.(spellForBoss(fakeType));
+              boss.current = spawnBoss(fakeType, level.current, TILE, (COLS - 1) * TILE, 0);
+              onBossDefeated();
+              setGate(false); gateRef.current = false;
+            }}
+          />
+        )}
+        <div />
 
         {paused && !resting && (
           <div className="absolute inset-0 z-50 bg-black/70 flex flex-col items-center justify-center gap-4 backdrop-blur-sm">
             <div className="font-display font-bold text-4xl text-amber-100">PAUSA</div>
             <Maxine skin={skin} pose="idle" size={120} />
             <div className="font-pixel text-[8px] text-amber-200/70 text-center leading-relaxed px-6">
-              ← → moverse · ESPACIO saltar<br />↓ cavar · J / X pegar · P pausa
+              ← → mover · ↑ salto · Shift dash<br />J (mantener) carga · huella cava
             </div>
             <button onClick={() => setPaused(false)} className="btn-3d font-display font-bold text-xl text-white px-8 py-2 rounded-full border-b-4" style={{ background: "linear-gradient(180deg,#7fc24a,#3a7a1a)", borderColor: "#1a3a08" }}>CONTINUAR</button>
           </div>
@@ -763,13 +922,49 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
   );
 }
 
-function TouchBtn({ label, onDown, onUp, big, color, "aria-label": ariaLabel }: { label: string; onDown: () => void; onUp: () => void; big?: boolean; color?: "jump" | "attack" | "dig"; "aria-label"?: string }) {
-  const palette = color === "jump" ? ["#7fc24a", "#3a7a1a", "#1a3a08"] : color === "attack" ? ["#d96bff", "#7a1aa8", "#3a0858"] : color === "dig" ? ["#ff7a4a", "#d9342b", "#7a1410"] : ["#7a5a3a", "#3a2410", "#1a0c04"];
+function ZeroPips({ n, filled, color, label }: { n: number; filled: number; color: string; label: string }) {
   return (
-    <button onPointerDown={(e) => { e.preventDefault(); onDown(); }} onPointerUp={onUp} onPointerLeave={onUp} onPointerCancel={onUp}
-      className={`btn-3d select-none font-display font-bold text-amber-50 rounded-full border-b-4 active:border-b-0 ${big ? "px-5 py-3 text-base" : "w-14 h-14 text-lg"}`}
-      aria-label={ariaLabel || label}
-      style={{ background: `linear-gradient(180deg,${palette[0]},${palette[1]})`, borderColor: palette[2], boxShadow: "0 4px 10px rgba(0,0,0,.4), inset 0 2px 0 rgba(255,255,255,.25)" }}>{label}</button>
+    <div className="flex flex-col items-center">
+      <div className="font-pixel text-[5px] text-white mb-0.5" style={{ textShadow: "1px 1px 0 #000" }}>{label}</div>
+      <div className="flex flex-col-reverse gap-px p-0.5" style={{ background: "#0a0402", border: "1px solid #000" }}>
+        {Array.from({ length: n }).map((_, i) => (
+          <div key={i} style={{ width: 10, height: 4, background: i < filled ? color : "#2a1810" }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TouchPad({ onMove, onDown, onJump, onAttack, onDash }: { onMove: (dir: -1 | 0 | 1) => void; onDown: (v: boolean) => void; onJump: () => void; onAttack: () => void; onDash: () => void }) {
+  const g = useRef({ x: 0, y: 0, t: 0, jumped: false, dashed: false, id: -1 });
+  const end = (e: PointerEvent<HTMLDivElement>) => {
+    if (g.current.id !== e.pointerId && g.current.id !== -1) return;
+    const dx = e.clientX - g.current.x; const dy = e.clientY - g.current.y;
+    const dt = performance.now() - g.current.t;
+    const dist = Math.hypot(dx, dy);
+    if (dist < 18 && dt < 320) onAttack();
+    onMove(0); onDown(false); g.current.id = -1;
+  };
+  return (
+    <div
+      className="absolute inset-0 z-20"
+      style={{ touchAction: "none" }}
+      onPointerDown={(e) => {
+        if (g.current.id !== -1) return;
+        (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+        g.current = { x: e.clientX, y: e.clientY, t: performance.now(), jumped: false, dashed: false, id: e.pointerId };
+      }}
+      onPointerMove={(e) => {
+        if (g.current.id !== e.pointerId) return;
+        const dx = e.clientX - g.current.x; const dy = e.clientY - g.current.y;
+        const dt = performance.now() - g.current.t;
+        if (Math.abs(dx) > 16) onMove(dx < 0 ? -1 : 1);
+        if (Math.abs(dx) > 72 && dt < 180 && !g.current.dashed) { onDash(); g.current.dashed = true; }
+        if (dy < -36 && !g.current.jumped) { onJump(); g.current.jumped = true; }
+        onDown(dy > 28);
+      }}
+      onPointerUp={end} onPointerCancel={end}
+    />
   );
 }
 
@@ -782,7 +977,7 @@ function EnemyView({ type, active }: { type: EnemyType; active: boolean }) {
   return (<svg width="40" height="40" viewBox="0 0 40 40" style={{ opacity: active ? 1 : 0.3 }}><rect x="17" y="20" width="6" height="18" rx="2" fill="#5a3a1a" /><rect x="10" y="6" width="20" height="16" rx="3" fill="#d7d2c4" stroke="#5a5545" strokeWidth="1.2" /><rect x="14" y="10" width="2" height="8" fill="#5a5545" /><rect x="19" y="10" width="2" height="8" fill="#5a5545" /><rect x="24" y="10" width="2" height="8" fill="#5a5545" /></svg>);
 }
 
-function Tile({ c, r, cell, zone }: { c: number; r: number; cell: Cell; zone: string }) {
+function Tile({ c, r, cell, zone, arena, door }: { c: number; r: number; cell: Cell; zone: string; arena?: boolean; door?: boolean }) {
   const pal: Record<string, { dirt: string; dirtDk: string; wall: string; wallDk: string }> = {
     mesa: { dirt: "#b07a3c", dirtDk: "#7a4a1c", wall: "#e4d2ac", wallDk: "#a89068" },
     horno: { dirt: "#6a2e14", dirtDk: "#3a1608", wall: "#8a3a22", wallDk: "#4a1808" },
@@ -794,27 +989,77 @@ function Tile({ c, r, cell, zone }: { c: number; r: number; cell: Cell; zone: st
   if (cell === 3) return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE }}><svg width={TILE} height={TILE} viewBox="0 0 45 45"><rect x="0" y="34" width="45" height="11" fill={P.wallDk} />{Array.from({ length: 5 }).map((_, i) => <path key={i} d={`M${3 + i * 9} 34 L${7.5 + i * 9} 8 L${12 + i * 9} 34 Z`} fill="#d7d2c4" stroke="#5a5545" strokeWidth="1" />)}</svg></div>);
   if (cell === 4) return <div className="absolute rounded-md" style={{ left: x + 3, top: y + 3, width: TILE - 6, height: TILE - 6, background: "radial-gradient(circle at 40% 30%, #ffe08a99, #c9842a99)", border: "2px solid #7a441066" }} />;
   if (cell === 5) return <div className="absolute rounded-md" style={{ left: x + 2, top: y + 6, width: TILE - 4, height: TILE - 10, background: "linear-gradient(180deg,#5a4010aa,#2a1c08cc)", border: "1px solid #ffe06655" }} />;
-  if (cell === 6) return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: `linear-gradient(180deg, ${P.wall} 0%, ${P.wallDk} 100%)`, boxShadow: `inset 0 -3px 0 rgba(0,0,0,0.25), inset 0 2px 0 rgba(255,255,255,0.2)`, border: `1px solid ${P.wallDk}`, animation: "bob 2.2s ease-in-out infinite" }}><div className="absolute" style={{ left: 4, top: 8, right: 4, height: 2, background: P.wallDk, opacity: 0.5, borderRadius: 1 }} /><div className="absolute" style={{ left: 6, top: 16, width: 6, height: 6, background: "#5a2a0a", borderRadius: 1, opacity: 0.3 }} /><div className="absolute" style={{ left: TILE-12, top: 16, width: 6, height: 6, background: "#5a2a0a", borderRadius: 1, opacity: 0.3 }} /><div className="absolute left-1/2 -translate-x-1/2 top-2 text-[6px] font-pixel text-amber-200/60 uppercase tracking-wide">plataforma</div></div>); // PLATFORM flotante - sólida y saltable
-  if (cell === 2) return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: P.wall, boxShadow: `inset 0 -4px 0 ${P.wallDk}, inset 0 3px 0 rgba(255,255,255,.18)` }}><div className="absolute inset-0" style={{ backgroundImage: `linear-gradient(to right, ${P.wallDk}66 0 2px, transparent 2px ${TILE / 2}px), linear-gradient(to bottom, ${P.wallDk}66 0 2px, transparent 2px ${TILE / 2}px)`, backgroundSize: `${TILE / 2}px ${TILE / 2}px` }} /></div>);
+  if (cell === 7) return (
+    <div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: P.dirt, boxShadow: `inset 0 -4px 0 ${P.dirtDk}` }}>
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rotate-45" style={{ background: "linear-gradient(135deg,#ffe066,#c9842a)", boxShadow: "0 0 8px #ffd27a" }} />
+    </div>
+  );
+  if (cell === 6) return (
+    <div className="absolute pointer-events-none" style={{ left: x, top: y + 14, width: TILE, height: 16 }}>
+      <div className="absolute inset-x-0 top-0 h-[5px]" style={{ background: "linear-gradient(180deg,#c9a06a,#8a5a2c)", borderRadius: 2, boxShadow: "0 2px 0 #3a2010, inset 0 1px 0 #ffe0b0" }} />
+      <div className="absolute left-1 right-1 top-[5px] h-[7px]" style={{ background: arena ? "linear-gradient(180deg,#6a3a18,#3a1c0a)" : `linear-gradient(180deg, ${P.wall}, ${P.wallDk})`, borderRadius: "0 0 4px 4px", boxShadow: "inset 0 -2px 0 #1a0c04" }} />
+      <div className="absolute left-1 top-0 w-[3px] h-4" style={{ background: "#8a8a8a", borderRadius: 1 }} />
+      <div className="absolute right-1 top-0 w-[3px] h-4" style={{ background: "#8a8a8a", borderRadius: 1 }} />
+    </div>
+  );
+  if (cell === 2 && door && c > 0 && c < COLS - 1) return (
+    <div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: "linear-gradient(180deg,#3a3a42,#1a1a22)", boxShadow: "inset 0 0 0 2px #6a6a74" }}>
+      <div className="absolute inset-y-1 left-2 w-1" style={{ background: "#9aa0a8" }} />
+      <div className="absolute inset-y-1 right-2 w-1" style={{ background: "#9aa0a8" }} />
+      <div className="absolute left-3 right-3 top-1/2 h-1 -translate-y-1/2" style={{ background: "#c9a86a" }} />
+    </div>
+  );
+  if (cell === 2 && arena && c > 0 && c < COLS - 1) return (
+    <div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: "linear-gradient(180deg,#5a2810,#2a1008)", boxShadow: "inset 0 3px 0 #c9842a55, inset 0 -4px 0 #1a0804" }}>
+      <div className="absolute left-2 right-2 bottom-2 h-2 rounded-full" style={{ background: "radial-gradient(circle,#ff7a2a,#7a1410)", boxShadow: "0 0 10px #ff5a2a88" }} />
+    </div>
+  );
+  if (cell === 2) return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: arena ? "#4a2010" : P.wall, boxShadow: `inset 0 -4px 0 ${P.wallDk}, inset 0 3px 0 rgba(255,255,255,.18)` }}><div className="absolute inset-0" style={{ backgroundImage: `linear-gradient(to right, ${P.wallDk}66 0 2px, transparent 2px ${TILE / 2}px), linear-gradient(to bottom, ${P.wallDk}66 0 2px, transparent 2px ${TILE / 2}px)`, backgroundSize: `${TILE / 2}px ${TILE / 2}px` }} /></div>);
   return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: P.dirt, boxShadow: `inset 0 -4px 0 ${P.dirtDk}, inset 0 3px 0 rgba(255,255,255,.12)` }}><div className="absolute rounded-sm" style={{ left: 6, top: 8, width: 7, height: 6, background: P.dirtDk, opacity: 0.6 }} /><div className="absolute rounded-sm" style={{ left: 26, top: 20, width: 9, height: 7, background: P.dirtDk, opacity: 0.5 }} />{zone === "horno" && <div className="absolute rounded-full" style={{ left: 30, top: 8, width: 4, height: 4, background: "#ff7a2a", boxShadow: "0 0 6px #ff7a2a", animation: "flicker 1s infinite" }} />}</div>);
 }
 
-function ArenaTile({ c, r }: { c: number; r: number }) {
+function ArenaTile({ c, r, local }: { c: number; r: number; local: number }) {
   const x = c * TILE, y = r * TILE;
-  return <div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: "radial-gradient(circle at 50% 0%, #3a1a3044, #14081488)", boxShadow: "inset 0 0 0 1px #ff306011" }} />;
+  const glow = local > 5 ? 0.18 : 0.06;
+  return (
+    <div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: `radial-gradient(circle at 50% 100%, rgba(255,90,42,${glow}), transparent 70%)` }}>
+      {c > 0 && c < COLS - 1 && local % 2 === 0 && (
+        <div className="absolute left-3 right-3 bottom-0 h-px" style={{ background: "#ff7a2a22" }} />
+      )}
+    </div>
+  );
 }
 function Torch({ c, r }: { c: number; r: number }) {
   const x = c * TILE + (c === 0 ? TILE - 8 : 2);
   return (
     <div className="absolute pointer-events-none" style={{ left: x, top: r * TILE + 6, width: 10, height: 20 }}>
-      <rect x="3" y="8" width="4" height="10" fill="#3a2010" />
+      <div className="absolute left-1/2 -translate-x-1/2 bottom-0 w-1.5 h-3" style={{ background: "#3a2010" }} />
       <div className="absolute left-1/2 -translate-x-1/2 top-0 w-3 h-4 rounded-full flicker" style={{ background: "radial-gradient(circle,#ffd27a,#ff5a2a 70%,transparent)", filter: "drop-shadow(0 0 8px #ff7a2a)" }} />
     </div>
   );
 }
-function RestTile({ c, r, level }: { c: number; r: number; level: number }) {
-  const x = c * TILE, y = r * TILE; const isMid = c === 3 || c === 4; const isTop = offOf(r) === LEVEL_LEN + ARENA_H + 1;
-  return (<div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: "repeating-conic-gradient(#e8c89a 0% 25%, #d9a86a 0% 50%) 0 0 / 22px 22px", boxShadow: "inset 0 0 0 1px #7a441033" }}>{isTop && isMid && <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"><div className="bg-[#fff3d6] border-2 border-[#7a3410] rounded px-2 py-0.5 font-display font-bold text-[#7a3410] text-[10px] shadow pop whitespace-nowrap">¡NIVEL {level}! · descanso</div></div>}</div>);
+function RestTile({ c, r, level, sealed }: { c: number; r: number; level: number; sealed?: boolean }) {
+  const x = c * TILE, y = r * TILE;
+  const isBanner = !sealed && c === 3 && offOf(r) === LEVEL_LEN + ARENA_H + 1;
+  if (sealed) {
+    return <div className="absolute" style={{ left: x, top: y, width: TILE, height: TILE, background: "linear-gradient(180deg,#140808,#070303)" }} />;
+  }
+  return (
+    <div className="absolute" style={{
+      left: x, top: y, width: TILE, height: TILE,
+      background: "linear-gradient(180deg,#8a5128 0%,#6a3a18 100%)",
+      boxShadow: "inset 0 2px 0 #c9842a55, inset 0 -3px 0 #3a201088",
+    }}>
+      <div className="absolute left-1 right-1 top-3 h-1 rounded-full" style={{ background: "#5a2a1088" }} />
+      {isBanner && (
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10" style={{ width: TILE * 3 }}>
+          <div className="bg-[#fff3d6] border-2 border-[#7a3410] rounded-xl px-3 py-1.5 font-display font-bold text-[#7a3410] text-[12px] shadow-lg whitespace-nowrap text-center">
+            Descanso · nivel {level}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function KitchenBG({ depth }: { depth: number }) {
@@ -852,7 +1097,7 @@ function RestStop({ level, bread, crowns, hearts, tool, owned, ownedMeta, onBuyP
           <div className="grid grid-cols-2 gap-2">{POWERS.map((pw) => { const can = bread >= pw.cost; return (<button key={pw.kind} disabled={!can} onClick={() => onBuyPower(pw.kind, pw.cost)} className="btn-3d text-left rounded-lg border-2 p-2 flex items-center gap-2 disabled:opacity-50" style={{ background: "#3a2010", borderColor: can ? "#ffd27a" : "#1a0c04", boxShadow: "0 3px 0 #1a0c04" }}><span className="text-xl">{pw.icon}</span><div className="flex-1"><div className="font-display font-bold text-amber-100 text-sm leading-tight">{pw.name}</div><div className="font-pixel text-[8px] text-amber-200/80">PAN {pw.cost}</div></div></button>); })}</div>
         </Section>
         <Section title="Herramientas de cavado">
-          <div className="grid grid-cols-2 gap-2">{TOOLS.filter((t2) => t2.id !== "palito").map((t2) => { const have = owned.includes(t2.id) || ownedMeta.includes(t2.id); const equipped = tool === t2.id; const price = t2.priceCrowns > 0 ? t2.priceCrowns : t2.priceBread; const curr = t2.priceCrowns > 0 ? crowns : bread; const can = have || curr >= price; return (<button key={t2.id} disabled={!can} onClick={() => onBuyTool(t2.id)} className="btn-3d text-left rounded-lg border-2 p-2 flex items-center gap-2 disabled:opacity-50" style={{ background: equipped ? "#5a3216" : "#3a2010", borderColor: equipped ? t2.color : can ? "#ffd27a88" : "#1a0c04", boxShadow: "0 3px 0 #1a0c04" }}><div className="w-10 h-10 rounded bg-black/40 flex items-center justify-center shrink-0"><Plushie id={t2.id} size={30} /></div><div className="flex-1 min-w-0"><div className="font-display font-bold text-amber-100 text-sm leading-tight truncate">{t2.name}</div><div className="font-pixel text-[7px] text-amber-200/70 leading-tight">{t2.tag}</div><div className="font-pixel text-[8px] mt-0.5" style={{ color: t2.color }}>{equipped ? "EN MANO" : have ? "EQUIPAR" : t2.priceCrowns > 0 ? `CRO ${price}` : `PAN ${price}`}</div></div></button>); })}</div>
+          <div className="grid grid-cols-2 gap-2">{TOOLS.filter((t2) => t2.id !== "palito" && (t2.unlock !== "secret" || owned.includes(t2.id) || ownedMeta.includes(t2.id))).map((t2) => { const have = owned.includes(t2.id) || ownedMeta.includes(t2.id); const equipped = tool === t2.id; const price = t2.priceCrowns > 0 ? t2.priceCrowns : t2.priceBread; const curr = t2.priceCrowns > 0 ? crowns : bread; const can = have || curr >= price; return (<button key={t2.id} disabled={!can} onClick={() => onBuyTool(t2.id)} className="btn-3d text-left rounded-lg border-2 p-2 flex items-center gap-2 disabled:opacity-50" style={{ background: equipped ? "#5a3216" : "#3a2010", borderColor: equipped ? t2.color : can ? "#ffd27a88" : "#1a0c04", boxShadow: "0 3px 0 #1a0c04" }}><div className="w-10 h-10 rounded bg-black/40 flex items-center justify-center shrink-0"><Plushie id={t2.id} size={30} /></div><div className="flex-1 min-w-0"><div className="font-display font-bold text-amber-100 text-sm leading-tight truncate">{t2.name}</div><div className="font-pixel text-[7px] text-amber-200/70 leading-tight">{t2.tag}</div><div className="font-pixel text-[8px] mt-0.5" style={{ color: t2.color }}>{equipped ? "EN MANO" : have ? "EQUIPAR" : t2.priceCrowns > 0 ? `CRO ${price}` : `PAN ${price}`}</div></div></button>); })}</div>
         </Section>
       </div>
       <div className="absolute bottom-2 inset-x-0 px-6 z-10"><button onClick={onContinue} className="btn-3d w-full font-display font-bold text-xl text-white py-2.5 rounded-full border-b-4 active:border-b-0" style={{ background: "linear-gradient(180deg,#7fc24a,#3a7a1a)", borderColor: "#1a3a08", boxShadow: "0 6px 14px rgba(58,122,26,.45), inset 0 2px 0 rgba(255,255,255,.35)" }}>SEGUIR CAVANDO ▶</button></div>
