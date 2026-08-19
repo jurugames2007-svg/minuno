@@ -29,13 +29,16 @@ export interface BossCtx {
 }
 
 export function bossForLevel(level: number): BossType {
-  // V2 chronological order 1-10, then loop + bigotes every 10
-  const order: BossType[] = ["escoba","gato","antisam","caballo","fantasma","cuchara","hornito","refriRey","alacena","bigotesGrande"];
-  if (level >=1 && level <=10) return order[level-1];
-  if (level >10 && level % 10 ===0) return "bigotesGrande";
-  // bonus rotation for checkpoints beyond 10
-  const loop: BossType[] = ["escoba","gato","antisam","caballo","fantasma"];
-  return loop[(level-11)%loop.length];
+  // 20 géneros distintos; nivel 20 (y cada 20) = Bigotes el Feo
+  const order: BossType[] = [
+    "escoba", "vacuum", "chef", "caballo", "alacena",
+    "espectro", "fantasma", "cuchara", "gato", "pastelero",
+    "duende", "reinaMigas", "oven", "maestroChoco", "hornito",
+    "fridge", "bread", "antisam", "refriRey", "bigotes",
+  ];
+  if (level < 1) return order[0];
+  if (level % 20 === 0) return "bigotes";
+  return order[(level - 1) % 20];
 }
 export const BOSS_NAME: Record<BossType, string> = {
   escoba: "ESCOBA MÁGICA", gato: "GATO ARCOÍRIS", antisam: "ANTI-SAM", caballo: "CABALLO DE MADERA",

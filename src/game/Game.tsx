@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent, type R
 import Maxine, { type Pose } from "../art/Maxine";
 import { Plushie, TOOL_MAP, TOOLS, type ToolId } from "../art/Plushie";
 import { Bread, type BreadType, Heart, Crown, PowerIcon, Flour, zoneOf, ZONE_NAME } from "../art/Decor";
-import { type Boss, type Bullet, type BossCtx, spawnBoss, stepBoss, bossForLevel, BossView, BulletView, BOSS_NAME, BOSS_TAUNT, bossPartsWorld } from "../art/Bosses";
+import { type Boss, type Bullet, type BossCtx, spawnBoss, stepBoss, bossForLevel, BossView, BulletView, bossPartsWorld } from "../art/Bosses";
 import type { SkinId } from "../data/skins";
 import * as Audio from "./AudioEngine";
 import BossStage from "./BossStage";
@@ -802,21 +802,6 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
         </div>
         <div className="absolute top-[58px] left-1/2 -translate-x-1/2 z-30 pointer-events-none flex items-center gap-1 bg-black/35 rounded-full px-2 py-0.5 border border-amber-300/20"><Plushie id={tool.current} size={14} /><span className="font-display font-semibold text-[11px] text-amber-100">{TOOL_MAP[tool.current].name}</span></div>
         <div />
-
-        {bossActive.current && boss.current && (
-          <div className="absolute left-4 right-4 z-30 pointer-events-none" style={{ top: 86 }}>
-            <div className="text-center font-display font-bold text-[13px] text-rose-200 mb-0.5" style={{ textShadow: "0 0 6px #ff3060" }}>{BOSS_NAME[boss.current.type]}</div>
-            <div className="h-2.5 rounded-full border border-rose-300/50 bg-black/50 overflow-hidden">
-              <div className="h-full" style={{ width: `${Math.max(0, (boss.current.hp / boss.current.maxHp) * 100)}%`, background: "linear-gradient(90deg,#ff3060,#ffd27a)", transition: "width .15s", boxShadow: "0 0 8px #ff306088" }} />
-            </div>
-            <div className="flex items-center justify-center gap-1 mt-1">
-              {boss.current.stun > 0 ? <span className="font-display font-bold text-[10px] px-1.5 py-0.5 rounded-full bg-amber-300 text-amber-900">Aturdido</span>
-                : boss.current.vulnerable ? <span className="font-display font-bold text-[10px] px-1.5 py-0.5 rounded-full bg-lime-300 text-lime-900">Vulnerable</span>
-                : <span className="font-display font-bold text-[10px] px-1.5 py-0.5 rounded-full bg-rose-400/80 text-white">Protegido</span>}
-              <span className="font-display italic text-[11px] text-amber-100/80">{BOSS_TAUNT[boss.current.type]}</span>
-            </div>
-          </div>
-        )}
 
         <button aria-label="Pausar juego" onClick={() => setPaused((v) => !v)} className="absolute top-10 right-2 z-40 bg-black/45 rounded-md px-2 py-1 font-display font-bold text-[12px] text-amber-100 border border-amber-300/30">{paused ? "▶" : "❚❚"}</button>
 

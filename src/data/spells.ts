@@ -36,8 +36,24 @@ export const SPELLS: SpellDef[] = [
 
 export const SPELL_MAP: Record<SpellId, SpellDef> = Object.fromEntries(SPELLS.map((s) => [s.id, s])) as Record<SpellId, SpellDef>;
 
+const EXTRA: Partial<Record<BossType, SpellId>> = {
+  vacuum: "barrido",
+  chef: "llama",
+  fridge: "hielo",
+  oven: "llama",
+  bread: "masa",
+  pastelero: "masa",
+  duende: "espectro",
+  reinaMigas: "iman",
+  maestroChoco: "llama",
+  espectro: "espectro",
+  bigotes: "ladrido",
+  bigotesGrande: "ladrido",
+};
+
 export function spellForBoss(type: BossType): SpellId {
-  if (type === "bigotes") return "ladrido";
+  const extra = EXTRA[type];
+  if (extra) return extra;
   const found = SPELLS.find((s) => s.boss === type);
   return found ? found.id : "barrido";
 }
