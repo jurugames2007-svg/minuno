@@ -187,7 +187,8 @@ function HelpModal({ onClose }: { onClose: () => void }) {
           <li><b className="text-amber-200">Mover</b> — deslizá a los lados (o A / D)</li>
           <li><b className="text-amber-200">Saltar</b> — deslizá hacia arriba (o espacio)</li>
           <li><b className="text-amber-200">Cavar</b> — flechas eligen el lado, huella cava</li>
-          <li><b className="text-amber-200">Pegar</b> — tocá la pantalla (o J)</li>
+          <li><b className="text-amber-200">Pegar</b> — tocá (o J). Mantené para cargar</li>
+          <li><b className="text-amber-200">Dash</b> — deslizá rápido o Shift / DASH</li>
           <li><b className="text-amber-200">Pausa</b> — P o el botón de arriba</li>
         </ul>
         <p className="font-display text-[13px] text-amber-100/80 mt-3 leading-snug">

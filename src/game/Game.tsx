@@ -29,7 +29,8 @@ interface PowerItem { id: number; x: number; y: number; kind: string; taken: boo
 interface Particle { x: number; y: number; vx: number; vy: number; life: number; max: number; color: string; size: number; }
 
 interface World { rows: Record<number, Cell[]>; enemies: Enemy[]; breads: BreadItem[]; powers: PowerItem[]; bullets: Bullet[]; isRest: Record<number, boolean>; isBoss: Record<number, boolean>; doorRow: Record<number, number>; }
-interface Player { x: number; y: number; prevY: number; vx: number; vy: number; onGround: boolean; facing: 1 | -1; invuln: number; hurtTimer: number; digTimer: number; attackTimer: number; attackCd: number; coyote: number; jumpBuf: number; usedDouble: boolean; wallSlide: number; wallDir: 0|1|-1; }
+interface Ghost { x: number; y: number; life: number; face: 1 | -1 }
+interface Player { x: number; y: number; prevY: number; vx: number; vy: number; onGround: boolean; facing: 1 | -1; invuln: number; hurtTimer: number; digTimer: number; attackTimer: number; attackCd: number; coyote: number; jumpBuf: number; usedDouble: boolean; wallSlide: number; wallDir: 0|1|-1; dash: number; dashCd: number; charge: number; }
 interface Active { shield: number; magnet: number; speed: number; yeast: number; frozen: number; bounceUsed: boolean; boost: number; }
 
 function mulberry32(seed: number) {
@@ -81,7 +82,8 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
   }, []);
 
   const world = useRef<World>({ rows: {}, enemies: [], breads: [], powers: [], bullets: [], isRest: {}, isBoss: {}, doorRow: {} });
-  const player = useRef<Player>({ x: 3 * TILE + TILE / 2 - PW / 2, y: startRow * TILE, prevY: startRow * TILE, vx: 0, vy: 0, onGround: false, facing: 1, invuln: 0, hurtTimer: 0, digTimer: 0, attackTimer: 0, attackCd: 0, coyote: 0, jumpBuf: 0, usedDouble: false, wallSlide: 0, wallDir: 0 });
+  const player = useRef<Player>({ x: 3 * TILE + TILE / 2 - PW / 2, y: startRow * TILE, prevY: startRow * TILE, vx: 0, vy: 0, onGround: false, facing: 1, invuln: 0, hurtTimer: 0, digTimer: 0, attackTimer: 0, attackCd: 0, coyote: 0, jumpBuf: 0, usedDouble: false, wallSlide: 0, wallDir: 0, dash: 0, dashCd: 0, charge: 0 });
+  const ghosts = useRef<Ghost[]>([]);
   const active = useRef<Active>({ shield: 0, magnet: 0, speed: 0, yeast: 0, frozen: 0, bounceUsed: false, boost: 0 });
   const cameraY = useRef(0);
   const hearts = useRef(3);
@@ -92,7 +94,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
   const startY = useRef(startRow * TILE);
   const maxDepth = useRef((startLevel||1)>1? (startLevel-1)*CYCLE:0);
   const ids = useRef(1);
-  const input = useRef({ left: false, right: false, down: false, digEdge: false, jumpEdge: false, attackEdge: false });
+  const input = useRef({ left: false, right: false, down: false, digEdge: false, jumpEdge: false, attackEdge: false, dashEdge: false, attackHold: false });
   const aim = useRef<{ x: number; y: number }>({ x: 0, y: 1 });
   const over = useRef(false);
   const elapsed = useRef(0);
@@ -279,12 +281,13 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
     return { x: cx + dx * TILE * 0.6 - (dx === 0 ? w / 2 : 0) - (dx > 0 ? 0 : w * 0.3), y: cy + dy * TILE * 0.5 - h / 2, w, h, dx, dy };
   }
 
-  function doAttack() {
+  function doAttack(charged = false) {
     const p = player.current; if (p.attackCd > 0) return;
-    p.attackCd = 0.32; p.attackTimer = 0.18;
-    const t = TOOL_MAP[tool.current]; const dmg = 1 + (t.speedMul >= 1.45 ? 1 : 0) + (t.healOnDig ? 1 : 0);
+    p.attackCd = charged ? 0.42 : 0.28; p.attackTimer = charged ? 0.26 : 0.18;
+    const t = TOOL_MAP[tool.current]; const dmg = 1 + (t.speedMul >= 1.45 ? 1 : 0) + (t.healOnDig ? 1 : 0) + (charged ? 2 : 0);
     const arc = attackArc();
-    spawnDust(arc.x + arc.w / 2, arc.y + arc.h / 2, "#fff3d6", 6); Audio.playAttack();
+    if (charged) { arc.w += 18; arc.h += 10; arc.x -= 6; shake.current = Math.max(shake.current, 5); Audio.playCharge(); }
+    spawnDust(arc.x + arc.w / 2, arc.y + arc.h / 2, charged ? "#7fd0ff" : "#fff3d6", charged ? 14 : 6); Audio.playAttack();
     if (spell) {
       const cx = p.x + PW / 2, cy = p.y + PH / 2, f = p.facing;
       if (spell === "barrido") { for (let i = -1; i <= 1; i++) world.current.bullets.push({ id: ids.current++, x: cx + f * 10, y: cy, vx: f * 180, vy: i * 70, life: 0.7, kind: "dust", ally: true }); }
@@ -372,6 +375,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       const p = player.current; const a = active.current; const t = TOOL_MAP[tool.current];
       a.shield = Math.max(0, a.shield - dt); a.magnet = Math.max(0, a.magnet - dt); a.speed = Math.max(0, a.speed - dt); a.yeast = Math.max(0, a.yeast - dt); a.frozen = Math.max(0, a.frozen - dt); a.boost = Math.max(0, a.boost - dt);
       p.invuln = Math.max(0, p.invuln - dt); p.hurtTimer = Math.max(0, p.hurtTimer - dt); p.digTimer = Math.max(0, p.digTimer - dt); p.attackTimer = Math.max(0, p.attackTimer - dt); p.attackCd = Math.max(0, p.attackCd - dt);
+      p.dash = Math.max(0, p.dash - dt); p.dashCd = Math.max(0, p.dashCd - dt);
       p.prevY = p.y;
 
       if (input.current.left) aim.current = { x: -1, y: 0 };
@@ -379,11 +383,35 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       else if (input.current.down) aim.current = { x: 0, y: 1 };
       else aim.current = { x: p.facing, y: 0 };
 
+      if (input.current.attackHold) p.charge = Math.min(1, p.charge + dt / 0.55);
+      else if (p.charge > 0) {
+        const charged = p.charge >= 1;
+        p.charge = 0;
+        doAttack(charged);
+      }
+
+      if (input.current.dashEdge && p.dashCd <= 0) {
+        input.current.dashEdge = false;
+        p.dash = 0.16; p.dashCd = 0.42; p.invuln = Math.max(p.invuln, 0.16);
+        p.vy = Math.min(p.vy, 40);
+        Audio.playDash();
+        spawnDust(p.x + PW / 2, p.y + PH / 2, "#7fd0ff", 10);
+      } else input.current.dashEdge = false;
+
       const frozenMul = a.frozen > 0 ? 0.4 : 1;
       const speedMul = (a.speed > 0 ? 1.4 : 1) * frozenMul;
       const dir = (input.current.right ? 1 : 0) - (input.current.left ? 1 : 0);
-      if (dir !== 0) p.facing = dir as 1 | -1;
-      p.vx = dir * MOVE * speedMul;
+      if (dir !== 0 && p.dash <= 0) p.facing = dir as 1 | -1;
+      if (p.dash > 0) {
+        p.vx = p.facing * 430;
+        if (Math.floor(elapsed.current * 40) % 2 === 0) ghosts.current.push({ x: p.x, y: p.y, life: 0.18, face: p.facing });
+      } else {
+        p.vx = dir * MOVE * speedMul;
+      }
+      for (let i = ghosts.current.length - 1; i >= 0; i--) {
+        ghosts.current[i].life -= dt;
+        if (ghosts.current[i].life <= 0) ghosts.current.splice(i, 1);
+      }
 
       const pc = Math.floor((p.x + PW / 2) / TILE); const pr = Math.floor((p.y + PH / 2) / TILE);
       if (getCell(pr, pc) === 4) p.vx *= 0.45;
@@ -409,7 +437,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       p.x = Math.max(TILE, Math.min(p.x, (COLS - 1) * TILE - PW));
 
       if (input.current.digEdge) { input.current.digEdge = false; tryDig(); }
-      if (input.current.attackEdge) { input.current.attackEdge = false; doAttack(); }
+      if (input.current.attackEdge && !input.current.attackHold) { input.current.attackEdge = false; doAttack(false); }
 
       // ——— JUMP: coyote + buffer + DOUBLE JUMP + WALL JUMP ———
       p.coyote = p.onGround ? 0.12 : Math.max(0, p.coyote - dt);
@@ -637,8 +665,8 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
         if (gp.buttons[0] && gp.buttons[0].pressed) { input.current.jumpEdge = true; }
         // Attack on button X (index 2)
         if (gp.buttons[2] && gp.buttons[2].pressed) { input.current.attackEdge = true; }
-        // Dig on button B (index 1)
         if (gp.buttons[1] && gp.buttons[1].pressed) { input.current.digEdge = true; }
+        if (gp.buttons[5] && gp.buttons[5].pressed) { input.current.dashEdge = true; }
       }
     }, 50);
 
@@ -740,6 +768,11 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
           {world.current.powers.filter((pw) => !pw.taken && pw.y > cam - 40 && pw.y < cam + STAGE_H + 40).map((pw) => (<div key={pw.id} className="absolute hop" style={{ left: pw.x - 15, top: pw.y - 15 }}><div className="rounded-full bg-white/20 p-1 border border-white/40" style={{ boxShadow: "0 0 10px #7fd0ff" }}><PowerIcon kind={pw.kind} size={22} /></div></div>))}
           {world.current.enemies.filter((e) => e.y > cam - 60 && e.y < cam + STAGE_H + 60).map((e) => (<div key={e.id} className="absolute" style={{ left: e.x - 20, top: e.y - 20, transform: `scaleX(${e.vx < 0 ? -1 : 1})`, opacity: e.hitCd > 0 ? 0.5 : 1, filter: e.hitCd > 0 ? "brightness(2)" : undefined }}><EnemyView type={e.type} active={e.active} /></div>))}
           {world.current.bullets.filter((b) => b.y > cam - 40 && b.y < cam + STAGE_H + 40).map((b) => <BulletView key={b.id} b={b} />)}
+          {ghosts.current.map((g, i) => (
+            <div key={`g${i}`} className="absolute pointer-events-none" style={{ left: g.x - 6, top: g.y - 14, opacity: g.life * 2, filter: "brightness(1.6) saturate(0.2)" }}>
+              <Maxine skin={skin} pose="fall" facing={g.face} size={PW + 18} animate={false} />
+            </div>
+          ))}
           {particles.current.map((q, i) => (<div key={i} className="absolute rounded-full" style={{ left: q.x, top: q.y, width: q.size, height: q.size, background: q.color, opacity: Math.max(0, q.life / q.max) }} />))}
 
           {bossActive.current && boss.current && boss.current.telegraph > 0 && boss.current.atkW > 0 && (
@@ -790,8 +823,21 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
           </div>
         </div>
 
-        {/* HUD */}
-        <div className="absolute top-2 left-2 flex gap-1 z-30">{Array.from({ length: Math.max(3, hearts.current) }).map((_, i) => <Heart key={i} filled={i < hearts.current} size={20} />)}</div>
+        {/* HUD estilo Zero: barras de pips + corazones */}
+        <div className="absolute top-2 left-2 z-30 flex items-start gap-1.5 pointer-events-none">
+          <ZeroPips n={Math.max(3, hearts.current)} filled={hearts.current} color="#ff4d6d" label="HP" />
+          {spell && <ZeroPips n={8} filled={8} color={spell === "hielo" ? "#7fd0ff" : "#ffd27a"} label="MG" />}
+          <div className="flex flex-col gap-0.5 mt-0.5">
+            {Array.from({ length: Math.max(3, hearts.current) }).map((_, i) => <Heart key={i} filled={i < hearts.current} size={14} />)}
+          </div>
+        </div>
+        {p.charge > 0 && (
+          <div className="absolute left-1/2 -translate-x-1/2 z-30 pointer-events-none" style={{ top: 72, width: 80 }}>
+            <div className="h-1.5 overflow-hidden" style={{ background: "#1a0c04", border: "1px solid #000" }}>
+              <div className="h-full" style={{ width: `${p.charge * 100}%`, background: p.charge >= 1 ? "#7fd0ff" : "#ffd27a" }} />
+            </div>
+          </div>
+        )}
         <div className="absolute top-2 right-2 flex flex-col items-end gap-1 z-30">
           <div className="flex items-center gap-1 bg-black/45 rounded-full px-2 py-0.5 border border-amber-300/30"><Crown size={12} /><span className="font-pixel text-[10px] text-amber-200">{crownsRun.current}</span></div>
           <div className="flex items-center gap-1 bg-black/45 rounded-full px-2 py-0.5 border border-amber-300/30"><span className="font-display text-[11px] font-bold text-amber-200/80">Pan</span><span className="font-display font-bold text-[12px] text-amber-100">{breadRun.current}</span></div>
@@ -816,7 +862,13 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
           onDown={(v) => { input.current.down = v; }}
           onJump={() => { input.current.jumpEdge = true; }}
           onAttack={() => { input.current.attackEdge = true; }}
+          onDash={() => { input.current.dashEdge = true; }}
         />
+        <button type="button" aria-label="Dash" className="absolute z-[90] font-pixel text-[7px] text-white"
+          style={{ right: 76, bottom: 86, width: 52, height: 52, background: "rgba(26,12,4,0.45)", border: "2px solid rgba(10,4,2,0.45)", opacity: 0.7 }}
+          onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); input.current.dashEdge = true; }}>
+          DASH
+        </button>
         <PawButton aim={aim.current} onPress={() => { input.current.digEdge = true; }} />
         <MagicButton spell={spell} locked={spells.length === 0} onCycle={() => onCycleSpell?.()} />
         {gate && (
@@ -842,7 +894,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
             <div className="font-display font-bold text-4xl text-amber-100">PAUSA</div>
             <Maxine skin={skin} pose="idle" size={120} />
             <div className="font-pixel text-[8px] text-amber-200/70 text-center leading-relaxed px-6">
-              ← → apuntar lado · ↓ apunta abajo<br />huella cava · J pega · P pausa
+              ← → mover · ↑ salto · Shift dash<br />J (mantener) carga · huella cava
             </div>
             <button onClick={() => setPaused(false)} className="btn-3d font-display font-bold text-xl text-white px-8 py-2 rounded-full border-b-4" style={{ background: "linear-gradient(180deg,#7fc24a,#3a7a1a)", borderColor: "#1a3a08" }}>CONTINUAR</button>
           </div>
@@ -854,8 +906,21 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
   );
 }
 
-function TouchPad({ onMove, onDown, onJump, onAttack }: { onMove: (dir: -1 | 0 | 1) => void; onDown: (v: boolean) => void; onJump: () => void; onAttack: () => void }) {
-  const g = useRef({ x: 0, y: 0, t: 0, jumped: false, id: -1 });
+function ZeroPips({ n, filled, color, label }: { n: number; filled: number; color: string; label: string }) {
+  return (
+    <div className="flex flex-col items-center">
+      <div className="font-pixel text-[5px] text-white mb-0.5" style={{ textShadow: "1px 1px 0 #000" }}>{label}</div>
+      <div className="flex flex-col-reverse gap-px p-0.5" style={{ background: "#0a0402", border: "1px solid #000" }}>
+        {Array.from({ length: n }).map((_, i) => (
+          <div key={i} style={{ width: 10, height: 4, background: i < filled ? color : "#2a1810" }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TouchPad({ onMove, onDown, onJump, onAttack, onDash }: { onMove: (dir: -1 | 0 | 1) => void; onDown: (v: boolean) => void; onJump: () => void; onAttack: () => void; onDash: () => void }) {
+  const g = useRef({ x: 0, y: 0, t: 0, jumped: false, dashed: false, id: -1 });
   const end = (e: PointerEvent<HTMLDivElement>) => {
     if (g.current.id !== e.pointerId && g.current.id !== -1) return;
     const dx = e.clientX - g.current.x; const dy = e.clientY - g.current.y;
@@ -871,12 +936,14 @@ function TouchPad({ onMove, onDown, onJump, onAttack }: { onMove: (dir: -1 | 0 |
       onPointerDown={(e) => {
         if (g.current.id !== -1) return;
         (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
-        g.current = { x: e.clientX, y: e.clientY, t: performance.now(), jumped: false, id: e.pointerId };
+        g.current = { x: e.clientX, y: e.clientY, t: performance.now(), jumped: false, dashed: false, id: e.pointerId };
       }}
       onPointerMove={(e) => {
         if (g.current.id !== e.pointerId) return;
         const dx = e.clientX - g.current.x; const dy = e.clientY - g.current.y;
+        const dt = performance.now() - g.current.t;
         if (Math.abs(dx) > 16) onMove(dx < 0 ? -1 : 1);
+        if (Math.abs(dx) > 72 && dt < 180 && !g.current.dashed) { onDash(); g.current.dashed = true; }
         if (dy < -36 && !g.current.jumped) { onJump(); g.current.jumped = true; }
         onDown(dy > 28);
       }}

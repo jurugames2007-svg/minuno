@@ -284,3 +284,5 @@ export function playMiss() { sfxOsc(180, "sawtooth", 0.12, 0.08, 90); }
 export function playCombo() { sfxOsc(880, "triangle", 0.1, 0.1, 1320); }
 export function playKo() { [392, 523, 659, 784].forEach((f, i) => setTimeout(() => sfxOsc(f, "triangle", 0.24, 0.13), i * 90)); }
 export function playPhase() { sfxOsc(220, "square", 0.18, 0.12, 440); }
+export function playDash() { sfxOsc(240, "square", 0.09, 0.1, 90); sfxOsc(520, "triangle", 0.08, 0.07); }
+export function playCharge() { sfxOsc(380, "sine", 0.16, 0.08, 760); }
