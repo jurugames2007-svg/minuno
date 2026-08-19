@@ -92,9 +92,9 @@
             setTimeout(function () { try { if (!removed) { removed = true; s.classList.add('hide'); setTimeout(function () { s.classList.add('gone'); }, 700); } } catch (_) {} }, 1800);
             return;
           }
-          var st = document.getElementById('sp-status'); if (st) st.textContent = 'LISTO ✓';
           removed = true;
-          setTimeout(function () { s.classList.add('hide'); setTimeout(function () { s.classList.add('gone'); }, 700); }, 220);
+          s.classList.add('hide');
+          setTimeout(function () { s.classList.add('gone'); }, 280);
         };
         // hard fallback: if React never signals ready, still free the screen
         window.addEventListener('load', function () { setTimeout(function () { if (!removed) window.hideSplash(); }, 1500); });

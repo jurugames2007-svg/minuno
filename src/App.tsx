@@ -1,29 +1,18 @@
-import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import Menu from "./screens/Menu";
 import Intro from "./screens/Intro";
+import Victory from "./screens/Victory";
+import Shop from "./screens/Shop";
+import GameOver from "./screens/GameOver";
+import Game from "./game/Game";
+import House from "./screens/House";
+import Campo from "./screens/Campo";
 import { Flour } from "./art/Decor";
 import { SKINS, type SkinId } from "./data/skins";
 import type { ToolId } from "./art/Plushie";
 import { CYCLE } from "./data/world";
 import { type SpellId } from "./data/spells";
 import ErrorBound from "./ui/ErrorBound";
-
-const Victory = lazy(() => import("./screens/Victory"));
-const Shop = lazy(() => import("./screens/Shop"));
-const GameOver = lazy(() => import("./screens/GameOver"));
-const Game = lazy(() => import("./game/Game"));
-const House = lazy(() => import("./screens/House"));
-const Campo = lazy(() => import("./screens/Campo"));
-
-function Gate({ children }: { children: ReactNode }) {
-  return (
-    <ErrorBound>
-      <Suspense fallback={<div className="absolute inset-0 flex items-center justify-center font-display text-amber-100">Cargando…</div>}>
-        {children}
-      </Suspense>
-    </ErrorBound>
-  );
-}
 
 type Screen = "intro" | "menu" | "shop" | "game" | "over" | "victory" | "house" | "campo";
 
@@ -124,7 +113,7 @@ export default function App() {
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full blur-3xl" style={{ background: "#ff7a2a22" }} />
         <div className="absolute -bottom-24 -right-16 w-96 h-96 rounded-full blur-3xl" style={{ background: "#b06bff1a" }} />
-        <Flour count={18} />
+        <Flour count={8} />
       </div>
 
       <div
@@ -158,7 +147,7 @@ export default function App() {
           </ErrorBound>
         )}
         {screen === "shop" && (
-          <Gate>
+          <ErrorBound>
             <Shop
               skin={skin}
               owned={owned}
@@ -172,10 +161,10 @@ export default function App() {
               onEquipTool={(id: ToolId) => setStartTool(id)}
               onBack={() => setScreen("menu")}
             />
-          </Gate>
+          </ErrorBound>
         )}
         {screen === "house" && (
-          <Gate>
+          <ErrorBound>
             <House
               skin={skin}
               crumbs={crumbs}
@@ -183,10 +172,10 @@ export default function App() {
               onEarn={(n) => setCrumbs((c) => c + n)}
               onBack={() => setScreen("menu")}
             />
-          </Gate>
+          </ErrorBound>
         )}
         {screen === "campo" && (
-          <Gate>
+          <ErrorBound>
             <Campo
               skin={skin}
               owned={owned}
@@ -197,7 +186,7 @@ export default function App() {
               onEarn={(n) => setCrumbs((c) => c + n)}
               onBack={() => setScreen("menu")}
             />
-          </Gate>
+          </ErrorBound>
         )}
         {screen === "intro" && (
           <ErrorBound>
@@ -208,7 +197,7 @@ export default function App() {
           </ErrorBound>
         )}
         {screen === "game" && (
-          <Gate>
+          <ErrorBound>
             <Game
               key={runId}
               skin={skin}
@@ -239,26 +228,26 @@ export default function App() {
                 setScreen("victory");
               }}
             />
-          </Gate>
+          </ErrorBound>
         )}
         {screen === "victory" && overStats && (
-          <Gate>
+          <ErrorBound>
             <Victory
               stats={overStats}
               unlockedUgly={justUnlockedUgly}
               onContinue={() => { setRunId((n) => n + 1); setScreen("game"); }}
               onMenu={() => setScreen("menu")}
             />
-          </Gate>
+          </ErrorBound>
         )}
         {screen === "over" && overStats && (
-          <Gate>
+          <ErrorBound>
             <GameOver
               stats={overStats}
               onRetry={() => { setRunId((n) => n + 1); setScreen("game"); }}
               onMenu={() => setScreen("menu")}
             />
-          </Gate>
+          </ErrorBound>
         )}
       </div>
     </div>
