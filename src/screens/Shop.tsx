@@ -158,7 +158,7 @@ export default function Shop({ skin, owned, crumbs, ownedTools, startTool, story
           <div className="flex gap-1 overflow-x-auto scrollbar-none px-2 pt-1.5">
             <CatChip label="Todas" active={cat === "Todas"} onClick={() => setCat("Todas")} />
             {cats.map((c) => (
-              <CatChip key={c} label={c} active={cat === c} onClick={() => setCat(c)} ugly={c === "Feo"} />
+              <CatChip key={c} label={c} active={cat === c} onClick={() => setCat(c)} ugly={c === "Feo"} mythic={c === "Mítica"} />
             ))}
           </div>
         )}
@@ -181,7 +181,7 @@ export default function Shop({ skin, owned, crumbs, ownedTools, startTool, story
                 }}
               >
                 <div className="absolute top-0.5 right-0.5 font-display font-bold text-[9px] px-1 rounded" style={{ background: RARITY_COLOR[s.rarity], color: "#1a0c04" }}>
-                  {s.rarity === "Legendario" ? "LEG" : s.rarity === "Épico" ? "EPI" : s.rarity === "Feo" ? "FEO" : s.rarity.slice(0, 3).toUpperCase()}
+                  {s.rarity === "Mítica" ? "MIT" : s.rarity === "Legendario" ? "LEG" : s.rarity === "Épico" ? "EPI" : s.rarity === "Feo" ? "FEO" : s.rarity.slice(0, 3).toUpperCase()}
                 </div>
                 <div className="w-full aspect-square rounded bg-[#1a0c04]/60 flex items-center justify-center overflow-hidden relative">
                   <Maxine skin={s.id} pose="idle" size={64} animate={sel && !secret} />
@@ -276,15 +276,16 @@ function TabBtn({ active, onClick, label }: { active: boolean; onClick: () => vo
   );
 }
 
-function CatChip({ label, active, onClick, ugly }: { label: string; active: boolean; onClick: () => void; ugly?: boolean }) {
+function CatChip({ label, active, onClick, ugly, mythic }: { label: string; active: boolean; onClick: () => void; ugly?: boolean; mythic?: boolean }) {
   return (
     <button
       onClick={onClick}
       className="shrink-0 font-display font-bold text-[11px] px-2 py-0.5 rounded-full border"
       style={{
-        background: active ? (ugly ? "#c07040" : "#ffd27a") : "#2a1408",
-        color: active ? "#1a0c04" : "#d9b070",
-        borderColor: ugly ? "#8a4020" : "#5a3216",
+        background: active ? (ugly ? "#c07040" : mythic ? "#7fffd4" : "#ffd27a") : "#2a1408",
+        color: active ? "#1a0c04" : mythic ? "#7fffd4" : "#d9b070",
+        borderColor: ugly ? "#8a4020" : mythic ? "#2a8a70" : "#5a3216",
+        boxShadow: mythic && active ? "0 0 8px #7fffd466" : undefined,
       }}
     >{label}</button>
   );

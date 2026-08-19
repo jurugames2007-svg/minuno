@@ -56,6 +56,9 @@ function palette(skin: SkinId): Pal {
 const BODY_SKINS = new Set<SkinId>(["kissy", "pochacco", "mahoraga", "yarnaby", "huggy", "catnap", "dogday", "craftycorn", "creeper", "zombie", "penguin", "bigotes", "catto", "ender", "unicornio", "eevee", "kira", "spooky", "freddy", "foxy", "bonnie", "chica", "croissant", "cthulhu", "bodoque", "juana"]);
 
 export default function Maxine({ skin = "default", pose = "idle", facing = 1, size = 120, className = "", animate = true }: Props) {
+  if (skin === "huachimingo") {
+    return <Huachimingo pose={pose} facing={facing} size={size} className={className} animate={animate} />;
+  }
   const tailWag = animate && (pose === "idle" || pose === "win" || pose === "dig");
   const bodyBob = animate && pose === "idle";
   const hurt = pose === "hurt"; const dead = pose === "dead"; const win = pose === "win"; const dig = pose === "dig"; const fall = pose === "fall";
@@ -696,20 +699,24 @@ function BodyCostume({ skin }: { skin: SkinId }) {
       <circle cx="50" cy="70" r="3.2" fill="#d8f3dc" opacity="0.7" />
     </g>;
     case "pennywise": return <g>
-      <path d="M28 62 Q50 54 72 62 L74 86 Q50 94 26 86 Z" fill="#d8dde4" stroke="#5a6270" strokeWidth="1.2" />
-      <path d="M28 62 Q50 58 72 62 L70 70 Q50 64 30 70 Z" fill="#fff" />
-      <circle cx="38" cy="74" r="3.2" fill="#d9342b" stroke="#7a1410" strokeWidth="0.5" />
-      <circle cx="50" cy="78" r="3.2" fill="#d9342b" stroke="#7a1410" strokeWidth="0.5" />
-      <circle cx="62" cy="74" r="3.2" fill="#d9342b" stroke="#7a1410" strokeWidth="0.5" />
-      <path d="M32 58 Q50 68 68 58 Q62 52 50 54 Q38 52 32 58 Z" fill="#fff" stroke="#c8c8c8" strokeWidth="0.8" />
+      <path d="M26 62 Q50 52 74 62 L78 88 Q50 96 22 88 Z" fill="#e8eaf0" stroke="#5a6270" strokeWidth="1.2" />
+      <path d="M26 62 Q50 56 74 62 L72 70 Q50 64 28 70 Z" fill="#fff" />
+      <circle cx="36" cy="74" r="3.4" fill="#c1121f" stroke="#7a1410" strokeWidth="0.5" />
+      <circle cx="50" cy="80" r="3.4" fill="#c1121f" stroke="#7a1410" strokeWidth="0.5" />
+      <circle cx="64" cy="74" r="3.4" fill="#c1121f" stroke="#7a1410" strokeWidth="0.5" />
+      <path d="M24 56 Q36 70 50 58 Q64 70 76 56 Q68 50 50 52 Q32 50 24 56 Z" fill="#fffef6" stroke="#c8c8c8" strokeWidth="0.8" />
+      <path d="M28 58 q6 8 10 0 M42 60 q8 8 16 0 M62 58 q6 8 10 0" fill="none" stroke="#d0d4dc" strokeWidth="0.7" />
     </g>;
     case "bodoque":
     case "juana": return <g>
-      <path d="M30 62 Q50 54 70 62 L70 84 Q50 92 30 84 Z" fill="#ffe066" stroke="#a8730a" strokeWidth="1.2" />
-      <path d="M30 62 Q50 58 70 62 L68 68 Q50 64 32 68 Z" fill="#fff3a8" />
-      <rect x="42" y="70" width="16" height="10" rx="1.5" fill="#fff" stroke="#1a1a1a" strokeWidth="0.7" />
-      <text x="50" y="78" textAnchor="middle" fontFamily="Fredoka, sans-serif" fontWeight="700" fontSize="5" fill="#1a1a1a">31</text>
-      <path d="M32 76 h36" stroke="#d9342b" strokeWidth="1.4" />
+      <path d="M28 60 Q50 52 72 60 L74 86 Q50 94 26 86 Z" fill="#ffe14a" stroke="#b8860b" strokeWidth="1.3" />
+      <path d="M28 60 Q50 56 72 60 L70 68 Q50 62 30 68 Z" fill="#fff4a8" />
+      <path d="M40 58 Q50 64 60 58 L58 70 Q50 74 42 70 Z" fill="#fff" stroke="#1a1a1a" strokeWidth="0.6" />
+      <rect x="41" y="69" width="18" height="11" rx="1.4" fill="#fffef2" stroke="#1a1a1a" strokeWidth="0.7" />
+      <text x="50" y="77" textAnchor="middle" fontFamily="Fredoka, sans-serif" fontWeight="800" fontSize="5.2" fill="#1a1a1a">31</text>
+      <path d="M30 78 h40" stroke="#c1121f" strokeWidth="1.6" />
+      <circle cx="36" cy="72" r="1.2" fill="#1a1a1a" />
+      <circle cx="64" cy="72" r="1.2" fill="#1a1a1a" />
     </g>;
     default: return null;
   }
@@ -1208,12 +1215,15 @@ function HeadGear({ skin }: { skin: SkinId }) {
     </g>;
     case "bodoque":
     case "juana": {
-      const hair = skin === "juana" ? "#ff4d6d" : "#c1121f";
+      const hair = skin === "juana" ? "#ff4d6d" : "#9b2226";
+      const hi = skin === "juana" ? "#ff8fab" : "#e85d04";
       return <g>
-        <path d="M26 28 Q22 6 42 8 Q36 18 30 30 Z" fill={hair} />
-        <path d="M74 28 Q78 6 58 8 Q64 18 70 30 Z" fill={hair} />
-        <path d="M30 18 Q50 2 70 18 Q62 12 50 12 Q38 12 30 18 Z" fill={hair} />
-        <path d="M34 22 Q50 10 66 22" fill={skin === "juana" ? "#ff8fab" : "#e85d04"} />
+        <path d="M22 32 Q16 4 40 6 Q32 20 28 34 Z" fill={hair} />
+        <path d="M78 32 Q84 4 60 6 Q68 20 72 34 Z" fill={hair} />
+        <path d="M26 16 Q50 -6 74 16 Q66 8 50 6 Q34 8 26 16 Z" fill={hair} />
+        <path d="M32 20 Q50 6 68 20 Q60 14 50 12 Q40 14 32 20 Z" fill={hi} />
+        <path d="M30 26 Q38 10 46 24" fill={hair} />
+        <path d="M70 26 Q62 10 54 24" fill={hair} />
       </g>;
     }
     default: return null;
@@ -1298,5 +1308,127 @@ function JockeyRider() {
       <path d="M42 30 Q50 18 58 30 Q58 26 50 24 Q42 26 42 30 Z" fill="#1a1a1a" />
       <path d="M42 30 Q50 26 58 30 L58 32 L42 32 Z" fill="#d9342b" />
     </g>
+  );
+}
+
+
+function Huachimingo({ pose, facing, size, className, animate }: { pose: Pose; facing: 1 | -1; size: number; className: string; animate: boolean }) {
+  const idle = animate && pose === "idle";
+  const dig = pose === "dig";
+  const hurt = pose === "hurt";
+  const dead = pose === "dead";
+  const win = pose === "win";
+  const fall = pose === "fall";
+  const spots = [
+    [34, 62, 3.2], [44, 58, 2.4], [56, 64, 3.6], [66, 60, 2.8], [40, 74, 2.6],
+    [60, 76, 3.1], [50, 70, 2.2], [32, 80, 2.0], [70, 80, 2.3], [48, 84, 1.8],
+    [38, 36, 2.8], [62, 34, 3.2], [50, 28, 2.4], [32, 46, 2.1], [70, 48, 2.6],
+    [44, 44, 1.7], [58, 46, 1.9], [36, 54, 2.2], [64, 54, 2.0],
+  ] as const;
+  return (
+    <svg viewBox="0 0 100 100" width={size} height={size} className={`${className} ${idle ? "bob" : ""}`} style={{ overflow: "visible", filter: hurt ? "drop-shadow(0 0 6px #ff5a5a)" : "drop-shadow(0 3px 4px rgba(0,0,0,.35))" }}>
+      <defs>
+        <radialGradient id="hua-fur" cx="40%" cy="30%" r="75%">
+          <stop offset="0%" stopColor="#f4f1ea" />
+          <stop offset="55%" stopColor="#cfc6b8" />
+          <stop offset="100%" stopColor="#8a8074" />
+        </radialGradient>
+        <filter id="hua-soft"><feGaussianBlur stdDeviation="0.25" /></filter>
+      </defs>
+      <g transform={facing === -1 ? "translate(100,0) scale(-1,1)" : undefined}>
+        <g transform={dead ? "rotate(-16 50 70) translate(0 6)" : ""}>
+          {/* antennae — rabbit-like but antenna, not schnauzer ears */}
+          <g className={idle ? "wag" : ""} style={{ transformOrigin: "38px 22px" }}>
+            <path d="M40 26 Q28 4 22 -6 Q18 -10 24 -4 Q32 10 40 26 Z" fill="url(#hua-fur)" stroke="#4a4036" strokeWidth="1.1" />
+            <ellipse cx="26" cy="2" rx="3.2" ry="4.6" fill="#1a1a1a" opacity="0.85" />
+            <ellipse cx="32" cy="12" rx="2.4" ry="2.8" fill="#1a1a1a" opacity="0.7" />
+          </g>
+          <g className={idle ? "wag" : ""} style={{ transformOrigin: "62px 22px", animationDelay: "0.12s" }}>
+            <path d="M60 26 Q72 2 80 -8 Q84 -12 78 -6 Q70 8 60 26 Z" fill="url(#hua-fur)" stroke="#4a4036" strokeWidth="1.1" />
+            <ellipse cx="76" cy="0" rx="3.4" ry="4.8" fill="#1a1a1a" opacity="0.85" />
+            <ellipse cx="70" cy="12" rx="2.2" ry="2.6" fill="#1a1a1a" opacity="0.7" />
+          </g>
+
+          {/* tail stub */}
+          <ellipse cx="78" cy="78" rx="6" ry="4" fill="#cfc6b8" stroke="#4a4036" strokeWidth="0.7" />
+          <ellipse cx="80" cy="78" rx="1.6" ry="1.3" fill="#1a1a1a" />
+
+          {/* long sock arms */}
+          <g>
+            <path d={dig ? "M30 68 Q8 58 6 82 Q12 86 18 78 Q14 70 30 70 Z" : fall ? "M30 66 Q10 50 4 40" : "M30 68 Q10 74 8 90 Q16 88 22 80 Q18 74 30 70 Z"} fill="url(#hua-fur)" stroke="#4a4036" strokeWidth="1" />
+            <path d={dig ? "M70 68 Q92 58 94 82 Q88 86 82 78 Q86 70 70 70 Z" : fall ? "M70 66 Q90 50 96 40" : "M70 68 Q90 74 92 90 Q84 88 78 80 Q82 74 70 70 Z"} fill="url(#hua-fur)" stroke="#4a4036" strokeWidth="1" />
+            <ellipse cx={dig ? 8 : 10} cy={dig ? 84 : 90} rx="4.2" ry="3.4" fill="#cfc6b8" stroke="#4a4036" strokeWidth="0.6" />
+            <ellipse cx={dig ? 92 : 90} cy={dig ? 84 : 90} rx="4.2" ry="3.4" fill="#cfc6b8" stroke="#4a4036" strokeWidth="0.6" />
+            <ellipse cx={dig ? 7 : 9} cy={dig ? 84 : 90} rx="1.2" ry="1" fill="#1a1a1a" />
+            <ellipse cx={dig ? 93 : 91} cy={dig ? 84 : 90} rx="1.2" ry="1" fill="#1a1a1a" />
+          </g>
+
+          {/* body */}
+          <ellipse cx="50" cy="72" rx="23" ry="18" fill="url(#hua-fur)" stroke="#4a4036" strokeWidth="1.3" />
+          <ellipse cx="50" cy="76" rx="11" ry="8" fill="#e8e2d8" />
+          {spots.filter((s) => s[1] > 54).map(([x, y, r], i) => (
+            <ellipse key={`b${i}`} cx={x} cy={y} rx={r} ry={r * 0.78} fill="#1a1a1a" opacity="0.92" />
+          ))}
+
+          {/* legs */}
+          <ellipse cx="38" cy="90" rx="7" ry="5" fill="#b8aea2" stroke="#4a4036" strokeWidth="0.7" />
+          <ellipse cx="62" cy="90" rx="7" ry="5" fill="#b8aea2" stroke="#4a4036" strokeWidth="0.7" />
+          <ellipse cx="37" cy="88" rx="1.8" ry="1.4" fill="#1a1a1a" />
+          <ellipse cx="63" cy="88" rx="1.8" ry="1.4" fill="#1a1a1a" />
+
+          {/* head */}
+          <path d="M24 40 Q24 16 50 14 Q76 16 76 40 Q78 56 66 62 Q50 68 34 62 Q22 56 24 40 Z" fill="url(#hua-fur)" stroke="#4a4036" strokeWidth="1.3" />
+          {spots.filter((s) => s[1] <= 54).map(([x, y, r], i) => (
+            <ellipse key={`h${i}`} cx={x} cy={y} rx={r} ry={r * 0.78} fill="#1a1a1a" opacity="0.92" />
+          ))}
+
+          {/* giant eyes, asymmetric pupils */}
+          {hurt ? (
+            <g stroke="#1a1a1a" strokeWidth="2.2" strokeLinecap="round">
+              <path d="M32 38 l10 8 M42 38 l-10 8" /><path d="M58 38 l10 8 M68 38 l-10 8" />
+            </g>
+          ) : dead ? (
+            <g stroke="#1a1a1a" strokeWidth="2" fill="none" strokeLinecap="round">
+              <path d="M32 40 q8 6 16 0" /><path d="M52 40 q8 6 16 0" />
+            </g>
+          ) : (
+            <g>
+              <ellipse cx="38" cy="40" rx="9.2" ry="10.4" fill="#fffef8" stroke="#2a241c" strokeWidth="1.1" />
+              <ellipse cx="62" cy="40" rx="10.4" ry="11.2" fill="#fffef8" stroke="#2a241c" strokeWidth="1.1" />
+              <ellipse cx="39.2" cy="42.2" rx="2.1" ry="2.4" fill="#111" />
+              <ellipse cx="63.6" cy="43" rx="3.4" ry="3.8" fill="#111" />
+              <circle cx="40.4" cy="40.6" r="0.9" fill="#fff" />
+              <circle cx="65.4" cy="40.8" r="1.2" fill="#fff" />
+              {win && <path d="M32 34 q6 -4 12 0 M56 33 q8 -4 16 0" stroke="#2a241c" strokeWidth="1.1" fill="none" />}
+            </g>
+          )}
+
+          {/* red sock-puppet mouth */}
+          <g>
+            <path d="M34 54 Q50 50 66 54 Q68 62 50 68 Q32 62 34 54 Z" fill="#c1121f" stroke="#6a0810" strokeWidth="1.1" />
+            <path d="M38 56 Q50 54 62 56 Q60 62 50 64 Q40 62 38 56 Z" fill="#ff4d4d" />
+            <ellipse cx="50" cy="61" rx="6" ry="2.4" fill="#7a0810" opacity="0.55" />
+            {win && <path d="M40 58 Q50 72 60 58 Q54 64 50 64 Q46 64 40 58 Z" fill="#9b1c1c" />}
+          </g>
+
+          {/* lint collection — utility: pelusas orbit when idle */}
+          {(idle || win) && (
+            <g opacity="0.95">
+              <g className="hop" style={{ animationDelay: "0.2s" }}>
+                <ellipse cx="14" cy="58" rx="4.4" ry="3.2" fill="#efe6d6" stroke="#8a8070" strokeWidth="0.5" />
+                <circle cx="13" cy="57" r="0.7" fill="#c9a888" /><circle cx="16" cy="59" r="0.5" fill="#c9a888" />
+              </g>
+              <g className="hop" style={{ animationDelay: "0.8s" }}>
+                <ellipse cx="88" cy="50" rx="3.6" ry="2.8" fill="#f4eee4" stroke="#8a8070" strokeWidth="0.5" />
+                <circle cx="87" cy="50" r="0.5" fill="#c9a888" />
+              </g>
+              <g className="hop" style={{ animationDelay: "1.3s" }}>
+                <ellipse cx="18" cy="30" rx="3.2" ry="2.4" fill="#efe6d6" stroke="#8a8070" strokeWidth="0.45" />
+              </g>
+            </g>
+          )}
+        </g>
+      </g>
+    </svg>
   );
 }

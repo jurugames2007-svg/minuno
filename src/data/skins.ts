@@ -78,9 +78,10 @@ export type SkinId =
   | "cthulhu"
   | "pennywise"
   | "bodoque"
-  | "juana";
+  | "juana"
+  | "huachimingo";
 
-export type SkinRarity = "Común" | "Raro" | "Épico" | "Legendario" | "Feo";
+export type SkinRarity = "Común" | "Raro" | "Épico" | "Legendario" | "Mítica" | "Feo";
 export type SkinCategory =
   | "Clásico"
   | "Jujutsu"
@@ -97,7 +98,8 @@ export type SkinCategory =
   | "Feo"
   | "Secreto"
   | "Horror"
-  | "31 Minutos";
+  | "31 Minutos"
+  | "Mítica";
 
 export type SkinUnlock = "shop" | "bigotes" | "secret";
 
@@ -193,6 +195,7 @@ export const SKINS: Skin[] = [
   { id: "pennywise", name: "Pennywise", tag: "IT", price: 980, rarity: "Legendario", category: "Horror", unlock: "shop", blurb: "Globo rojo, peluca naranja. Flota… si hay hojaldre abajo." },
   { id: "bodoque", name: "Juan Carlos Bodoque", tag: "31 Minutos", price: 860, rarity: "Épico", category: "31 Minutos", unlock: "shop", blurb: "Periodista de Nota Verde. Micrófono, camisa amarilla y furia editorial." },
   { id: "juana", name: "Juana Carla", tag: "31 Minutos", price: 860, rarity: "Épico", category: "31 Minutos", unlock: "shop", blurb: "La misma Bodoque, pero rosa. Sigue cubriendo el horno en llamas." },
+  { id: "huachimingo", name: "Huachimingo", tag: "Mítica", price: 3100, rarity: "Mítica", category: "Mítica", unlock: "shop", blurb: "H. H. Huachimingo. Gris leopardo, dos antenas y boca roja. Colecciona pelusas desde hace 1500 años. Les juro que es verdad." },
 ];
 
 export const RARITY_COLOR: Record<SkinRarity, string> = {
@@ -200,6 +203,7 @@ export const RARITY_COLOR: Record<SkinRarity, string> = {
   "Raro": "#7fd0ff",
   "Épico": "#d9a6ff",
   "Legendario": "#ffd27a",
+  "Mítica": "#7fffd4",
   "Feo": "#c07040",
 };
 
@@ -220,6 +224,7 @@ export const CATEGORIES: SkinCategory[] = [
   "Secreto",
   "Horror",
   "31 Minutos",
+  "Mítica",
 ];
 
 export const SKIN_MAP: Record<SkinId, Skin> = Object.fromEntries(SKINS.map((s) => [s.id, s])) as Record<SkinId, Skin>;
@@ -229,7 +234,7 @@ export const BODY_TRANSFORM: readonly SkinId[] = [
   "kissy", "pochacco", "mahoraga", "yarnaby", "huggy", "catnap", "dogday", "craftycorn",
   "creeper", "zombie", "penguin", "bigotes", "catto", "ender", "unicornio", "eevee",
   "kira", "spooky", "freddy", "foxy", "bonnie", "chica", "croissant",
-  "cthulhu", "bodoque", "juana",
+  "cthulhu", "bodoque", "juana", "huachimingo",
 ];
 
 export function isBodyTransform(id: SkinId): boolean {

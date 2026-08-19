@@ -603,7 +603,7 @@ function Lucha({ skin, onHit, onHurt, type }: { skin: SkinId; onHit: (n?: number
   const act = (kind: "hi" | "lo" | "block") => {
     if (!warn) return;
     if (kind === "block") { setWarn(null); lock.current = false; return; }
-    if (kind !== warn) { onHit(1); setPose("dig"); }
+    if (kind === warn) { onHit(1); setPose("dig"); }
     else onHurt();
     setWarn(null);
     lock.current = false;
@@ -739,6 +739,7 @@ function Runner({ skin, onHit, onHurt }: { skin: SkinId; onHit: (n?: number) => 
   const jump = useRef(0);
   const obs = useRef<{ x: number; kind: "up" | "lo"; id: number }>({ x: 360, kind: "lo", id: 1 });
   const nid = useRef(2);
+  const stung = useRef(0);
   const [, setT] = useState(0);
   useLoop((dt) => {
     if (jump.current > 0) jump.current = Math.max(0, jump.current - dt);
@@ -746,10 +747,11 @@ function Runner({ skin, onHit, onHurt }: { skin: SkinId; onHit: (n?: number) => 
     if (obs.current.x < -30) {
       onHit(1);
       obs.current = { x: 380, kind: Math.random() < 0.5 ? "up" : "lo", id: nid.current++ };
+      stung.current = 0;
     }
-    if (obs.current.x < 92 && obs.current.x > 48) {
-      if (obs.current.kind === "lo" && jump.current <= 0) onHurt();
-      if (obs.current.kind === "up" && !duck.current) onHurt();
+    if (obs.current.x < 92 && obs.current.x > 48 && stung.current !== obs.current.id) {
+      const smash = (obs.current.kind === "lo" && jump.current <= 0) || (obs.current.kind === "up" && !duck.current);
+      if (smash) { stung.current = obs.current.id; onHurt(); }
     }
     setT((n) => n + 1);
   }, [onHit, onHurt]);

@@ -96,6 +96,7 @@ describe("cinematics", () => {
     assert.equal(maxineIntroKind("pennywise"), "spin");
     assert.equal(maxineIntroKind("juana"), "sparkle");
     assert.equal(maxineIntroKind("bodoque"), "dash");
+    assert.equal(maxineIntroKind("huachimingo"), "sparkle");
   });
 });
 
@@ -105,8 +106,8 @@ describe("skins", () => {
     assert.equal(new Set(ids).size, ids.length);
     for (const s of SKINS) assert.equal(SKIN_MAP[s.id].name, s.name);
   });
-  it("incluye Cthulhu, Pennywise, Bodoque y Juana Carla", () => {
-    const need: SkinId[] = ["cthulhu", "pennywise", "bodoque", "juana"];
+  it("incluye Cthulhu, Pennywise, Bodoque, Juana y Huachimingo mítico", () => {
+    const need: SkinId[] = ["cthulhu", "pennywise", "bodoque", "juana", "huachimingo"];
     for (const id of need) {
       assert.ok(SKIN_MAP[id], id);
       assert.ok(SKIN_MAP[id].name.length > 2);
@@ -116,13 +117,18 @@ describe("skins", () => {
     assert.match(SKIN_MAP.juana.blurb.toLowerCase(), /rosa/);
     assert.equal(SKIN_MAP.cthulhu.category, "Horror");
     assert.equal(SKIN_MAP.pennywise.category, "Horror");
+    assert.equal(SKIN_MAP.huachimingo.rarity, "Mítica");
+    assert.equal(SKIN_MAP.huachimingo.category, "Mítica");
+    assert.ok(SKIN_MAP.huachimingo.price > SKIN_MAP.yarnaby.price);
     assert.ok(CATEGORIES.includes("Horror"));
     assert.ok(CATEGORIES.includes("31 Minutos"));
+    assert.ok(CATEGORIES.includes("Mítica"));
   });
-  it("Cthulhu/Bodoque/Juana transforman el cuerpo; Pennywise es disfraz", () => {
+  it("Cthulhu/Bodoque/Juana/Huachimingo transforman el cuerpo; Pennywise es disfraz", () => {
     assert.equal(isBodyTransform("cthulhu"), true);
     assert.equal(isBodyTransform("bodoque"), true);
     assert.equal(isBodyTransform("juana"), true);
+    assert.equal(isBodyTransform("huachimingo"), true);
     assert.equal(isBodyTransform("pennywise"), false);
     assert.equal(isBodyTransform("default"), false);
     assert.ok(BODY_TRANSFORM.includes("cthulhu"));

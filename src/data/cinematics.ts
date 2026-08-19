@@ -168,6 +168,6 @@ export function maxineIntroKind(skin: SkinId): "dash" | "drop" | "fade" | "spin"
   if (skin === "vampire" || skin === "darth" || skin === "spooky" || skin === "bat" || skin === "ender" || skin === "cthulhu") return "fade";
   if (skin === "barbie" || skin === "princess" || skin === "schnauzarella" || skin === "payaso" || skin === "pennywise") return "spin";
   if (skin === "boxer" || skin === "subzero" || skin === "wonder" || skin === "captain") return "charge";
-  if (skin === "unicornio" || skin === "hada" || skin === "kissy" || skin === "yarnaby" || skin === "juana") return "sparkle";
+  if (skin === "unicornio" || skin === "hada" || skin === "kissy" || skin === "yarnaby" || skin === "juana" || skin === "huachimingo") return "sparkle";
   return "dash";
 }
