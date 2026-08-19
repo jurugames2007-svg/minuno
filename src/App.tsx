@@ -1,17 +1,29 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import Menu from "./screens/Menu";
-import Intro from "./screens/Intro";
-import Victory from "./screens/Victory";
-import Shop from "./screens/Shop";
-import GameOver from "./screens/GameOver";
-import Game from "./game/Game";
-import House from "./screens/House";
-import Campo from "./screens/Campo";
 import { Flour } from "./art/Decor";
 import { SKINS, type SkinId } from "./data/skins";
 import type { ToolId } from "./art/Plushie";
 import { CYCLE } from "./data/world";
 import { type SpellId } from "./data/spells";
+import ErrorBound from "./ui/ErrorBound";
+
+const Intro = lazy(() => import("./screens/Intro"));
+const Victory = lazy(() => import("./screens/Victory"));
+const Shop = lazy(() => import("./screens/Shop"));
+const GameOver = lazy(() => import("./screens/GameOver"));
+const Game = lazy(() => import("./game/Game"));
+const House = lazy(() => import("./screens/House"));
+const Campo = lazy(() => import("./screens/Campo"));
+
+function Gate({ children }: { children: ReactNode }) {
+  return (
+    <ErrorBound>
+      <Suspense fallback={<div className="absolute inset-0 flex items-center justify-center font-display text-amber-100">Cargando…</div>}>
+        {children}
+      </Suspense>
+    </ErrorBound>
+  );
+}
 
 type Screen = "intro" | "menu" | "shop" | "game" | "over" | "victory" | "house" | "campo";
 
@@ -21,7 +33,7 @@ function hideSplash() {
   const s = document.getElementById("splash");
   if (!s) return;
   s.classList.add("hide");
-  setTimeout(() => s.remove(), 700);
+  window.setTimeout(() => s.remove(), 700);
 }
 
 function load<T>(k: string, def: T): T {
@@ -53,7 +65,11 @@ export default function App() {
   const [spells, setSpells] = useState<SpellId[]>(() => load("maxine_spells", [] as SpellId[]));
   const [spell, setSpell] = useState<SpellId | null>(() => load("maxine_spell", null as SpellId | null));
 
-  useEffect(() => { const t = setTimeout(hideSplash, 900); return () => clearTimeout(t); }, []);
+  useEffect(() => {
+    hideSplash();
+    const t = setTimeout(hideSplash, 200);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => save("maxine_skin", skin), [skin]);
   useEffect(() => save("maxine_owned", owned), [owned]);
@@ -122,111 +138,127 @@ export default function App() {
         }}
       >
         {screen === "menu" && (
-          <Menu
-            skin={skin}
-            best={best}
-            crumbs={crumbs}
-            startTool={startTool}
-            ownedTools={ownedTools}
-            storyWon={storyWon}
-            checkpoint={checkpoint}
-            unlocked={unlocked}
-            onSelectCheckpoint={setCheckpoint}
-            onPlay={() => { setRunId((n) => n + 1); setScreen("game"); }}
-            onShop={() => setScreen("shop")}
-            onHouse={() => setScreen("house")}
-            onCampo={() => setScreen("campo")}
-            onStory={() => setScreen("intro")}
-          />
+          <ErrorBound>
+            <Menu
+              skin={skin}
+              best={best}
+              crumbs={crumbs}
+              startTool={startTool}
+              ownedTools={ownedTools}
+              storyWon={storyWon}
+              checkpoint={checkpoint}
+              unlocked={unlocked}
+              onSelectCheckpoint={setCheckpoint}
+              onPlay={() => { setRunId((n) => n + 1); setScreen("game"); }}
+              onShop={() => setScreen("shop")}
+              onHouse={() => setScreen("house")}
+              onCampo={() => setScreen("campo")}
+              onStory={() => setScreen("intro")}
+            />
+          </ErrorBound>
         )}
         {screen === "shop" && (
-          <Shop
-            skin={skin}
-            owned={owned}
-            crumbs={crumbs}
-            ownedTools={ownedTools}
-            startTool={startTool}
-            storyWon={storyWon}
-            onEquip={(id) => setSkin(id)}
-            onBuySkin={(id: SkinId) => { const found = SKINS.find((s) => s.id === id); buySkin(id, found ? found.price : 0); }}
-            onBuyTool={buyToolMeta}
-            onEquipTool={(id: ToolId) => setStartTool(id)}
-            onBack={() => setScreen("menu")}
-          />
+          <Gate>
+            <Shop
+              skin={skin}
+              owned={owned}
+              crumbs={crumbs}
+              ownedTools={ownedTools}
+              startTool={startTool}
+              storyWon={storyWon}
+              onEquip={(id) => setSkin(id)}
+              onBuySkin={(id: SkinId) => { const found = SKINS.find((s) => s.id === id); buySkin(id, found ? found.price : 0); }}
+              onBuyTool={buyToolMeta}
+              onEquipTool={(id: ToolId) => setStartTool(id)}
+              onBack={() => setScreen("menu")}
+            />
+          </Gate>
         )}
         {screen === "house" && (
-          <House
-            skin={skin}
-            crumbs={crumbs}
-            onSpend={(n) => setCrumbs((c) => Math.max(0, c - n))}
-            onEarn={(n) => setCrumbs((c) => c + n)}
-            onBack={() => setScreen("menu")}
-          />
+          <Gate>
+            <House
+              skin={skin}
+              crumbs={crumbs}
+              onSpend={(n) => setCrumbs((c) => Math.max(0, c - n))}
+              onEarn={(n) => setCrumbs((c) => c + n)}
+              onBack={() => setScreen("menu")}
+            />
+          </Gate>
         )}
         {screen === "campo" && (
-          <Campo
-            skin={skin}
-            owned={owned}
-            ownedTools={ownedTools}
-            crumbs={crumbs}
-            onFindSkin={grantSkin}
-            onFindTool={grantTool}
-            onEarn={(n) => setCrumbs((c) => c + n)}
-            onBack={() => setScreen("menu")}
-          />
+          <Gate>
+            <Campo
+              skin={skin}
+              owned={owned}
+              ownedTools={ownedTools}
+              crumbs={crumbs}
+              onFindSkin={grantSkin}
+              onFindTool={grantTool}
+              onEarn={(n) => setCrumbs((c) => c + n)}
+              onBack={() => setScreen("menu")}
+            />
+          </Gate>
         )}
         {screen === "intro" && (
-          <Intro
-            skin={skin}
-            onStart={() => { save("maxine_intro_seen", true); setScreen("menu"); }}
-          />
+          <Gate>
+            <Intro
+              skin={skin}
+              onStart={() => { save("maxine_intro_seen", true); setScreen("menu"); }}
+            />
+          </Gate>
         )}
         {screen === "game" && (
-          <Game
-            key={runId}
-            skin={skin}
-            best={best}
-            startTool={startTool}
-            ownedMeta={ownedTools}
-            startLevel={checkpoint}
-            storyWon={storyWon}
-            spells={spells}
-            spell={spell}
-            onCycleSpell={() => {
-              if (spells.length === 0) return;
-              const i = spell ? spells.indexOf(spell) : -1;
-              setSpell(spells[(i + 1) % spells.length]);
-            }}
-            onUnlockSpell={(id) => {
-              setSpells((s) => s.includes(id) ? s : [...s, id]);
-              setSpell(id);
-            }}
-            onExit={(s) => { finishRun(s); setScreen("over"); }}
-            onVictory={(s) => {
-              const first = !storyWon;
-              finishRun({ ...s, isNewBest: s.depth > best });
-              setStoryWon(true);
-              setOwned((o) => grantBigotes(o));
-              setJustUnlockedUgly(first);
-              if (first) setSkin("bigotes");
-              setScreen("victory");
-            }}
-          />
+          <Gate>
+            <Game
+              key={runId}
+              skin={skin}
+              best={best}
+              startTool={startTool}
+              ownedMeta={ownedTools}
+              startLevel={checkpoint}
+              storyWon={storyWon}
+              spells={spells}
+              spell={spell}
+              onCycleSpell={() => {
+                if (spells.length === 0) return;
+                const i = spell ? spells.indexOf(spell) : -1;
+                setSpell(spells[(i + 1) % spells.length]);
+              }}
+              onUnlockSpell={(id) => {
+                setSpells((s) => s.includes(id) ? s : [...s, id]);
+                setSpell(id);
+              }}
+              onExit={(s) => { finishRun(s); setScreen("over"); }}
+              onVictory={(s) => {
+                const first = !storyWon;
+                finishRun({ ...s, isNewBest: s.depth > best });
+                setStoryWon(true);
+                setOwned((o) => grantBigotes(o));
+                setJustUnlockedUgly(first);
+                if (first) setSkin("bigotes");
+                setScreen("victory");
+              }}
+            />
+          </Gate>
         )}
         {screen === "victory" && overStats && (
-          <Victory
-            stats={overStats}
-            unlockedUgly={justUnlockedUgly}
-            onContinue={() => { setRunId((n) => n + 1); setScreen("game"); }}
-            onMenu={() => setScreen("menu")}
-          />
+          <Gate>
+            <Victory
+              stats={overStats}
+              unlockedUgly={justUnlockedUgly}
+              onContinue={() => { setRunId((n) => n + 1); setScreen("game"); }}
+              onMenu={() => setScreen("menu")}
+            />
+          </Gate>
         )}
         {screen === "over" && overStats && (
-          <GameOver
-            stats={overStats}
-            onRetry={() => { setRunId((n) => n + 1); setScreen("game"); }}
-            onMenu={() => setScreen("menu")}
-          />
+          <Gate>
+            <GameOver
+              stats={overStats}
+              onRetry={() => { setRunId((n) => n + 1); setScreen("game"); }}
+              onMenu={() => setScreen("menu")}
+            />
+          </Gate>
         )}
       </div>
     </div>

@@ -95,7 +95,7 @@ export default function Menu({ skin, best, crumbs, startTool, ownedTools, storyW
           </div>
           <div className="absolute left-1/2 -translate-x-1/2 -bottom-2 bg-[#fff3d6] border-2 border-[#7a3410] rounded-full px-3 py-0.5 font-display font-bold text-[11px] text-[#7a3410] shadow pop flex items-center gap-1 whitespace-nowrap">
             <Plushie id={startTool} size={12} />
-            <span>Arranque: {TOOL_MAP[startTool].name}</span>
+            <span>Arranque: {(TOOL_MAP[startTool] ?? TOOL_MAP.palito).name}</span>
           </div>
           <div className="absolute left-1/2 -translate-x-1/2 -bottom-7 font-display text-[11px] text-amber-200/70">
             {ownedTools.length} herramientas en la mochila

@@ -85,7 +85,13 @@
         var removed = false;
         window.hideSplash = function (errMsg) {
           var s = document.getElementById('splash'); if (!s || removed) return;
-          if (errMsg) { s.classList.add('error'); var e = document.getElementById('sp-err'); if (e) e.textContent = errMsg; var st = document.getElementById('sp-status'); if (st) st.textContent = 'ERROR'; return; }
+          if (errMsg) {
+            s.classList.add('error');
+            var e = document.getElementById('sp-err'); if (e) e.textContent = errMsg;
+            var st = document.getElementById('sp-status'); if (st) st.textContent = 'ERROR';
+            setTimeout(function () { try { if (!removed) { removed = true; s.classList.add('hide'); setTimeout(function () { s.classList.add('gone'); }, 700); } } catch (_) {} }, 1800);
+            return;
+          }
           var st = document.getElementById('sp-status'); if (st) st.textContent = 'LISTO ✓';
           removed = true;
           setTimeout(function () { s.classList.add('hide'); setTimeout(function () { s.classList.add('gone'); }, 700); }, 220);
