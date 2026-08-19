@@ -9,6 +9,7 @@ import BossStage from "./BossStage";
 import { COLS, TILE, LEVEL_LEN, GATE_H, REST_H, CYCLE } from "../data/world";
 import PawButton from "../ui/PawButton";
 import MagicButton from "../ui/MagicButton";
+import ChromeBtn from "../ui/ChromeBtn";
 import { spellForBoss, type SpellId } from "../data/spells";
 
 const STAGE_W = COLS * TILE;
@@ -299,7 +300,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       if (spell === "llama") { world.current.bullets.push({ id: ids.current++, x: cx, y: cy, vx: f * 240, vy: 0, life: 1.2, kind: "flame", ally: true }); }
       if (spell === "hielo") { active.current.frozen = 0; for (const e of world.current.enemies) { if (Math.hypot(e.x - cx, e.y - cy) < 90) { e.vx *= 0.2; e.hitCd = 0.8; } } }
       if (spell === "iman") { active.current.magnet = Math.max(active.current.magnet, 10); }
-      if (spell === "ladrido") { for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; world.current.bullets.push({ id: ids.current++, x: cx, y: cy, vx: Math.cos(a) * 180, vy: Math.sin(a) * 180, life: 0.8, kind: "bark" }); } }
+      if (spell === "ladrido") { for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; world.current.bullets.push({ id: ids.current++, x: cx, y: cy, vx: Math.cos(a) * 180, vy: Math.sin(a) * 180, life: 0.8, kind: "bark", ally: true }); } }
     }
     for (const e of world.current.enemies) {
       if (e.hp >= 999) continue;
@@ -620,10 +621,19 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
         if (b.grav) b.vy += b.grav * dt;
         b.x += b.vx * dt; b.y += b.vy * dt;
         if (b.ally) {
+          let spent = false;
           for (const e of world.current.enemies) {
             if (e.hp < 999 && Math.abs(b.x - e.x) < 18 && Math.abs(b.y - e.y) < 18) {
               e.hp -= 1; e.hitCd = 0.2; spawnDust(e.x, e.y, "#ffd27a", 6);
-              world.current.bullets.splice(i, 1); break;
+              world.current.bullets.splice(i, 1); spent = true; break;
+            }
+          }
+          if (!spent && boss.current) {
+            const bo = boss.current;
+            if (Math.abs(b.x - bo.x) < 36 && Math.abs(b.y - bo.y) < 36) {
+              if (bo.vulnerable || bo.stun > 0) { bo.hp -= 1; bo.flash = 0.16; spawnDust(bo.x, bo.y, "#ffd27a", 8); if (bo.hp <= 0) onBossDefeated(); }
+              else { bo.shieldFlash = 0.18; }
+              world.current.bullets.splice(i, 1);
             }
           }
           continue;
@@ -677,18 +687,20 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
     }, 50);
 
     const kd = (e: KeyboardEvent) => {
-      if (e.repeat) return;
       if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") input.current.left = true;
       if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") input.current.right = true;
       if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") { input.current.down = true; e.preventDefault(); }
+      if (e.repeat) return;
       if (e.key === " " || e.key === "ArrowUp" || e.key === "w" || e.key === "W") { input.current.jumpEdge = true; e.preventDefault(); }
-      if (e.key === "j" || e.key === "J" || e.key === "x" || e.key === "X" || e.key === "Shift") { input.current.attackEdge = true; }
+      if (e.key === "j" || e.key === "J" || e.key === "x" || e.key === "X") { input.current.attackHold = true; }
+      if (e.key === "k" || e.key === "K" || e.key === "Shift") { input.current.dashEdge = true; e.preventDefault(); }
       if (e.key === "p" || e.key === "P" || e.key === "Escape") setPaused((v) => !v);
     };
     const ku = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") input.current.left = false;
       if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") input.current.right = false;
       if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") input.current.down = false;
+      if (e.key === "j" || e.key === "J" || e.key === "x" || e.key === "X") input.current.attackHold = false;
     };
     window.addEventListener("keydown", kd); window.addEventListener("keyup", ku);
     return () => { cancelAnimationFrame(raf); clearInterval(gamepadPoll); Audio.stopAmbientMusic(); window.removeEventListener("keydown", kd); window.removeEventListener("keyup", ku); };
@@ -870,11 +882,9 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
           onAttack={() => { input.current.attackEdge = true; }}
           onDash={() => { input.current.dashEdge = true; }}
         />
-        <button type="button" aria-label="Dash" className="absolute z-[90] font-pixel text-[7px] text-white"
-          style={{ right: 76, bottom: 86, width: 52, height: 52, background: "rgba(26,12,4,0.45)", border: "2px solid rgba(10,4,2,0.45)", opacity: 0.7 }}
-          onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); input.current.dashEdge = true; }}>
-          DASH
-        </button>
+        <div className="absolute z-[90]" style={{ right: 76, bottom: 86 }} onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+          <ChromeBtn onPress={() => { input.current.dashEdge = true; }} w={52} h={52} accent="#7fd0ff">DASH</ChromeBtn>
+        </div>
         <PawButton aim={aim.current} onPress={() => { input.current.digEdge = true; }} />
         <MagicButton spell={spell} locked={spells.length === 0} onCycle={() => onCycleSpell?.()} />
         {gate && (

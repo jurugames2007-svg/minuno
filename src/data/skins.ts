@@ -74,7 +74,11 @@ export type SkinId =
   | "croissant"
   | "lodo"
   | "exploradora"
-  | "llanta";
+  | "llanta"
+  | "cthulhu"
+  | "pennywise"
+  | "bodoque"
+  | "juana";
 
 export type SkinRarity = "Común" | "Raro" | "Épico" | "Legendario" | "Feo";
 export type SkinCategory =
@@ -91,7 +95,9 @@ export type SkinCategory =
   | "Pokémon"
   | "Familia"
   | "Feo"
-  | "Secreto";
+  | "Secreto"
+  | "Horror"
+  | "31 Minutos";
 
 export type SkinUnlock = "shop" | "bigotes" | "secret";
 
@@ -183,6 +189,10 @@ export const SKINS: Skin[] = [
   { id: "lodo", name: "Maxine Lodosa", tag: "Secreta", price: 0, rarity: "Raro", category: "Secreto", unlock: "secret", blurb: "Barro hasta las cejas. El campo la adoptó." },
   { id: "exploradora", name: "Exploradora", tag: "Secreta", price: 0, rarity: "Épico", category: "Secreto", unlock: "secret", blurb: "Sombrero de paja y mochila de migas. Lista para el mapa." },
   { id: "llanta", name: "Neumático", tag: "Secreta", price: 0, rarity: "Épico", category: "Secreto", unlock: "secret", blurb: "Una llanta le queda de collar. Corre como kart de patio." },
+  { id: "cthulhu", name: "Cthulhu", tag: "R'lyeh", price: 1180, rarity: "Legendario", category: "Horror", unlock: "shop", blurb: "Tentáculos de masa madre. Ph'nglui mglw'nafh… ¿pan?" },
+  { id: "pennywise", name: "Pennywise", tag: "IT", price: 980, rarity: "Legendario", category: "Horror", unlock: "shop", blurb: "Globo rojo, peluca naranja. Flota… si hay hojaldre abajo." },
+  { id: "bodoque", name: "Juan Carlos Bodoque", tag: "31 Minutos", price: 860, rarity: "Épico", category: "31 Minutos", unlock: "shop", blurb: "Periodista de Nota Verde. Micrófono, camisa amarilla y furia editorial." },
+  { id: "juana", name: "Juana Carla", tag: "31 Minutos", price: 860, rarity: "Épico", category: "31 Minutos", unlock: "shop", blurb: "La misma Bodoque, pero rosa. Sigue cubriendo el horno en llamas." },
 ];
 
 export const RARITY_COLOR: Record<SkinRarity, string> = {
@@ -208,6 +218,38 @@ export const CATEGORIES: SkinCategory[] = [
   "Disfraz",
   "Feo",
   "Secreto",
+  "Horror",
+  "31 Minutos",
 ];
 
 export const SKIN_MAP: Record<SkinId, Skin> = Object.fromEntries(SKINS.map((s) => [s.id, s])) as Record<SkinId, Skin>;
+
+/** Skins that recolor Maxine's whole body (not just a costume). */
+export const BODY_TRANSFORM: readonly SkinId[] = [
+  "kissy", "pochacco", "mahoraga", "yarnaby", "huggy", "catnap", "dogday", "craftycorn",
+  "creeper", "zombie", "penguin", "bigotes", "catto", "ender", "unicornio", "eevee",
+  "kira", "spooky", "freddy", "foxy", "bonnie", "chica", "croissant",
+  "cthulhu", "bodoque", "juana",
+];
+
+export function isBodyTransform(id: SkinId): boolean {
+  return BODY_TRANSFORM.includes(id);
+}
+
+export function isHiddenUntilOwned(s: Skin, owned: readonly SkinId[]): boolean {
+  return s.unlock === "secret" && !owned.includes(s.id);
+}
+
+export function isUglyLocked(s: Skin, owned: readonly SkinId[], storyWon: boolean): boolean {
+  return s.unlock === "bigotes" && !storyWon && !owned.includes(s.id);
+}
+
+export function canBuySkin(s: Skin, owned: readonly SkinId[], crumbs: number, storyWon: boolean): boolean {
+  if (owned.includes(s.id)) return false;
+  if (s.unlock === "secret" || isUglyLocked(s, owned, storyWon)) return false;
+  return crumbs >= s.price;
+}
+
+export function visibleShopSkins(owned: readonly SkinId[]): Skin[] {
+  return SKINS.filter((s) => !isHiddenUntilOwned(s, owned));
+}

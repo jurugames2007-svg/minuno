@@ -69,6 +69,8 @@ export default function App() {
   useEffect(() => save("maxine_checkpoint", checkpoint), [checkpoint]);
   useEffect(() => save("maxine_checkpoints", unlocked), [unlocked]);
   useEffect(() => save("maxine_story_won", storyWon), [storyWon]);
+  useEffect(() => save("maxine_spells", spells), [spells]);
+  useEffect(() => save("maxine_spell", spell), [spell]);
 
   const unlockForDepth = (depth: number) => {
     const newUnlock = [1];
