@@ -549,35 +549,41 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
         e.hitCd = Math.max(0, e.hitCd - dt); e.stateT += dt;
         const slowAura = t.slowAura && Math.hypot(e.x - (p.x + PW / 2), e.y - (p.y + PH / 2)) < TILE * 2.4 ? 0.35 : 1;
         if (e.type === "spoon") {
-          e.x += e.vx * slowAura * dt; if (e.x < e.minX) { e.x = e.minX; e.vx = Math.abs(e.vx); } if (e.x > e.maxX) { e.x = e.maxX; e.vx = -Math.abs(e.vx); }
-          if (e.stateT > 1.7) {
+          const wind = e.stateT % 2.2;
+          if (wind < 1.4) {
+            e.x += e.vx * slowAura * dt; if (e.x < e.minX) { e.x = e.minX; e.vx = Math.abs(e.vx); } if (e.x > e.maxX) { e.x = e.maxX; e.vx = -Math.abs(e.vx); }
+          } else if (wind > 2.05 && e.stateT > 2) {
             e.stateT = 0;
             const dx = (p.x + PW / 2) - e.x, dy = (p.y + PH / 2) - e.y; const d = Math.hypot(dx, dy) || 1;
-            world.current.bullets.push({ id: ids.current++, x: e.x, y: e.y, vx: (dx / d) * 150, vy: (dy / d) * 150, life: 2.2, kind: "crumb" });
+            world.current.bullets.push({ id: ids.current++, x: e.x, y: e.y, vx: (dx / d) * 160, vy: (dy / d) * 160, life: 2.2, kind: "crumb" });
           }
         } else if (e.type === "mouse") {
-          e.x += e.vx * slowAura * dt; if (e.x < e.minX) { e.x = e.minX; e.vx = Math.abs(e.vx); } if (e.x > e.maxX) { e.x = e.maxX; e.vx = -Math.abs(e.vx); }
-          e.vy += 700 * dt; e.y += e.vy * dt; if (e.y > e.homeY) { e.y = e.homeY; e.vy = 0; if (Math.random() < 0.01) e.vy = -220; }
-          if (e.stateT > 1.4 && Math.abs(e.x - (p.x + PW / 2)) < 90) {
-            e.stateT = 0; e.vy = -260; e.vx = ((p.x + PW / 2) > e.x ? 1 : -1) * 110;
+          const chase = Math.abs(e.x - (p.x + PW / 2)) < 110 && Math.abs(e.y - (p.y + PH / 2)) < 80;
+          if (chase && e.stateT > 0.9) {
+            e.stateT = 0; e.vy = -240; e.vx = ((p.x + PW / 2) > e.x ? 1 : -1) * 160;
+          } else {
+            e.x += e.vx * slowAura * dt; if (e.x < e.minX) { e.x = e.minX; e.vx = Math.abs(e.vx); } if (e.x > e.maxX) { e.x = e.maxX; e.vx = -Math.abs(e.vx); }
           }
+          e.vy += 720 * dt; e.y += e.vy * dt; if (e.y > e.homeY) { e.y = e.homeY; e.vy = 0; }
         } else if (e.type === "whisk") {
-          if (e.stateT > 1.1) {
-            e.stateT = 0; e.vx = (Math.random() - 0.5) * 120; e.vy = (Math.random() - 0.5) * 120;
-            const dx = (p.x + PW / 2) - e.x, dy = (p.y + PH / 2) - e.y; const d = Math.hypot(dx, dy) || 1;
-            world.current.bullets.push({ id: ids.current++, x: e.x, y: e.y, vx: (dx / d) * 130, vy: (dy / d) * 130, life: 1.8, kind: "dust" });
+          const ang = e.stateT * 3.2;
+          e.x = (e.minX + e.maxX) / 2 + Math.cos(ang) * 28;
+          e.y = e.homeY + Math.sin(ang * 1.4) * 16;
+          if (e.stateT > 1.6) {
+            e.stateT = 0;
+            for (let k = 0; k < 4; k++) {
+              const a = (k / 4) * Math.PI * 2 + ang;
+              world.current.bullets.push({ id: ids.current++, x: e.x, y: e.y, vx: Math.cos(a) * 90, vy: Math.sin(a) * 90, life: 1.6, kind: "dust" });
+            }
           }
-          e.x += e.vx * slowAura * dt; e.y += e.vy * slowAura * dt;
-          if (e.x < e.minX) { e.x = e.minX; e.vx = Math.abs(e.vx); } if (e.x > e.maxX) { e.x = e.maxX; e.vx = -Math.abs(e.vx); }
-          if (e.y < e.homeY - 30) { e.y = e.homeY - 30; e.vy = Math.abs(e.vy); } if (e.y > e.homeY + 30) { e.y = e.homeY + 30; e.vy = -Math.abs(e.vy); }
         } else if (e.type === "bubble") {
-          e.y -= 18 * dt; e.x += Math.sin(e.stateT * 2) * 20 * dt;
+          e.y -= 22 * dt; e.x += Math.sin(e.stateT * 5) * 50 * dt;
           if (e.y < cameraY.current - 60) e.hp = 0;
-          // push player
-          if (Math.abs(e.x - (p.x + PW / 2)) < PW && Math.abs(e.y - (p.y + PH / 2)) < PH) { p.vx += (p.x + PW / 2 > e.x ? 1 : -1) * 200 * dt; p.vy -= 60 * dt; }
+          if (Math.abs(e.x - (p.x + PW / 2)) < PW && Math.abs(e.y - (p.y + PH / 2)) < PH) { p.vx += (p.x + PW / 2 > e.x ? 1 : -1) * 220 * dt; p.vy -= 80 * dt; }
         } else if (e.type === "spatula") {
-          const phase = e.stateT % 2.4; e.active = phase > 1.6 && phase < 2.1;
-          e.y = e.active ? e.homeY - 22 : e.homeY + 10;
+          const phase = e.stateT % 2.8;
+          e.active = phase > 1.9 && phase < 2.35;
+          e.y = e.active ? e.homeY - 28 : e.homeY + 12;
         }
       }
       world.current.enemies = world.current.enemies.filter((e) => e.hp > 0);

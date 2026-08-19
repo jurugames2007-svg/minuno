@@ -6,7 +6,10 @@ import type { SkinId } from "../data/skins";
 import { BOSS_GENRE, type GenreId } from "../data/bossModes";
 import { stageFor } from "../data/cinematics";
 import { PawIcon } from "../ui/PawButton";
+import ChromeBtn from "../ui/ChromeBtn";
 import * as Audio from "./AudioEngine";
+import { makeChart, judgeDelta, judgeScore, LANE_GLYPH, LANE_COL, type ChartNote, type Judge } from "./fnf";
+import { moodPose } from "../data/cinematics";
 
 interface Props {
   type: BossType;
@@ -26,7 +29,9 @@ const INK = "#1a0c04";
 export default function GenreFight({ type, level, skin, hearts, onHurt, onWin }: Props) {
   const genre = BOSS_GENRE[type];
   const stage = stageFor(type);
-  const [intro, setIntro] = useState(0);
+  const [cine, setCine] = useState(0);
+  const [ready, setReady] = useState(false);
+  const [playOn, setPlayOn] = useState(false);
   const [hp, setHp] = useState(10);
   const max = useRef(10);
   const boss = useRef(spawnBoss(type, level, 40, 320, 80));
@@ -37,12 +42,18 @@ export default function GenreFight({ type, level, skin, hearts, onHurt, onWin }:
   const hurtCd = useRef(0);
   const hitCd = useRef(0);
 
-  useEffect(() => {
-    const a = window.setTimeout(() => setIntro(1), 80);
-    const b = window.setTimeout(() => setIntro(2), 900);
-    const c = window.setTimeout(() => setIntro(3), 3000);
-    return () => { clearTimeout(a); clearTimeout(b); clearTimeout(c); };
-  }, []);
+  const lines = [
+    stage.intro[0] ?? "Algo se acerca.",
+    stage.react[0] ?? "¡Guau!",
+    stage.intro[1] ?? stage.intro[stage.intro.length - 1] ?? "¡A pelear!",
+  ];
+  const advanceCine = () => {
+    if (playOn || ready) return;
+    if (cine + 1 >= lines.length) {
+      setReady(true);
+      window.setTimeout(() => setPlayOn(true), 900);
+    } else setCine((n) => n + 1);
+  };
 
   useEffect(() => {
     let raf = 0;
@@ -121,17 +132,20 @@ export default function GenreFight({ type, level, skin, hearts, onHurt, onWin }:
       </div>
 
       <div className="absolute inset-x-0" style={{ top: "10%", bottom: 0, transform: `translate(${sx}px, ${sy}px)` }}>
-        {intro < 3 ? (
-          <div className="absolute inset-0 z-40 flex flex-col items-center justify-center" style={{ background: "#0a0402" }}>
-            <div className="font-pixel text-[8px] text-white mb-2 tracking-[0.18em]" style={{ textShadow: "1px 1px 0 #000", opacity: intro >= 1 ? 1 : 0 }}>
-              APARECIÓ UN JEFE
+        {!playOn ? (
+          <button type="button" onClick={advanceCine} className="absolute inset-0 z-40 text-left" style={{ background: "linear-gradient(180deg,#0a1420,#1a0c04 70%)" }}>
+            <div className="absolute inset-x-0 top-3 text-center font-pixel text-[7px] text-white tracking-[0.2em]" style={{ textShadow: "1px 1px 0 #000" }}>APARECIÓ UN JEFE</div>
+            <div className="absolute left-2 top-16"><BossView boss={boss.current} size={132} /></div>
+            <div className="absolute right-2 top-24"><Maxine skin={skin} pose={moodPose(stage.moods[Math.min(cine, stage.moods.length - 1)] ?? "curious")} size={88} /></div>
+            <div className="absolute left-3 right-3 bottom-8">
+              <div className="font-pixel text-[7px] mb-1" style={{ color: MAG }}>{stage.place}</div>
+              <div className="font-pixel text-[8px] text-white mb-2" style={{ textShadow: "1px 1px 0 #000" }}>{BOSS_NAME[type]}</div>
+              <div className="px-2 py-2" style={{ background: "linear-gradient(180deg,#2a3a50,#141c28)", border: "2px solid #0a1018", boxShadow: "inset 0 2px 0 #6a90b0" }}>
+                <p className="font-display text-[14px] text-[#e8f4ff] leading-snug">{ready ? "READY" : lines[cine]}</p>
+                {!ready && <div className="text-right font-pixel text-[6px] mt-1" style={{ color: "#8ab4d0" }}>tocá</div>}
+              </div>
             </div>
-            <div style={{ transform: intro >= 1 ? "scale(1)" : "scale(0.4)", opacity: intro >= 1 ? 1 : 0, transition: "transform .25s, opacity .25s" }}>
-              <BossView boss={boss.current} size={148} />
-            </div>
-            <div className="font-pixel text-[8px] text-white mt-3" style={{ textShadow: "1px 1px 0 #000" }}>{BOSS_NAME[type]}</div>
-            <div className="font-pixel text-[7px] mt-1" style={{ color: MAG }}>{stage.place}</div>
-          </div>
+          </button>
         ) : (
           <Play genre={genre} skin={skin} onHit={hit} onHurt={hurt} type={type} />
         )}
@@ -149,7 +163,7 @@ export default function GenreFight({ type, level, skin, hearts, onHurt, onWin }:
 }
 
 function Play({ genre, skin, onHit, onHurt, type }: { genre: GenreId; skin: SkinId; onHit: (n?: number) => void; onHurt: () => void; type: BossType }) {
-  if (genre === "tiles") return <Tiles onHit={onHit} onHurt={onHurt} />;
+  if (genre === "tiles") return <Fnf skin={skin} onHit={onHit} onHurt={onHurt} type={type} />;
   if (genre === "shmup") return <Shmup skin={skin} onHit={onHit} onHurt={onHurt} type={type} />;
   if (genre === "rpg") return <Rpg onHit={onHit} onHurt={onHurt} type={type} />;
   if (genre === "dance") return <Dance onHit={onHit} onHurt={onHurt} />;
@@ -172,13 +186,7 @@ function Play({ genre, skin, onHit, onHurt, type }: { genre: GenreId; skin: Skin
 }
 
 function Pad({ children, onPress, w = 60, h = 60 }: { children: ReactNode; onPress: () => void; w?: number; h?: number }) {
-  return (
-    <button type="button" onPointerDown={(e) => { e.preventDefault(); onPress(); }}
-      className="font-pixel text-[8px] text-white flex items-center justify-center"
-      style={{ width: w, height: h, background: "rgba(26,12,4,0.62)", border: "2px solid rgba(10,4,2,0.5)", opacity: 0.72 }}>
-      {children}
-    </button>
-  );
+  return <ChromeBtn onPress={onPress} w={w} h={h}>{children}</ChromeBtn>;
 }
 
 function useLoop(fn: (dt: number) => void, deps: unknown[]) {
@@ -196,46 +204,85 @@ function useLoop(fn: (dt: number) => void, deps: unknown[]) {
   }, deps);
 }
 
-function Tiles({ onHit, onHurt }: { onHit: (n?: number) => void; onHurt: () => void }) {
-  const tiles = useRef<{ id: number; y: number; lane: number; hit: boolean }[]>([
-    { id: 1, y: 40, lane: 1, hit: false }, { id: 2, y: -90, lane: 3, hit: false }, { id: 3, y: -220, lane: 0, hit: false },
-  ]);
-  const nid = useRef(4);
-  const spawn = useRef(0);
+function Fnf({ skin, onHit, onHurt, type }: { skin: SkinId; onHit: (n?: number) => void; onHurt: () => void; type: BossType }) {
+  const chart = useRef(makeChart(14, 132));
+  const done = useRef(new Set<number>());
+  const song = useRef(0);
+  const boss = useRef(spawnBoss(type, 1, 80, 280, 40));
+  const [combo, setCombo] = useState(0);
+  const [tag, setTag] = useState<Judge | "">("");
   const [, setT] = useState(0);
-  const ZONE = 430;
+  const RECV = 430;
+  const SPEED = 280;
   useLoop((dt) => {
-    spawn.current += dt;
-    if (spawn.current > 0.62) {
-      spawn.current = 0;
-      tiles.current.push({ id: nid.current++, y: -80, lane: Math.floor(Math.random() * 4), hit: false });
-    }
-    for (const t of tiles.current) t.y += 210 * dt;
-    for (const t of tiles.current) {
-      if (!t.hit && t.y > ZONE + 58) { t.hit = true; onHurt(); }
-    }
-    tiles.current = tiles.current.filter((t) => t.y < 620);
+    song.current += dt;
+    chart.current.forEach((n, i) => {
+      if (done.current.has(i)) return;
+      const y = RECV - (n.t - song.current) * SPEED;
+      if (n.side === "e" && y >= RECV) { done.current.add(i); boss.current.flash = 0.12; }
+      if (n.side === "p" && y > RECV + 58) { done.current.add(i); onHurt(); setCombo(0); setTag("miss"); }
+    });
     setT((n) => n + 1);
   }, [onHurt]);
+  const tapRef = useRef<(lane: number) => void>(() => { /* set below */ });
+  useEffect(() => {
+    const kd = (e: KeyboardEvent) => {
+      const map: Record<string, number> = { ArrowLeft: 0, a: 0, A: 0, ArrowDown: 1, s: 1, S: 1, ArrowUp: 2, w: 2, W: 2, ArrowRight: 3, d: 3, D: 3 };
+      if (map[e.key] != null) { e.preventDefault(); tapRef.current(map[e.key]); }
+    };
+    window.addEventListener("keydown", kd);
+    return () => window.removeEventListener("keydown", kd);
+  }, []);
   const tap = (lane: number) => {
-    const t = tiles.current.find((x) => !x.hit && x.lane === lane && x.y > ZONE - 50 && x.y < ZONE + 50);
-    if (!t) { onHurt(); return; }
-    t.hit = true;
-    onHit(1);
-    tiles.current = tiles.current.filter((x) => x !== t);
+    let best = -1; let bestAbs = 999;
+    chart.current.forEach((n, i) => {
+      if (done.current.has(i) || n.side !== "p" || n.lane !== lane) return;
+      const y = RECV - (n.t - song.current) * SPEED;
+      const d = Math.abs(y - RECV);
+      if (d < bestAbs) { bestAbs = d; best = i; }
+    });
+    if (best < 0 || bestAbs > 54) { onHurt(); setCombo(0); setTag("miss"); return; }
+    done.current.add(best);
+    const j = judgeDelta(bestAbs);
+    setTag(j);
+    if (j === "miss") { onHurt(); setCombo(0); return; }
+    const next = combo + 1;
+    setCombo(next);
+    const sc = judgeScore(j) + (next > 8 ? 1 : 0);
+    if (sc) onHit(sc);
+    if (j === "sick") Audio.playCombo();
   };
+  tapRef.current = tap;
+  const noteY = (n: ChartNote) => RECV - (n.t - song.current) * SPEED;
   return (
-    <div className="absolute inset-0">
+    <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,#102038,#2a1408 80%)" }}>
+      <div className="absolute left-2 top-2"><BossView boss={boss.current} size={88} /></div>
+      <div className="absolute right-2 top-6"><Maxine skin={skin} pose="dig" size={64} /></div>
+      {tag && <div className="absolute left-1/2 -translate-x-1/2 top-20 font-pixel text-[10px] text-white" style={{ textShadow: "2px 2px 0 #000" }}>{tag.toUpperCase()} {combo > 1 ? `x${combo}` : ""}</div>}
       {[0, 1, 2, 3].map((l) => (
-        <button key={l} onPointerDown={() => tap(l)} className="absolute top-0 bottom-0" style={{ left: `${l * 25}%`, width: "25%", background: l % 2 ? "#2a1a1088" : "#24160e88" }} />
+        <div key={l} className="absolute" style={{ left: 28 + l * 78, top: RECV, width: 56, height: 44, border: `3px solid ${LANE_COL[l]}`, background: "#0a101888", boxShadow: `inset 0 0 8px ${LANE_COL[l]}55` }} />
       ))}
-      <div className="absolute left-0 right-0 pointer-events-none" style={{ top: ZONE, height: 52, borderTop: `2px solid ${CREAM}`, borderBottom: `2px solid ${CREAM}`, background: "#fff3d618" }} />
-      {tiles.current.filter((t) => !t.hit).map((t) => (
-        <div key={t.id} className="absolute pointer-events-none" style={{
-          left: `${t.lane * 25 + 3}%`, width: "19%", top: t.y, height: 70,
-          background: INK, border: `3px solid ${MAG}`, boxShadow: `0 0 8px ${MAG}66`,
-        }} />
-      ))}
+      {chart.current.map((n, i) => {
+        if (done.current.has(i)) return null;
+        const y = noteY(n);
+        if (y < -40 || y > 560) return null;
+        return (
+          <div key={i} className="absolute flex items-center justify-center font-pixel text-[12px]"
+            style={{
+              left: 28 + n.lane * 78, top: y, width: 56, height: 40,
+              background: n.side === "e" ? "#3a201088" : LANE_COL[n.lane],
+              color: n.side === "e" ? "#fff8" : INK,
+              border: `2px solid ${INK}`,
+              opacity: n.side === "e" ? 0.45 : 1,
+            }}>{LANE_GLYPH[n.lane]}</div>
+        );
+      })}
+      <div className="absolute bottom-2 inset-x-4 flex justify-between">
+        <ChromeBtn onPress={() => tap(0)} accent={LANE_COL[0]}>←</ChromeBtn>
+        <ChromeBtn onPress={() => tap(1)} accent={LANE_COL[1]}>↓</ChromeBtn>
+        <ChromeBtn onPress={() => tap(2)} accent={LANE_COL[2]}>↑</ChromeBtn>
+        <ChromeBtn onPress={() => tap(3)} accent={LANE_COL[3]}>→</ChromeBtn>
+      </div>
     </div>
   );
 }
@@ -333,7 +380,7 @@ function Rpg({ onHit, onHurt, type }: { onHit: (n?: number) => void; onHurt: () 
       {tele && <div className="absolute right-8 top-2 font-pixel text-[8px]" style={{ color: MAG }}>{tele === "slam" ? "!" : "!!"}</div>}
       <div className="absolute left-3 bottom-36" style={{ opacity: hide ? 0.35 : 1 }}><Maxine size={72} pose="dig" /></div>
       <div className="absolute bottom-3 inset-x-3 grid grid-cols-2 gap-2">
-        <Pad onPress={() => act("morder")} w={undefined as unknown as number} h={52}>MORDER</Pad>
+        <ChromeBtn onPress={() => act("morder")} w={150} h={52}>MORDER</ChromeBtn>
         <button type="button" onPointerDown={() => act("ladrar")} className="font-pixel text-[8px] text-white h-[52px]" style={{ background: "rgba(26,12,4,0.62)", opacity: 0.72 }}>LADRAR</button>
         <button type="button" onPointerDown={() => act("mirada")} className="font-pixel text-[8px] text-white h-[52px]" style={{ background: "rgba(26,12,4,0.62)", opacity: 0.72 }}>MIRADA</button>
         <button type="button" onPointerDown={() => act("esconder")} className="font-pixel text-[8px] text-white h-[52px]" style={{ background: "rgba(26,12,4,0.62)", opacity: 0.72 }}>ESCONDER</button>

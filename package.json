@@ -10,7 +10,8 @@
     "cap:add": "npx cap add android",
     "cap:sync": "npm run build && npx cap sync android",
     "cap:open": "npx cap open android",
-    "apk": "npm run build && npx cap sync android"
+    "apk": "npm run build && npx cap sync android",
+    "test": "tsx --test src/game/fnf.test.ts"
   },
   "dependencies": {
     "clsx": "2.1.1",
