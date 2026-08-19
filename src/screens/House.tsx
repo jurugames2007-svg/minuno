@@ -3,25 +3,30 @@ import Maxine from "../art/Maxine";
 import { Maria, Abu } from "../art/Folk";
 import { Crown } from "../art/Decor";
 import type { SkinId } from "../data/skins";
-import { FURNS, HOTBAR, START_STOCK, furnById, newUid, type FurnId, type PlacedFurn } from "../data/furniture";
-import { FurnitureArt, WoodIcon } from "../art/FurnitureArt";
+import {
+  FURNS, HOTBAR, START_STOCK, WALLS, FLOORINGS, DEFAULT_WALLS, DEFAULT_FLOORS,
+  furnById, newUid,
+  type FurnId, type PlacedFurn, type WallId, type FloorId, type ArcadeId, type FurnCat,
+} from "../data/furniture";
+import { FurnitureArt, WoodIcon, HammerIcon, BagIcon } from "../art/FurnitureArt";
+import ArcadePlay from "./ArcadePlay";
 
 const TILE = 20;
 const BASE_W = 11;
-const ROOF = 46;
-const STORY = 112;
-const ORIGIN = 72;
+const ROOF = 52;
+const STORY = 118;
+const ORIGIN = 64;
 const PW = 22;
 const PH = 32;
-const MS = 58;
+const MS = 56;
 const G = 1650;
 const JUMP = 420;
 const SPEED = 155;
 
 type PalId = "maria" | "abu";
 const PALS: { id: PalId; name: string; price: number; blurb: string }[] = [
-  { id: "maria", name: "María", price: 180, blurb: "Teje en la planta baja." },
-  { id: "abu", name: "Abu", price: 220, blurb: "Toma té en el comedor." },
+  { id: "maria", name: "María", price: 180, blurb: "Teje abajo, con mate." },
+  { id: "abu", name: "Abu", price: 220, blurb: "Toma té en la sala." },
 ];
 
 function load<T>(k: string, def: T): T {
@@ -30,12 +35,12 @@ function load<T>(k: string, def: T): T {
 function save(k: string, v: unknown) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* */ } }
 
 function standY(floor: 0 | 1 | 2) {
-  return ROOF + STORY * (3 - floor) - 4;
+  return ROOF + STORY * (3 - floor) - 2;
 }
 function floorOfY(y: number): 0 | 1 | 2 {
   const foot = y + PH;
-  if (foot <= standY(2) + 8) return 2;
-  if (foot <= standY(1) + 8) return 1;
+  if (foot <= standY(2) + 10) return 2;
+  if (foot <= standY(1) + 10) return 1;
   return 0;
 }
 function span(id: FurnId, rot: 0 | 1) {
@@ -58,12 +63,16 @@ export default function House({ skin, crumbs, onSpend, onEarn, onBack }: Props) 
   const [expL, setExpL] = useState(() => load("maxine_expl", 0));
   const [expR, setExpR] = useState(() => load("maxine_expr", 0));
   const [ownedP, setOwnedP] = useState<PalId[]>(() => load("maxine_pals", []));
+  const [walls, setWalls] = useState<Record<0 | 1 | 2, WallId>>(() => load("maxine_walls", DEFAULT_WALLS));
+  const [floors, setFloors] = useState<Record<0 | 1 | 2, FloorId>>(() => load("maxine_floors", DEFAULT_FLOORS));
   const [build, setBuild] = useState(false);
   const [shopOn, setShopOn] = useState(false);
+  const [tab, setTab] = useState<FurnCat | "pared" | "piso" | "amigo">("casa");
   const [sel, setSel] = useState<FurnId | null>("cama");
   const [rot, setRot] = useState<0 | 1>(0);
   const [ghost, setGhost] = useState<{ gx: number; floor: 0 | 1 | 2; ok: boolean } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [arcade, setArcade] = useState<ArcadeId | null>(null);
   const chops = useRef(0);
   const x = useRef(ORIGIN + 5 * TILE);
   const y = useRef(standY(0) - PH);
@@ -84,6 +93,8 @@ export default function House({ skin, crumbs, onSpend, onEarn, onBack }: Props) 
   useEffect(() => save("maxine_expl", expL), [expL]);
   useEffect(() => save("maxine_expr", expR), [expR]);
   useEffect(() => save("maxine_pals", ownedP), [ownedP]);
+  useEffect(() => save("maxine_walls", walls), [walls]);
+  useEffect(() => save("maxine_floors", floors), [floors]);
 
   const leftTile = -expL * 2;
   const rightTile = BASE_W + expR * 2;
@@ -94,66 +105,53 @@ export default function House({ skin, crumbs, onSpend, onEarn, onBack }: Props) 
 
   const flash = (t: string) => {
     setToast(t);
-    window.setTimeout(() => setToast(null), 1800);
+    window.setTimeout(() => setToast(null), 1600);
   };
 
   useEffect(() => {
+    if (arcade) return;
     let raf = 0;
     let last = performance.now();
     const step = (now: number) => {
       raf = requestAnimationFrame(step);
       let dt = (now - last) / 1000; last = now; if (dt > 0.05) dt = 0.05;
-      const ladL = houseL + 10;
-      const ladR = houseL + 36;
+      const ladL = houseL + 14;
+      const ladR = houseL + 40;
       const cx = x.current + PW / 2;
       const nearLad = cx > ladL && cx < ladR;
       if (!build) {
         vx.current = dir.current * SPEED;
         if (dir.current) face.current = dir.current as 1 | -1;
-      } else {
-        vx.current = 0;
-      }
-      const wantClimb = nearLad && (jumpQ.current || climb.current);
-      if (wantClimb && nearLad) {
+      } else vx.current = 0;
+      const wantClimb = nearLad && (jumpQ.current || climb.current || downQ.current);
+      if (wantClimb) {
         climb.current = true;
         onG.current = false;
         if (jumpQ.current) y.current -= 170 * dt;
         if (downQ.current) y.current += 170 * dt;
         y.current = Math.max(standY(2) - PH - 8, Math.min(standY(0) - PH, y.current));
-        x.current = houseL + 12;
+        x.current = houseL + 16;
       } else {
         climb.current = false;
-        if (jumpQ.current && onG.current && !build) {
-          vy.current = -JUMP;
-          onG.current = false;
-        }
-        vy.current += G * dt;
-        if (vy.current > 620) vy.current = 620;
-        y.current += vy.current * dt;
-        onG.current = false;
+        if (jumpQ.current && onG.current && !build) { vy.current = -JUMP; onG.current = false; }
+        vy.current += G * dt; if (vy.current > 620) vy.current = 620;
+        y.current += vy.current * dt; onG.current = false;
         const foot = y.current + PH;
         for (const fl of [2, 1, 0] as const) {
           const sy = standY(fl);
           if (vy.current >= 0 && foot >= sy && foot <= sy + 16 && x.current + PW > houseL + 4 && x.current < houseR - 4) {
-            y.current = sy - PH;
-            vy.current = 0;
-            onG.current = true;
-            break;
+            y.current = sy - PH; vy.current = 0; onG.current = true; break;
           }
         }
-        if (y.current > standY(0) - PH) {
-          y.current = standY(0) - PH;
-          vy.current = 0;
-          onG.current = true;
-        }
+        if (y.current > standY(0) - PH) { y.current = standY(0) - PH; vy.current = 0; onG.current = true; }
       }
       jumpQ.current = false;
       x.current += vx.current * dt;
-      x.current = Math.max(houseL + 6, Math.min(houseR - PW - 8, x.current));
+      x.current = Math.max(houseL - 30, Math.min(houseR - PW - 10, x.current));
       const mid = x.current + PW / 2;
       cam.current += (mid - 180 - cam.current) * Math.min(1, dt * 6);
-      const maxCam = Math.max(0, houseR + 40 - 360);
-      cam.current = Math.max(Math.min(houseL - 40, 0), Math.min(cam.current, maxCam));
+      const maxCam = Math.max(0, houseR + 36 - 360);
+      cam.current = Math.max(Math.min(houseL - 36, 0), Math.min(cam.current, maxCam));
       setTick((n) => (n + 1) & 1023);
     };
     raf = requestAnimationFrame(step);
@@ -167,23 +165,23 @@ export default function House({ skin, crumbs, onSpend, onEarn, onBack }: Props) 
     };
     const ku = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft" || e.key === "a" || e.key === "ArrowRight" || e.key === "d") dir.current = 0;
+      if (e.key === "ArrowDown" || e.key === "s") downQ.current = false;
     };
     window.addEventListener("keydown", kd);
     window.addEventListener("keyup", ku);
     return () => { cancelAnimationFrame(raf); window.removeEventListener("keydown", kd); window.removeEventListener("keyup", ku); };
-  }, [build, houseL, houseR]);
+  }, [build, houseL, houseR, arcade]);
 
   const countOf = (id: FurnId) => stock[id] ?? 0;
 
   const canSit = (gx: number, floor: 0 | 1 | 2, id: FurnId, r: 0 | 1, ignore?: string) => {
     const { w } = span(id, r);
-    if (gx < leftTile || gx + w > rightTile) return false;
+    if (gx < leftTile + 2 || gx + w > rightTile) return false;
     const def = furnById(id);
     for (const p of placed) {
       if (p.uid === ignore || p.floor !== floor) continue;
       const a = furnById(p.id);
-      if (def.slot === "rug" || a.slot === "rug") continue;
-      if (def.slot === "wall" || a.slot === "wall") continue;
+      if (def.slot === "rug" || a.slot === "rug" || def.slot === "wall" || a.slot === "wall") continue;
       const sw = span(p.id, p.rot).w;
       if (gx < p.gx + sw && gx + w > p.gx) return false;
     }
@@ -207,18 +205,15 @@ export default function House({ skin, crumbs, onSpend, onEarn, onBack }: Props) 
 
   const pickFloor = (clientY: number, rect: DOMRect) => {
     const ly = clientY - rect.top;
-    const attic = standY(2);
-    const mid = standY(1);
-    if (ly < attic + 8) return 2 as const;
-    if (ly < mid + 8) return 1 as const;
+    if (ly < standY(2) + 8) return 2 as const;
+    if (ly < standY(1) + 8) return 1 as const;
     return 0 as const;
   };
 
   const onWorldMove = (e: PointerEvent<HTMLDivElement>) => {
     if (!build || !sel) { setGhost(null); return; }
     const rect = e.currentTarget.getBoundingClientRect();
-    const lx = e.clientX - rect.left + cam.current;
-    const gx = Math.floor((lx - ORIGIN) / TILE);
+    const gx = Math.floor((e.clientX - rect.left + cam.current - ORIGIN) / TILE);
     const floor = pickFloor(e.clientY, rect);
     setGhost({ gx, floor, ok: canSit(gx, floor, sel, rot) && countOf(sel) > 0 });
   };
@@ -226,8 +221,7 @@ export default function House({ skin, crumbs, onSpend, onEarn, onBack }: Props) 
   const onWorldDown = (e: PointerEvent<HTMLDivElement>) => {
     if (!build) return;
     const rect = e.currentTarget.getBoundingClientRect();
-    const lx = e.clientX - rect.left + cam.current;
-    const gx = Math.floor((lx - ORIGIN) / TILE);
+    const gx = Math.floor((e.clientX - rect.left + cam.current - ORIGIN) / TILE);
     const floor = pickFloor(e.clientY, rect);
     const hit = [...placed].reverse().find((p) => {
       if (p.floor !== floor) return false;
@@ -244,12 +238,29 @@ export default function House({ skin, crumbs, onSpend, onEarn, onBack }: Props) 
     onSpend(d.price);
     setWood((w) => w - d.wood);
     setStock((s) => ({ ...s, [id]: (s[id] ?? 0) + 1 }));
-    flash(`+1 ${d.name}`);
+    setSel(id);
+    flash(d.name);
   };
   const buyP = (id: PalId, price: number) => {
     if (ownedP.includes(id) || crumbs < price) return;
     onSpend(price);
     setOwnedP((o) => [...o, id]);
+  };
+  const paintWall = (id: WallId) => {
+    const def = WALLS.find((w) => w.id === id);
+    if (!def || crumbs < def.price) { flash("Faltan migas"); return; }
+    const fl = floorOfY(y.current);
+    onSpend(def.price);
+    setWalls((w) => ({ ...w, [fl]: id }));
+    flash(`Pared · ${def.name}`);
+  };
+  const paintFloor = (id: FloorId) => {
+    const def = FLOORINGS.find((f) => f.id === id);
+    if (!def || crumbs < def.price) { flash("Faltan migas"); return; }
+    const fl = floorOfY(y.current);
+    onSpend(def.price);
+    setFloors((f) => ({ ...f, [fl]: id }));
+    flash(`Piso · ${def.name}`);
   };
   const expand = (side: "l" | "r") => {
     if (crumbs < 50 || wood < 18) { flash("50 migas y 18 leños"); return; }
@@ -257,9 +268,7 @@ export default function House({ skin, crumbs, onSpend, onEarn, onBack }: Props) 
     if (side === "r" && expR >= 2) return;
     onSpend(50);
     setWood((w) => w - 18);
-    if (side === "l") setExpL((n) => n + 1);
-    else setExpR((n) => n + 1);
-    flash("¡Habitación nueva!");
+    if (side === "l") setExpL((n) => n + 1); else setExpR((n) => n + 1);
   };
   const chop = () => {
     setWood((w) => w + 1);
@@ -271,89 +280,72 @@ export default function House({ skin, crumbs, onSpend, onEarn, onBack }: Props) 
   const flNow = floorOfY(y.current);
   const gW = sel ? span(sel, rot).w : 1;
   const gH = sel ? span(sel, rot).h : 1;
+  const gxNow = Math.floor((x.current + PW / 2 - ORIGIN) / TILE);
+  const nearGame = !build ? placed.find((p) => {
+    const d = furnById(p.id);
+    if (!d.game || p.floor !== flNow) return false;
+    const w = span(p.id, p.rot).w;
+    return gxNow >= p.gx - 1 && gxNow <= p.gx + w;
+  }) : undefined;
+  const nearStump = !build && x.current < houseL + 8;
+
+  const catalog = FURNS.filter((f) => f.cat === tab);
 
   return (
-    <div className="absolute inset-0 select-none overflow-hidden" style={{ background: "radial-gradient(120% 80% at 50% 0%, #1a1028 0%, #080610 70%)" }}>
-      <div className="absolute inset-0 pointer-events-none">
-        {Array.from({ length: 28 }).map((_, i) => (
-          <div key={i} className="absolute rounded-full bg-amber-100/70" style={{
-            width: 2 + (i % 3), height: 2 + (i % 3),
-            left: `${(i * 37) % 100}%`, top: `${(i * 17) % 42}%`, opacity: 0.35 + (i % 5) * 0.08,
-          }} />
-        ))}
-      </div>
+    <div className="absolute inset-0 select-none overflow-hidden" style={{ background: "linear-gradient(180deg,#1b1630 0%,#0c0816 55%,#141018 100%)" }}>
+      <div className="absolute right-8 top-10 w-14 h-14 rounded-full pointer-events-none" style={{ background: "#fff4d0", boxShadow: "0 0 40px #ffe08a66" }} />
+      {Array.from({ length: 10 }).map((_, i) => (
+        <div key={i} className="absolute rounded-full bg-white pointer-events-none" style={{
+          width: 2, height: 2, left: `${12 + (i * 29) % 80}%`, top: `${8 + (i * 13) % 22}%`, opacity: 0.35,
+        }} />
+      ))}
 
-      <div className="absolute top-2 left-2 right-2 z-40 flex items-center justify-between gap-1.5">
-        <button onClick={onBack} className="btn-3d font-display font-bold text-[13px] bg-[#3a2010] text-amber-100 px-3 py-2 rounded-xl border-2 border-[#1a0c04] border-b-4">Atrás</button>
-        <div className="flex items-center gap-1">
-          <div className="flex items-center gap-1 bg-[#3a2010] border-2 border-[#1a0c04] rounded-xl px-2 py-1.5">
-            <Crown size={14} /><span className="font-display font-bold text-[13px] text-amber-200">{crumbs}</span>
-          </div>
-          <div className="flex items-center gap-1 bg-[#3a2010] border-2 border-[#1a0c04] rounded-xl px-2 py-1.5">
-            <WoodIcon size={14} /><span className="font-display font-bold text-[13px] text-amber-200">{wood}</span>
-          </div>
+      <div className="absolute top-2 left-2 right-2 z-40 flex items-center gap-1.5">
+        <button onClick={onBack} aria-label="Atrás" className="btn-3d w-10 h-10 rounded-full border-2 border-b-4 flex items-center justify-center font-display font-bold text-amber-100"
+          style={{ background: "#3a2010", borderColor: "#1a0c04" }}>←</button>
+        <div className="flex items-center gap-2 ml-auto rounded-full px-2.5 py-1 border-2" style={{ background: "#2a1810cc", borderColor: "#1a0c04" }}>
+          <span className="flex items-center gap-0.5"><Crown size={13} /><b className="font-display text-[13px] text-amber-200">{crumbs}</b></span>
+          <span className="flex items-center gap-0.5"><WoodIcon size={13} /><b className="font-display text-[13px] text-amber-200">{wood}</b></span>
         </div>
-        <button onClick={() => setBuild((v) => !v)} className="btn-3d font-display font-bold text-[12px] px-2.5 py-2 rounded-xl border-2 border-b-4"
-          style={{ background: build ? "linear-gradient(180deg,#7fc24a,#3a7a1a)" : "#3a2010", color: build ? "#102008" : "#ffd27a", borderColor: "#1a0c04" }}>
-          {build ? "Construir" : "Pasear"}
+        <button onClick={() => setShopOn(true)} aria-label="Inventario" className="btn-3d w-10 h-10 rounded-full border-2 border-b-4 flex items-center justify-center"
+          style={{ background: "#3a2010", borderColor: "#1a0c04" }}><BagIcon size={16} /></button>
+        <button onClick={() => setBuild((v) => !v)} aria-label="Construir" className="btn-3d w-10 h-10 rounded-full border-2 border-b-4 flex items-center justify-center"
+          style={{ background: build ? "#8fd45a" : "#3a2010", borderColor: "#1a0c04" }}>
+          <HammerIcon size={16} color={build ? "#1a3008" : "#ffd27a"} />
         </button>
-      </div>
-      <div className="absolute z-40 flex gap-1.5" style={{ top: 50, left: 8, right: 8 }}>
-        <div className="font-display text-[11px] text-amber-100/80 bg-black/40 rounded-full px-2 py-0.5">{tilesW}×5 · 3 pisos</div>
-        <button onClick={() => setShopOn(true)} className="btn-3d ml-auto font-display font-bold text-[12px] px-2.5 py-1 rounded-lg border-2" style={{ background: "#3a2010", color: "#ffd27a", borderColor: "#1a0c04" }}>Inventario</button>
-        {build && (
-          <button onClick={() => setRot((r) => (r ? 0 : 1))} className="btn-3d font-display font-bold text-[12px] px-2.5 py-1 rounded-lg border-2" style={{ background: "#3a2010", color: "#ffd27a", borderColor: "#1a0c04" }}>Girar</button>
-        )}
       </div>
 
       <div
         className="absolute inset-0"
-        style={{ top: 78, bottom: build ? 92 : 78, touchAction: "none" }}
+        style={{ top: 52, bottom: build ? 78 : 70, touchAction: "none" }}
         onPointerMove={onWorldMove}
         onPointerDown={onWorldDown}
         onPointerLeave={() => setGhost(null)}
       >
         <div className="absolute inset-0" style={{ transform: `translate3d(${-cam.current}px,0,0)` }}>
-          <div className="absolute" style={{ left: houseL - 8, top: 4, width: houseW + 16, height: ROOF + 8 }}>
+          <div className="absolute" style={{ left: houseL - 10, top: 2, width: houseW + 20, height: ROOF }}>
             <div style={{
               width: "100%", height: "100%",
-              background: "#5a3218",
-              clipPath: "polygon(0 100%, 50% 0, 100% 100%)",
-              boxShadow: "0 6px 0 #2a1408",
-              border: "3px solid #1a0c04",
+              background: "repeating-linear-gradient(180deg,#6a3a18 0 7px,#5a2e12 7px 8px)",
+              clipPath: "polygon(0 100%, 50% 6%, 100% 100%)",
+              boxShadow: "0 8px 0 #2a1408",
             }} />
-            <div className="absolute left-1/2 -translate-x-1/2" style={{ top: ROOF * 0.45, width: 18, height: 22, background: "#3a2010", border: "3px solid #1a0c04" }} />
+            <div className="absolute" style={{ right: 18, top: 10, width: 16, height: 28, background: "#4a2814", border: "3px solid #1a0c04" }} />
           </div>
 
           <div className="absolute overflow-hidden" style={{
-            left: houseL, top: ROOF, width: houseW, height: STORY * 3 + 6,
-            border: "4px solid #1a0c04", background: "#2a1810", boxShadow: "0 10px 0 #120808",
+            left: houseL, top: ROOF - 2, width: houseW, height: STORY * 3 + 4,
+            border: "5px solid #2a1408", background: "#3a2418", boxShadow: "8px 12px 0 #100808",
           }}>
-            {([2, 1, 0] as const).map((fl) => {
-              const top = standY(fl) - ROOF - (STORY - 8);
-              const pal = fl === 2 ? "#4a2e1c" : fl === 1 ? "#3a2840" : "#2a3040";
-              return (
-                <div key={fl} className="absolute inset-x-0" style={{ top, height: STORY - 4, background: `linear-gradient(180deg,${pal},#1a120c)` }}>
-                  {build && Array.from({ length: tilesW }).map((_, i) => (
-                    <div key={i} className="absolute inset-y-0" style={{
-                      left: i * TILE, width: TILE,
-                      borderRight: "1px solid #ffd27a22",
-                      borderTop: "1px solid #ffd27a18",
-                    }} />
-                  ))}
-                  <div className="absolute inset-x-0 bottom-0 h-2" style={{ background: "#6a3a14", borderTop: "3px solid #1a0c04" }} />
-                  <div className="absolute left-2 top-2 font-display text-[10px] text-amber-100/40">
-                    {fl === 2 ? "Ático" : fl === 1 ? "Sala" : "Cocina"}
-                  </div>
-                </div>
-              );
-            })}
+            {([2, 1, 0] as const).map((fl) => (
+              <StorySkin key={fl} fl={fl} wall={walls[fl]} floor={floors[fl]} tilesW={tilesW} build={build} />
+            ))}
 
-            <div className="absolute bottom-0" style={{ left: 12, width: 22, top: 6 }}>
-              <div className="absolute inset-y-0 left-0 w-1 bg-[#8a5a2c]" />
-              <div className="absolute inset-y-0 right-0 w-1 bg-[#8a5a2c]" />
-              {Array.from({ length: 16 }).map((_, i) => (
-                <div key={i} className="absolute left-0 right-0 h-0.5" style={{ top: 10 + i * 20, background: "#c9842a" }} />
+            <div className="absolute bottom-0 pointer-events-none" style={{ left: 18, width: 20, top: 8 }}>
+              <div className="absolute inset-y-0 left-0 w-[3px] bg-[#7a4a22]" />
+              <div className="absolute inset-y-0 right-0 w-[3px] bg-[#7a4a22]" />
+              {Array.from({ length: 14 }).map((_, i) => (
+                <div key={i} className="absolute left-0 right-0 h-[3px]" style={{ top: 8 + i * 22, background: "#c9842a" }} />
               ))}
             </div>
 
@@ -363,67 +355,84 @@ export default function House({ skin, crumbs, onSpend, onEarn, onBack }: Props) 
             {ghost && sel && (
               <div className="absolute pointer-events-none" style={{
                 left: ORIGIN - houseL + ghost.gx * TILE,
-                top: standY(ghost.floor) - ROOF - gH * TILE,
+                top: standY(ghost.floor) - ROOF + 2 - gH * TILE,
                 width: gW * TILE, height: gH * TILE,
-                background: ghost.ok ? "#7fc24a66" : "#e23b3b66",
-                outline: `3px dashed ${ghost.ok ? "#7fc24a" : "#e23b3b"}`,
+                background: ghost.ok ? "#7fc24a44" : "#e23b3b44",
+                outline: `2px dashed ${ghost.ok ? "#7fc24a" : "#e23b3b"}`,
               }}>
-                <div className="opacity-70"><FurnitureArt id={sel} w={gW * TILE} h={gH * TILE} /></div>
+                <div className="opacity-60"><FurnitureArt id={sel} w={gW * TILE} h={gH * TILE} /></div>
               </div>
             )}
 
             {ownedP.includes("maria") && (
-              <div className="absolute" style={{ left: 90, top: standY(0) - ROOF - 70 }}><Maria size={70} wave /></div>
+              <div className="absolute" style={{ left: 86, top: standY(0) - ROOF - 66 }}><Maria size={66} wave /></div>
             )}
             {ownedP.includes("abu") && (
-              <div className="absolute" style={{ left: 150, top: standY(0) - ROOF - 70 }}><Abu size={70} /></div>
+              <div className="absolute" style={{ left: 148, top: standY(1) - ROOF - 66 }}><Abu size={66} /></div>
             )}
           </div>
 
-          {expL < 2 && (
-            <button onPointerDown={(e) => e.stopPropagation()} onClick={() => expand("l")} className="absolute font-display font-bold text-[22px] text-[#102008]"
-              style={{ left: houseL - 34, top: ROOF + STORY, width: 30, height: 30, background: "#7fc24a", border: "3px solid #1a3a08", borderRadius: 8 }}>+</button>
+          <button onPointerDown={(e) => { e.stopPropagation(); chop(); }} className="absolute"
+            style={{ left: houseL - 38, top: standY(0) - 22, width: 28, height: 22, background: "#6a3a14", border: "3px solid #2a1408", borderRadius: 6 }}
+            aria-label="Leño" />
+
+          {build && expL < 2 && (
+            <button onPointerDown={(e) => e.stopPropagation()} onClick={() => expand("l")}
+              className="absolute font-display font-bold text-[18px] text-[#16300a]"
+              style={{ left: houseL - 28, top: ROOF + STORY + 20, width: 24, height: 24, background: "#8fd45a", border: "2px solid #1a3a08", borderRadius: 6 }}>+</button>
           )}
-          {expR < 2 && (
-            <button onPointerDown={(e) => e.stopPropagation()} onClick={() => expand("r")} className="absolute font-display font-bold text-[22px] text-[#102008]"
-              style={{ left: houseR + 4, top: ROOF + STORY, width: 30, height: 30, background: "#7fc24a", border: "3px solid #1a3a08", borderRadius: 8 }}>+</button>
+          {build && expR < 2 && (
+            <button onPointerDown={(e) => e.stopPropagation()} onClick={() => expand("r")}
+              className="absolute font-display font-bold text-[18px] text-[#16300a]"
+              style={{ left: houseR + 4, top: ROOF + STORY + 20, width: 24, height: 24, background: "#8fd45a", border: "2px solid #1a3a08", borderRadius: 6 }}>+</button>
           )}
 
-          <div className="absolute z-30" style={{ left: x.current - 18, top: y.current - 22, width: MS, height: MS }}>
+          <div className="absolute z-30" style={{ left: x.current - 16, top: y.current - 20, width: MS, height: MS }}>
             <Maxine skin={skin} pose={pose} facing={face.current} size={MS} />
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 font-display font-bold text-[9px] text-amber-50 bg-black/55 px-1.5 rounded-full whitespace-nowrap">Maxine</div>
           </div>
         </div>
       </div>
 
       {toast && (
-        <div className="absolute left-4 right-4 z-50 text-center font-display font-bold text-amber-50 bg-black/75 rounded-xl py-1.5 border border-amber-200/30" style={{ top: 86 }}>{toast}</div>
+        <div className="absolute left-8 right-8 z-50 text-center font-display font-bold text-[13px] text-amber-50 bg-black/60 rounded-full py-1" style={{ top: 56 }}>{toast}</div>
+      )}
+
+      {!build && nearGame && (
+        <button onClick={() => { const g = furnById(nearGame.id).game; if (g) setArcade(g); }}
+          className="absolute z-40 btn-3d font-display font-bold text-[13px] px-3 py-1.5 rounded-full"
+          style={{ left: "50%", transform: "translateX(-50%)", bottom: 78, background: "#ffd27a", color: "#3a1808" }}>Jugar</button>
+      )}
+      {!build && nearStump && (
+        <button onClick={chop} className="absolute z-40 btn-3d font-display font-bold text-[12px] px-3 py-1.5 rounded-full"
+          style={{ left: 12, bottom: 78, background: "#c9842a", color: "#1a0c04" }}>Leño</button>
       )}
 
       {!build && (
-        <div className="absolute bottom-2 inset-x-2 z-40 flex gap-2">
-          <button className="btn-3d flex-1 font-display font-bold text-[15px] py-2.5 rounded-full border-b-4 text-white" style={{ background: "#3a2010", borderColor: "#1a0c04" }}
-            onPointerDown={() => { dir.current = -1; }} onPointerUp={() => { dir.current = 0; }} onPointerLeave={() => { dir.current = 0; }}>Izq</button>
-          <button className="btn-3d font-display font-bold text-[13px] px-3 py-2.5 rounded-full border-b-4" style={{ background: "#c9842a", color: "#1a0c04", borderColor: "#5a3216" }}
-            onPointerDown={() => { downQ.current = true; climb.current = true; }} onPointerUp={() => { downQ.current = false; climb.current = false; }} onPointerLeave={() => { downQ.current = false; climb.current = false; }}>Bajar</button>
-          <button className="btn-3d font-display font-bold text-[14px] px-3 py-2.5 rounded-full border-b-4" style={{ background: "#ffd27a", color: "#3a1808", borderColor: "#7a4410" }}
-            onPointerDown={() => { jumpQ.current = true; climb.current = true; }} onPointerUp={() => { climb.current = false; }}>Salto</button>
-          <button className="btn-3d flex-1 font-display font-bold text-[15px] py-2.5 rounded-full border-b-4 text-white" style={{ background: "#3a2010", borderColor: "#1a0c04" }}
-            onPointerDown={() => { dir.current = 1; }} onPointerUp={() => { dir.current = 0; }} onPointerLeave={() => { dir.current = 0; }}>Der</button>
+        <div className="absolute bottom-2 inset-x-3 z-40 flex items-end justify-between">
+          <div className="flex gap-2">
+            <Pad label="‹" onDown={() => { dir.current = -1; }} onUp={() => { dir.current = 0; }} />
+            <Pad label="›" onDown={() => { dir.current = 1; }} onUp={() => { dir.current = 0; }} />
+          </div>
+          <div className="flex gap-2">
+            <Pad label="↓" dim onDown={() => { downQ.current = true; climb.current = true; }} onUp={() => { downQ.current = false; climb.current = false; }} />
+            <Pad label="↑" gold onDown={() => { jumpQ.current = true; climb.current = true; }} onUp={() => { climb.current = false; }} />
+          </div>
         </div>
       )}
 
       {build && (
-        <div className="absolute bottom-0 inset-x-0 z-40 px-1.5 pb-2 pt-1" style={{ background: "linear-gradient(180deg,#0000,#0a0614 30%)" }}>
-          <div className="flex gap-1 overflow-x-auto scrollbar-none">
-            {HOTBAR.map((id) => {
+        <div className="absolute bottom-0 inset-x-0 z-40 px-2 pb-2 pt-1">
+          <div className="flex items-end gap-1 overflow-x-auto scrollbar-none">
+            <button onClick={() => setRot((r) => (r ? 0 : 1))} className="shrink-0 w-9 h-11 rounded-lg border-2 font-display font-bold text-[11px] text-amber-100"
+              style={{ background: "#2a1810", borderColor: "#1a0c04" }}>90°</button>
+            {HOTBAR.concat(FURNS.filter((f) => f.cat === "arcade").map((f) => f.id)).filter((id, i, a) => a.indexOf(id) === i).map((id) => {
               const n = countOf(id);
               const on = sel === id;
               return (
                 <button key={id} onClick={() => setSel(id)} className="relative shrink-0 rounded-lg border-2"
-                  style={{ width: 42, height: 46, background: on ? "#4a3018" : "#24140c", borderColor: on ? "#ffd27a" : "#1a0c04" }}>
-                  <FurnitureArt id={id} w={38} h={30} />
-                  <span className="absolute -top-1 -right-1 min-w-[16px] text-center font-display font-bold text-[10px] bg-[#1a0c04] text-amber-100 rounded-full px-1">{n}</span>
+                  style={{ width: 40, height: 44, background: on ? "#4a3018" : "#1c100a", borderColor: on ? "#e8c070" : "#1a0c04", opacity: n ? 1 : 0.45 }}>
+                  <FurnitureArt id={id} w={36} h={28} />
+                  <span className="absolute -top-1 -right-1 min-w-[14px] text-center font-display font-bold text-[9px] bg-[#1a0c04] text-amber-100 rounded-full px-0.5">{n}</span>
                 </button>
               );
             })}
@@ -432,44 +441,108 @@ export default function House({ skin, crumbs, onSpend, onEarn, onBack }: Props) 
       )}
 
       {shopOn && (
-        <div className="absolute inset-0 z-50 bg-black/75 flex items-end">
-          <div className="w-full rounded-t-2xl border-2 border-amber-200/30 p-3 max-h-[78%] overflow-y-auto scrollbar-none" style={{ background: "#24140c" }}>
+        <div className="absolute inset-0 z-50 bg-black/60 flex items-end">
+          <div className="w-full rounded-t-2xl border-t-2 p-3 max-h-[76%] overflow-y-auto scrollbar-none" style={{ background: "#26160e", borderColor: "#c9a86a55" }}>
             <div className="flex items-center justify-between mb-2">
-              <div className="font-display font-bold text-amber-50 text-[18px]">Inventario</div>
-              <button onClick={() => setShopOn(false)} className="font-display font-bold text-amber-100">Cerrar</button>
+              <div className="font-display font-bold text-amber-50 text-[17px]">Decorar</div>
+              <button onClick={() => setShopOn(false)} className="font-display font-bold text-amber-200 text-[13px]">Listo</button>
             </div>
-            <p className="font-display text-[12px] text-amber-100/75 mb-2">Comprá muebles, giralos (R) y colocálos en la rejilla. Tocá un mueble puesto para recogerlo.</p>
-            <div className="grid grid-cols-4 gap-1.5">
-              {FURNS.map((f) => (
-                <button key={f.id} onClick={() => buyF(f.id)} className="rounded-lg border-2 p-1 text-left" style={{ background: "#3a2010", borderColor: "#1a0c04" }}>
-                  <FurnitureArt id={f.id} w={48} h={36} />
-                  <div className="font-display font-bold text-[11px] text-amber-100 leading-tight">{f.name}</div>
-                  <div className="font-display text-[10px] text-amber-200/80">{f.price} · {f.wood} leño · x{countOf(f.id)}</div>
-                </button>
+            <div className="flex gap-1 mb-2 overflow-x-auto scrollbar-none">
+              {([
+                ["casa", "Casa"], ["deco", "Deco"], ["arcade", "Arcade"],
+                ["pared", "Pared"], ["piso", "Piso"], ["amigo", "Amigos"],
+              ] as const).map(([id, label]) => (
+                <button key={id} onClick={() => setTab(id)} className="shrink-0 font-display font-bold text-[11px] px-2.5 py-1 rounded-full"
+                  style={{ background: tab === id ? "#ffd27a" : "#3a2010", color: tab === id ? "#3a1808" : "#e8c890" }}>{label}</button>
               ))}
             </div>
-            <div className="mt-3 space-y-1.5">
-              {PALS.map((p) => {
-                const own = ownedP.includes(p.id);
-                return (
-                  <button key={p.id} disabled={own || crumbs < p.price} onClick={() => buyP(p.id, p.price)}
-                    className="w-full text-left rounded-lg border-2 p-2 flex items-center gap-2 disabled:opacity-50" style={{ background: "#3a2010", borderColor: own ? "#7fc24a" : "#1a0c04" }}>
-                    <div className="w-10 h-12">{p.id === "maria" ? <Maria size={52} /> : <Abu size={52} />}</div>
-                    <div>
-                      <div className="font-display font-bold text-amber-100">{p.name}</div>
-                      <div className="font-display text-[11px] text-amber-200/80">{own ? "Vive aquí" : `${p.blurb} · ${p.price}`}</div>
-                    </div>
+            {(tab === "casa" || tab === "deco" || tab === "arcade") && (
+              <div className="grid grid-cols-4 gap-1.5">
+                {catalog.map((f) => (
+                  <button key={f.id} onClick={() => buyF(f.id)} className="rounded-lg border p-1 text-left" style={{ background: "#3a2010", borderColor: "#1a0c04" }}>
+                    <FurnitureArt id={f.id} w={56} h={36} />
+                    <div className="font-display font-bold text-[10px] text-amber-100 leading-tight">{f.name}</div>
+                    <div className="font-display text-[9px] text-amber-200/75">{f.price} · x{countOf(f.id)}</div>
                   </button>
-                );
-              })}
-            </div>
-            <button onClick={chop} className="btn-3d mt-3 w-full font-display font-bold py-2 rounded-xl" style={{ background: "#7fc24a", color: "#102008" }}>Amasar leño +1</button>
+                ))}
+              </div>
+            )}
+            {tab === "pared" && (
+              <div className="grid grid-cols-4 gap-1.5">
+                {WALLS.map((w) => (
+                  <button key={w.id} onClick={() => paintWall(w.id)} className="rounded-lg border p-1 h-16" style={{ background: `linear-gradient(180deg,${w.a},${w.b})`, borderColor: walls[flNow] === w.id ? "#ffd27a" : "#1a0c04" }}>
+                    <div className="font-display font-bold text-[10px] text-[#2a1408] bg-white/50 rounded px-1">{w.name}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+            {tab === "piso" && (
+              <div className="grid grid-cols-4 gap-1.5">
+                {FLOORINGS.map((f) => (
+                  <button key={f.id} onClick={() => paintFloor(f.id)} className="rounded-lg border p-1 h-16" style={{ background: `repeating-linear-gradient(90deg,${f.a} 0 10px,${f.b} 10px 20px)`, borderColor: floors[flNow] === f.id ? "#ffd27a" : "#1a0c04" }}>
+                    <div className="font-display font-bold text-[10px] text-[#fff8e8] bg-black/35 rounded px-1">{f.name}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+            {tab === "amigo" && PALS.map((p) => {
+              const own = ownedP.includes(p.id);
+              return (
+                <button key={p.id} disabled={own || crumbs < p.price} onClick={() => buyP(p.id, p.price)}
+                  className="w-full text-left rounded-lg border p-2 flex items-center gap-2 mb-1.5 disabled:opacity-50" style={{ background: "#3a2010", borderColor: own ? "#7fc24a" : "#1a0c04" }}>
+                  <div className="w-10 h-12">{p.id === "maria" ? <Maria size={50} /> : <Abu size={50} />}</div>
+                  <div>
+                    <div className="font-display font-bold text-amber-100">{p.name}</div>
+                    <div className="font-display text-[11px] text-amber-200/80">{own ? "En casa" : `${p.blurb} · ${p.price}`}</div>
+                  </div>
+                </button>
+              );
+            })}
+            <p className="mt-2 font-display text-[11px] text-amber-100/60 text-center">Pared y piso se aplican al piso donde está Maxine.</p>
           </div>
         </div>
       )}
-      <div className="absolute bottom-[72px] left-1/2 -translate-x-1/2 z-30 font-display text-[10px] text-amber-100/50 pointer-events-none">
-        {flNow === 2 ? "Ático" : flNow === 1 ? "Sala" : "Cocina"}
+
+      {arcade && <ArcadePlay game={arcade} onEarn={onEarn} onClose={() => setArcade(null)} />}
+    </div>
+  );
+}
+
+function Pad({ label, onDown, onUp, gold, dim }: { label: string; onDown: () => void; onUp: () => void; gold?: boolean; dim?: boolean }) {
+  return (
+    <button
+      className="btn-3d w-12 h-12 rounded-full border-2 border-b-4 font-display font-bold text-[20px]"
+      style={{ background: gold ? "#ffd27a" : dim ? "#5a3a22" : "#3a2010", color: gold ? "#3a1808" : "#fff3d6", borderColor: "#1a0c04" }}
+      onPointerDown={onDown} onPointerUp={onUp} onPointerLeave={onUp}
+    >{label}</button>
+  );
+}
+
+function StorySkin({ fl, wall, floor, tilesW, build }: { fl: 0 | 1 | 2; wall: WallId; floor: FloorId; tilesW: number; build: boolean }) {
+  const wdef = WALLS.find((w) => w.id === wall) ?? WALLS[0];
+  const fdef = FLOORINGS.find((f) => f.id === floor) ?? FLOORINGS[0];
+  const top = standY(fl) - ROOF + 2 - (STORY - 10);
+  const brick = wall === "ladrillo";
+  const stripes = wall === "rayas";
+  const bg = brick
+    ? `repeating-linear-gradient(0deg,${wdef.a} 0 12px,${wdef.b} 12px 14px)`
+    : stripes
+      ? `repeating-linear-gradient(90deg,${wdef.a} 0 10px,${wdef.b} 10px 14px)`
+      : `linear-gradient(180deg,${wdef.a},${wdef.b})`;
+  const board = floor === "damero"
+    ? `repeating-conic-gradient(${fdef.a} 0% 25%, ${fdef.b} 0% 50%)`
+    : `repeating-linear-gradient(90deg,${fdef.a} 0 14px,${fdef.b} 14px 16px)`;
+  return (
+    <div className="absolute inset-x-0" style={{ top, height: STORY - 6, background: bg }}>
+      <div className="absolute right-3 top-3 w-11 h-14 border-[3px]" style={{ borderColor: "#4a2814", background: "linear-gradient(#7eb7e8,#f0b060)" }}>
+        <div className="absolute inset-y-0 left-1/2 w-[2px] bg-[#4a2814]" />
+        <div className="absolute inset-x-0 top-1/2 h-[2px] bg-[#4a2814]" />
       </div>
+      {build && Array.from({ length: tilesW }).map((_, i) => (
+        <div key={i} className="absolute inset-y-0" style={{ left: i * TILE, width: TILE, borderRight: "1px solid #00000012" }} />
+      ))}
+      <div className="absolute inset-x-0 bottom-0 h-3" style={{ background: board, backgroundSize: floor === "damero" ? "12px 12px" : undefined, boxShadow: "0 -2px 0 #2a1408" }} />
+      <div className="absolute inset-x-0 top-0 h-1.5" style={{ background: "#6a3a18" }} />
     </div>
   );
 }
@@ -479,9 +552,10 @@ function Piece({ p, origin, houseL }: { p: PlacedFurn; origin: number; houseL: n
   const { w, h } = span(p.id, p.rot);
   const wall = d.slot === "wall";
   const left = origin - houseL + p.gx * TILE;
-  const top = standY(p.floor) - ROOF - (wall ? h * TILE + 18 : h * TILE);
+  const top = standY(p.floor) - ROOF + 2 - (wall ? h * TILE + 16 : h * TILE);
   return (
     <div className="absolute" style={{ left, top, width: w * TILE, height: h * TILE, zIndex: d.slot === "rug" ? 1 : 2 }}>
+      {d.id === "lampara" && <div className="absolute -inset-3 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle,#ffe08a55,transparent 70%)" }} />}
       <FurnitureArt id={p.id} w={w * TILE} h={h * TILE} />
     </div>
   );
