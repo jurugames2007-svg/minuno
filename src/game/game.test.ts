@@ -16,6 +16,10 @@ import {
   cycleLength, rowOfLevel, uniqueGenres, enemyPeriod, cineLineCount,
   isChargeKey, isDashKey,
 } from "./rules";
+import {
+  markMatches, applyGravity, trySwap, neighbors, isOrthoAdj, prizeRevealed,
+  luchaResolve, checkpointsForDepth, gamepadEdge,
+} from "./minigames";
 
 describe("fnf chart", () => {
   it("genera notas de jugador y enemigo", () => {
@@ -178,5 +182,44 @@ describe("world + combate", () => {
     assert.equal(ENEMY_TYPES.length, 5);
     const periods = ENEMY_TYPES.map(enemyPeriod);
     assert.equal(new Set(periods).size, 5);
+  });
+});
+
+describe("minijuegos", () => {
+  it("match-3 marca tres en línea y aplica gravedad", () => {
+    const row = [1, 1, 1, 0, 2, 3, 0, 2, 3, 0, 2, 3, 0, 2, 3, 0];
+    const m = markMatches(row);
+    assert.ok(m.has(0) && m.has(1) && m.has(2));
+    const fallen = applyGravity([1, -1, 2, 3, 1, 1, 2, 3, 0, 0, 2, 3, 0, 0, 2, 3], () => 9);
+    assert.ok(!fallen.includes(-1));
+    assert.ok(fallen.includes(9));
+  });
+  it("swap solo si hay match y son vecinos", () => {
+    assert.equal(neighbors(0, 1), true);
+    assert.equal(neighbors(0, 2), false);
+    const board = [0, 1, 1, 2, 3, 0, 2, 3, 0, 2, 3, 0, 2, 3, 0, 2];
+    const miss = trySwap(board, 0, 1, () => 0);
+    assert.equal(miss && miss.cleared, 0);
+    const hit = trySwap([1, 0, 1, 1, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3], 0, 1, () => 2);
+    assert.ok(hit && hit.cleared >= 3);
+  });
+  it("cavar: premio oculto hasta cavar al lado", () => {
+    assert.equal(isOrthoAdj(0, 1, 6), true);
+    assert.equal(isOrthoAdj(0, 2, 6), false);
+    assert.equal(prizeRevealed(new Set([3]), 40, 6), false);
+    assert.equal(prizeRevealed(new Set([39]), 40, 6), true);
+  });
+  it("lucha: mismo aviso pega, distinto lastima, bloqueo cubre", () => {
+    assert.equal(luchaResolve("hi", "hi"), "hit");
+    assert.equal(luchaResolve("lo", "hi"), "hurt");
+    assert.equal(luchaResolve("block", "lo"), "block");
+    assert.equal(luchaResolve("hi", null), "idle");
+  });
+  it("checkpoints usan CYCLE y gamepad solo en flanco", () => {
+    assert.deepEqual(checkpointsForDepth(0, 56), [1]);
+    assert.ok(checkpointsForDepth(4 * 56, 56).includes(5));
+    assert.equal(gamepadEdge(false, true), true);
+    assert.equal(gamepadEdge(true, true), false);
+    assert.equal(gamepadEdge(true, false), false);
   });
 });

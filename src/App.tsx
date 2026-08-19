@@ -11,6 +11,7 @@ import { Flour } from "./art/Decor";
 import { SKINS, type SkinId } from "./data/skins";
 import type { ToolId } from "./art/Plushie";
 import { CYCLE } from "./data/world";
+import { checkpointsForDepth } from "./game/minigames";
 import { type SpellId } from "./data/spells";
 import ErrorBound from "./ui/ErrorBound";
 
@@ -73,8 +74,7 @@ export default function App() {
   useEffect(() => save("maxine_spell", spell), [spell]);
 
   const unlockForDepth = (depth: number) => {
-    const newUnlock = [1];
-    for (const lv of [5, 10, 15, 20, 25]) { if (depth >= (lv - 1) * CYCLE) newUnlock.push(lv); }
+    const newUnlock = checkpointsForDepth(depth, CYCLE);
     const merged = Array.from(new Set([...unlocked, ...newUnlock])).sort((a, b) => a - b);
     if (merged.length !== unlocked.length) setUnlocked(merged);
   };

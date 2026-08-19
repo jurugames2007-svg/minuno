@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import Maxine, { type Pose } from "../art/Maxine";
 import { Plushie, TOOL_MAP, TOOLS, type ToolId } from "../art/Plushie";
-import { Bread, type BreadType, Heart, Crown, PowerIcon, Flour, zoneOf, ZONE_NAME } from "../art/Decor";
+import { Bread, type BreadType, Crown, PowerIcon, Flour, zoneOf, ZONE_NAME } from "../art/Decor";
 import { type Boss, type Bullet, type BossCtx, spawnBoss, stepBoss, bossForLevel, BossView, BulletView, bossPartsWorld } from "../art/Bosses";
 import type { SkinId } from "../data/skins";
 import * as Audio from "./AudioEngine";
@@ -630,7 +630,14 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
           }
           if (!spent && boss.current) {
             const bo = boss.current;
-            if (Math.abs(b.x - bo.x) < 36 && Math.abs(b.y - bo.y) < 36) {
+            const partsW = bossPartsWorld(bo);
+            const part = partsW.find((q) => q.hp > 0 && Math.abs(b.x - q.x) < 16 && Math.abs(b.y - q.y) < 16);
+            if (part) {
+              const raw = bo.parts.find((q) => q.id === part.id);
+              if (raw) { raw.hp -= 1; raw.flash = 0.2; if (raw.hp <= 0) bo.parts = bo.parts.filter((q) => q.id !== raw.id); }
+              spawnDust(part.x, part.y, "#ffd27a", 6);
+              world.current.bullets.splice(i, 1);
+            } else if (Math.abs(b.x - bo.x) < 36 && Math.abs(b.y - bo.y) < 36) {
               if (bo.vulnerable || bo.stun > 0) { bo.hp -= 1; bo.flash = 0.16; spawnDust(bo.x, bo.y, "#ffd27a", 8); if (bo.hp <= 0) onBossDefeated(); }
               else { bo.shieldFlash = 0.18; }
               world.current.bullets.splice(i, 1);
@@ -667,22 +674,24 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
     };
     raf = requestAnimationFrame(step);
 
-    // Gamepad support
+    const padPrev = { a: false, b: false, x: false, dash: false };
     const gamepadPoll = setInterval(() => {
       const pads = navigator.getGamepads ? navigator.getGamepads() : [];
       for (const gp of pads) {
         if (!gp) continue;
         const deadZone = 0.15;
-        const left = gp.axes[0] < -deadZone ? true : false;
-        const right = gp.axes[0] > deadZone ? true : false;
-        input.current.left = left;
-        input.current.right = right;
-        // Jump on button A (index 0)
-        if (gp.buttons[0] && gp.buttons[0].pressed) { input.current.jumpEdge = true; }
-        // Attack on button X (index 2)
-        if (gp.buttons[2] && gp.buttons[2].pressed) { input.current.attackEdge = true; }
-        if (gp.buttons[1] && gp.buttons[1].pressed) { input.current.digEdge = true; }
-        if (gp.buttons[5] && gp.buttons[5].pressed) { input.current.dashEdge = true; }
+        input.current.left = gp.axes[0] < -deadZone;
+        input.current.right = gp.axes[0] > deadZone;
+        const a = !!(gp.buttons[0] && gp.buttons[0].pressed);
+        const b = !!(gp.buttons[1] && gp.buttons[1].pressed);
+        const x = !!(gp.buttons[2] && gp.buttons[2].pressed);
+        const dash = !!(gp.buttons[5] && gp.buttons[5].pressed);
+        if (a && !padPrev.a) input.current.jumpEdge = true;
+        if (b && !padPrev.b) input.current.digEdge = true;
+        if (x && !padPrev.x) input.current.attackHold = true;
+        if (!x && padPrev.x) input.current.attackHold = false;
+        if (dash && !padPrev.dash) input.current.dashEdge = true;
+        padPrev.a = a; padPrev.b = b; padPrev.x = x; padPrev.dash = dash;
       }
     }, 50);
 
@@ -845,9 +854,6 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
         <div className="absolute top-2 left-2 z-30 flex items-start gap-1.5 pointer-events-none">
           <ZeroPips n={Math.max(3, hearts.current)} filled={hearts.current} color="#ff4d6d" label="HP" />
           {spell && <ZeroPips n={8} filled={8} color={spell === "hielo" ? "#7fd0ff" : "#ffd27a"} label="MG" />}
-          <div className="flex flex-col gap-0.5 mt-0.5">
-            {Array.from({ length: Math.max(3, hearts.current) }).map((_, i) => <Heart key={i} filled={i < hearts.current} size={14} />)}
-          </div>
         </div>
         {p.charge > 0 && (
           <div className="absolute left-1/2 -translate-x-1/2 z-30 pointer-events-none" style={{ top: 72, width: 80 }}>
@@ -916,7 +922,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
           </div>
         )}
 
-        {resting && <RestStop level={level.current} bread={breadRun.current} crowns={crownsRun.current} hearts={hearts.current} tool={tool.current} owned={ownedTools.current} ownedMeta={ownedMeta} onBuyPower={buyPower} onBuyTool={buyTool} onContinue={() => setResting(false)} />}
+        {resting && <RestStop level={level.current} bread={breadRun.current} crowns={crownsRun.current} hearts={hearts.current} tool={tool.current} owned={ownedTools.current} ownedMeta={ownedMeta} skin={skin} onBuyPower={buyPower} onBuyTool={buyTool} onContinue={() => setResting(false)} />}
       </div>
     </div>
   );
@@ -1070,8 +1076,8 @@ function KitchenBG({ depth }: { depth: number }) {
 }
 
 /* REST STOP */
-interface RestProps { level: number; bread: number; crowns: number; hearts: number; tool: ToolId; owned: ToolId[]; ownedMeta: ToolId[]; onBuyPower: (kind: string, cost: number) => void; onBuyTool: (id: ToolId) => void; onContinue: () => void; }
-function RestStop({ level, bread, crowns, hearts, tool, owned, ownedMeta, onBuyPower, onBuyTool, onContinue }: RestProps) {
+interface RestProps { level: number; bread: number; crowns: number; hearts: number; tool: ToolId; owned: ToolId[]; ownedMeta: ToolId[]; skin: SkinId; onBuyPower: (kind: string, cost: number) => void; onBuyTool: (id: ToolId) => void; onContinue: () => void; }
+function RestStop({ level, bread, crowns, hearts, tool, owned, ownedMeta, skin, onBuyPower, onBuyTool, onContinue }: RestProps) {
   const POWERS = [
     { kind: "shield", name: "Escudo Leche", cost: 30, icon: "LEC" },
     { kind: "magnet", name: "Imán", cost: 40, icon: "MAG" },
@@ -1088,7 +1094,7 @@ function RestStop({ level, bread, crowns, hearts, tool, owned, ownedMeta, onBuyP
         <div className="font-pixel text-[9px] text-amber-200/70">DESCANSO · JEFE DERROTADO</div>
         <h2 className="font-display font-bold text-3xl text-amber-100" style={{ textShadow: "0 3px 0 #7a3410" }}>Nivel {level} ✓</h2>
       </div>
-      <div className="absolute top-[15%] left-1/2 -translate-x-1/2 pop"><Maxine pose="win" size={96} /></div>
+      <div className="absolute top-[15%] left-1/2 -translate-x-1/2 pop"><Maxine skin={skin} pose="win" size={96} /></div>
       <div className="absolute top-[36%] left-1/2 -translate-x-1/2 flex gap-2">
         <Pill icon="PAN" value={bread} color="#ffd27a" /><Pill iconCrown value={crowns} color="#ff8fa0" /><Pill icon="COR" value={hearts} color="#ff5a6a" />
       </div>

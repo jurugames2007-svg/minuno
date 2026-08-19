@@ -11,6 +11,7 @@ import * as Audio from "./AudioEngine";
 import { makeChart, judgeDelta, judgeScore, LANE_GLYPH, LANE_COL, type ChartNote, type Judge } from "./fnf";
 import { moodPose } from "../data/cinematics";
 import { DANCE_BEAT, DANCE_SEQ } from "./rules";
+import { trySwap, isOrthoAdj, prizeRevealed, luchaResolve } from "./minigames";
 
 interface Props {
   type: BossType;
@@ -59,6 +60,17 @@ export default function GenreFight({ type, level, skin, hearts, onHurt, onWin }:
     if (playOn || ready) return;
     const id = window.setTimeout(advanceCine, 2800);
     return () => window.clearTimeout(id);
+  }, [cine, playOn, ready]);
+  useEffect(() => {
+    const kd = (e: KeyboardEvent) => {
+      if (e.repeat) return;
+      if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        advanceCine();
+      }
+    };
+    window.addEventListener("keydown", kd);
+    return () => window.removeEventListener("keydown", kd);
   }, [cine, playOn, ready]);
 
   useEffect(() => {
@@ -574,7 +586,7 @@ function Breakout({ onHit, onHurt }: { onHit: (n?: number) => void; onHurt: () =
         pad.current = Math.max(4, Math.min(278, ((e.clientX - r.left) / r.width) * 360 - 39));
       }}>
       {bricks.current.filter((k) => k.on).map((k, i) => (
-        <div key={i} className="absolute" style={{ left: k.x, top: k.y, width: 50, height: 20, background: i % 2 ? MAG : WOOD, border: `1px solid ${INK}` }} />
+        <div key={i} className="absolute" style={{ left: k.x, top: k.y, width: 50, height: 20, background: `linear-gradient(180deg, ${i % 2 ? MAG : "#c9a06a"}, ${i % 2 ? "#7a0a40" : WOOD})`, border: `1px solid ${INK}`, boxShadow: "inset 0 2px 0 #fff4, inset 0 -2px 0 #0005" }} />
       ))}
       <div className="absolute w-2.5 h-2.5 rounded-full" style={{ left: ball.current.x, top: ball.current.y, background: CREAM }} />
       <div className="absolute h-3" style={{ left: pad.current, top: 500, width: 78, background: CREAM, opacity: 0.8 }} />
@@ -602,9 +614,10 @@ function Lucha({ skin, onHit, onHurt, type }: { skin: SkinId; onHit: (n?: number
   }, []);
   const act = (kind: "hi" | "lo" | "block") => {
     if (!warn) return;
-    if (kind === "block") { setWarn(null); lock.current = false; return; }
-    if (kind === warn) { onHit(1); setPose("dig"); }
-    else onHurt();
+    const res = luchaResolve(kind, warn);
+    if (res === "block") { setWarn(null); lock.current = false; return; }
+    if (res === "hit") { onHit(1); setPose("dig"); }
+    else if (res === "hurt") onHurt();
     setWarn(null);
     lock.current = false;
     window.setTimeout(() => setPose("idle"), 200);
@@ -728,8 +741,8 @@ function Td({ onHit, onHurt }: { onHit: (n?: number) => void; onHurt: () => void
       if (traps.current.length < 3) traps.current.push({ x, id: nid.current++ });
     }}>
       <div className="absolute left-0 right-0 h-10" style={{ top: 180, background: "#5a3a1488" }} />
-      {ants.current.map((a) => <div key={a.id} className="absolute w-7 h-7 rounded-full" style={{ left: a.x, top: 186, background: MAG }} />)}
-      {traps.current.map((t) => <div key={t.id} className="absolute w-5 h-10" style={{ left: t.x, top: 176, background: "#7fc24a" }} />)}
+      {ants.current.map((a) => <div key={a.id} className="absolute w-7 h-5 rounded-full" style={{ left: a.x, top: 188, background: "radial-gradient(circle,#ffe4b0,#c9842a)", border: `1px solid ${INK}` }} />)}
+      {traps.current.map((t) => <div key={t.id} className="absolute w-5 h-10" style={{ left: t.x, top: 176, background: "linear-gradient(180deg,#9fe070,#3a7a1a)", border: `2px solid ${INK}`, boxShadow: "inset 0 2px 0 #fff4" }} />)}
     </div>
   );
 }
@@ -790,30 +803,13 @@ function Match3({ onHit }: { onHit: (n?: number) => void }) {
   const [sel, setSel] = useState<number | null>(null);
   const tap = (i: number) => {
     if (sel == null) { setSel(i); return; }
-    const ar = Math.abs(Math.floor(sel / 4) - Math.floor(i / 4));
-    const ac = Math.abs((sel % 4) - (i % 4));
-    if (ar + ac !== 1) { setSel(i); return; }
-    const a = board.slice();
-    const tmp = a[sel]; a[sel] = a[i]; a[i] = tmp;
-    const mark = new Set<number>();
-    for (let r = 0; r < 4; r++) {
-      for (let c = 0; c < 2; c++) {
-        const i0 = r * 4 + c;
-        if (a[i0] === a[i0 + 1] && a[i0] === a[i0 + 2]) { mark.add(i0); mark.add(i0 + 1); mark.add(i0 + 2); }
-      }
-    }
-    for (let c = 0; c < 4; c++) {
-      for (let r = 0; r < 2; r++) {
-        const i0 = r * 4 + c;
-        if (a[i0] === a[i0 + 4] && a[i0] === a[i0 + 8]) { mark.add(i0); mark.add(i0 + 4); mark.add(i0 + 8); }
-      }
-    }
-    if (mark.size) {
-      onHit(Math.min(3, Math.floor(mark.size / 3)));
+    const res = trySwap(board, sel, i, () => Math.floor(Math.random() * 4));
+    if (!res) { setSel(i); return; }
+    if (res.cleared) {
+      onHit(Math.min(3, Math.floor(res.cleared / 3)));
       Audio.playCombo();
-      for (const k of mark) a[k] = Math.floor(Math.random() * 4);
+      setBoard(res.board);
     }
-    setBoard(a);
     setSel(null);
   };
   return (
@@ -941,8 +937,12 @@ function Fisica({ onHit, type, skin }: { onHit: (n?: number) => void; type: Boss
       }}>
       <div className="absolute right-8 top-8"><BossView boss={boss.current} size={100} /></div>
       <div className="absolute left-8 bottom-28"><Maxine skin={skin} size={48} pose="dig" /></div>
-      {ball.current && <div className="absolute w-3 h-3 rounded-full" style={{ left: ball.current.x, top: ball.current.y, background: CREAM }} />}
-      {pull.current.on && <div className="absolute left-[70px] bottom-[140px] w-1 origin-bottom" style={{ height: 80, background: WOOD, transform: "rotate(-25deg)" }} />}
+      {ball.current && <div className="absolute w-3 h-3 rounded-full" style={{ left: ball.current.x, top: ball.current.y, background: CREAM, boxShadow: "0 0 8px #fff3d6" }} />}
+      {pull.current.on && [0.15, 0.3, 0.45, 0.6].map((k) => {
+        const px = 70 + (pull.current.x - 70) * k * -0.35;
+        const py = 420 + (pull.current.y - 420) * k * -0.35 + k * k * 80;
+        return <div key={k} className="absolute w-1.5 h-1.5 rounded-full" style={{ left: px, top: py, background: CREAM, opacity: 0.7 }} />;
+      })}
     </div>
   );
 }
@@ -951,11 +951,11 @@ function Cavar({ skin, onHit, onHurt }: { skin: SkinId; onHit: (n?: number) => v
   const COLS = 6, ROWS = 7;
   const [grid, setGrid] = useState<number[]>(() => Array.from({ length: COLS * ROWS }, (_, i) => (i === 3 ? 0 : 1)));
   const [pos, setPos] = useState(3);
-  const prize =  COLS * ROWS - 2;
+  const [dug, setDug] = useState<number[]>([3]);
+  const prize = COLS * ROWS - 2;
+  const showPrize = prizeRevealed(new Set(dug), prize, COLS);
   const tap = (i: number) => {
-    const pr = Math.floor(pos / COLS), pc = pos % COLS;
-    const r = Math.floor(i / COLS), c = i % COLS;
-    if (Math.abs(pr - r) + Math.abs(pc - c) !== 1) return;
+    if (!isOrthoAdj(pos, i, COLS)) return;
     if (i === prize) { onHit(3); return; }
     if (grid[i] === 2) { onHurt(); return; }
     const n = grid.slice();
@@ -963,13 +963,14 @@ function Cavar({ skin, onHit, onHurt }: { skin: SkinId; onHit: (n?: number) => v
     if (Math.random() < 0.12) n[i] = 2;
     setGrid(n);
     setPos(i);
+    setDug((d) => d.includes(i) ? d : [...d, i]);
     if (n.filter((v) => v === 0).length % 5 === 0) onHit(1);
   };
   return (
     <div className="absolute inset-x-5 grid gap-1" style={{ top: 16, gridTemplateColumns: `repeat(${COLS}, 1fr)` }}>
       {grid.map((v, i) => (
-        <button key={i} onClick={() => tap(i)} className="h-11" style={{ background: v === 0 ? INK : v === 2 ? MAG : WOOD }}>
-          {i === pos ? <Maxine skin={skin} size={26} pose="dig" /> : i === prize ? <div className="w-3 h-3 mx-auto" style={{ background: CREAM }} /> : null}
+        <button key={i} onClick={() => tap(i)} className="h-11" style={{ background: v === 0 ? INK : v === 2 ? MAG : WOOD, boxShadow: "inset 0 2px 0 #fff2, inset 0 -2px 0 #0004" }}>
+          {i === pos ? <Maxine skin={skin} size={26} pose="dig" /> : (i === prize && showPrize) ? <div className="w-3 h-3 mx-auto" style={{ background: CREAM }} /> : null}
         </button>
       ))}
     </div>
@@ -1000,8 +1001,8 @@ function Snake({ onHit, onHurt }: { onHit: (n?: number) => void; onHurt: () => v
   }, [onHit, onHurt]);
   return (
     <div className="absolute inset-0">
-      {body.current.map((p, i) => <div key={i} className="absolute w-5 h-5" style={{ left: 36 + p.x * 22, top: 20 + p.y * 22, background: i === 0 ? CREAM : "#c9a888" }} />)}
-      <div className="absolute w-5 h-5" style={{ left: 36 + food.current.x * 22, top: 20 + food.current.y * 22, background: MAG }} />
+      {body.current.map((p, i) => <div key={i} className="absolute w-5 h-5" style={{ left: 36 + p.x * 22, top: 20 + p.y * 22, background: i === 0 ? CREAM : "#c9a888", boxShadow: "inset 0 1px 0 #fff6", border: `1px solid ${INK}` }} />)}
+      <div className="absolute w-5 h-5" style={{ left: 36 + food.current.x * 22, top: 20 + food.current.y * 22, background: MAG, borderRadius: 99, boxShadow: `0 0 8px ${MAG}` }} />
       <div className="absolute bottom-3 inset-x-8 flex justify-between">
         <Pad onPress={() => { if (dir.current.x !== 1) dir.current = { x: -1, y: 0 }; }}>←</Pad>
         <div className="flex flex-col gap-1">

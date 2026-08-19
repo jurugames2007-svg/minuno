@@ -323,6 +323,20 @@ export function stepBoss(b:Boss, dt:number, ctx:BossCtx){
     b.vulnerable=stunned||b.parts.length===0; const sp=b.parts.length===0?1.5:1; if(b.cd<=0){b.cd=(1.7/enraged)/sp; const dir=ctx.playerX>b.x?1:-1; b.vx=dir*120*sp; b.vy=-260;} b.x+=b.vx*dt; b.y+=b.vy*dt; b.vy+=520*dt; if(b.x<b.minX){b.x=b.minX;b.vx=Math.abs(b.vx)*0.6;} if(b.x>b.maxX){b.x=b.maxX;b.vx=-Math.abs(b.vx)*0.6;} if(b.y>b.homeY+80){ if(b.vy>0){ctx.shake(6); for(let i=-2;i<=2;i++) ctx.spawnBullet({x:b.x,y:b.y+20,vx:i*70,vy:-120,life:2.4,kind:"crumb",grav:260}); if(b.parts.length===0) b.stun=Math.max(b.stun,0.6);} b.y=b.homeY+80; b.vy=0; b.vx*=0.5; }
   } else if(b.type==="bigotes"){
     if(!b.phase2 && b.hp<=b.maxHp*0.5){ b.phase2=true; b.vx=180; b.stun=0.8; ctx.shake(6); } const sp=(b.phase2?1.6:1)*enraged; if(stunned){b.vulnerable=true;} else { const cyc=b.t%(2.6/sp); if(cyc<0.55){b.vulnerable=false; b.x+=(b.vx>0?1:-1)*260*sp*dt;} else {b.vulnerable=true; b.x+=b.vx*0.7*dt;} if(b.x<b.minX){b.x=b.minX;b.vx=Math.abs(b.vx);} if(b.x>b.maxX){b.x=b.maxX;b.vx=-Math.abs(b.vx);} b.y=b.homeY+Math.sin(b.t*2)*10 + (b.phase2? Math.abs(Math.sin(b.t*4))*-18:0); if(b.cd<=0){b.cd=(b.phase2?2.2:3.2)/sp; for(let i=0;i<8;i++){const a=i/8*Math.PI*2; ctx.spawnBullet({x:b.x,y:b.y,vx:Math.cos(a)*130,vy:Math.sin(a)*130,life:1.6,kind:"bark"});} ctx.shake(4); if(b.phase2||Math.random()<0.6) ctx.spawnMouse(b.x+(Math.random()<0.5?-40:40),b.y+40);} }
+  } else {
+    // pastelero / duende / reina / choco / espectro: patrulla + ráfaga propia
+    if(stunned){ b.vulnerable=true; }
+    else {
+      const cyc=b.t%2.8;
+      if(cyc<0.7){ b.vulnerable=true; warn(b, b.x-28, b.y-10, 56, 70, 0.7); }
+      else { b.vulnerable=false; b.x+=b.vx*0.7*enraged*dt; if(b.x<b.minX){b.x=b.minX;b.vx=Math.abs(b.vx);} if(b.x>b.maxX){b.x=b.maxX;b.vx=-Math.abs(b.vx);} }
+      b.y=b.homeY+Math.sin(b.t*1.5)*10;
+      if(b.cd<=0 && cyc>=0.7){
+        b.cd=1.5/enraged;
+        const kind = b.type==="maestroChoco"?"dough": b.type==="espectro"?"ecto": b.type==="reinaMigas"?"crumb": b.type==="duende"?"dust":"pan";
+        ctx.spawnBullet({x:b.x,y:b.y+8,vx:(ctx.playerX-b.x)*0.4,vy:90,life:2.4,kind,grav:40});
+      }
+    }
   }
 }
 
@@ -648,11 +662,72 @@ function Bigotes({ t, phase2, charging }: { t: number; phase2: boolean; charging
     </g>
   );
 }
-function Pastelero({t:_t}:{t:number}){ return <g><ellipse cx="50" cy="88" rx="24" ry="4" fill="#000" opacity="0.2"/><rect x="26" y="36" width="48" height="32" rx="6" fill="#ffd27a" stroke="#7a4a1a" strokeWidth="1.2"/><circle cx="50" cy="28" r="10" fill="#ff8fa0" stroke="#7a1430" strokeWidth="1"/><circle cx="46" cy="26" r="1" fill="#000"/><circle cx="54" cy="26" r="1" fill="#000"/></g>;}
-function Duende({t:_t}:{t:number}){ return <g><circle cx="50" cy="44" r="14" fill="#7fc24a" stroke="#2a5a10" strokeWidth="1.2"/><rect x="44" y="30" width="12" height="8" rx="2" fill="#d44a6a"/><circle cx="46" cy="44" r="2" fill="#000"/><circle cx="54" cy="44" r="2" fill="#000"/></g>;}
-function ReinaMigas({t:_t}:{t:number}){ return <g><ellipse cx="50" cy="88" rx="22" ry="4" fill="#000" opacity="0.2"/><ellipse cx="50" cy="58" rx="18" ry="12" fill="#5a2a0a" stroke="#1a0c04" strokeWidth="1"/><circle cx="50" cy="38" r="10" fill="#ffd27a" stroke="#7a4a1a" strokeWidth="1"/><path d="M44 56 q6 4 12 0" stroke="#000" strokeWidth="1" fill="none"/></g>;}
-function MaestroChoco({t:_t}:{t:number}){ return <g><rect x="28" y="36" width="44" height="30" rx="4" fill="#5a2a0a" stroke="#1a0c04" strokeWidth="1.2"/><rect x="32" y="20" width="36" height="18" rx="3" fill="#fff" stroke="#1a0c04" strokeWidth="1"/><circle cx="46" cy="28" r="1.2" fill="#000"/><circle cx="54" cy="28" r="1.2" fill="#000"/></g>;}
-function Espectro({t:_t}:{t:number}){ return <g opacity="0.85"><path d="M30 50 Q30 30 50 30 Q70 30 70 50 Q70 70 60 74 Q50 78 40 74 Q30 70 30 50 Z" fill="#d8f4ff" stroke="#4a8aa8" strokeWidth="1"/><circle cx="44" cy="48" r="2" fill="#4a8aa8"/><circle cx="56" cy="48" r="2" fill="#4a8aa8"/><path d="M46 56 q4 3 8 0" stroke="#4a8aa8" strokeWidth="1" fill="none"/></g>;}
+function Pastelero({t}:{t:number}){
+  const bob=Math.sin(t*3)*2;
+  return <g transform={`translate(0 ${bob})`}>
+    <ellipse cx="50" cy="90" rx="26" ry="4" fill="#000" opacity="0.25"/>
+    <path d="M28 52 Q26 80 38 86 Q50 92 62 86 Q74 80 72 52 Z" fill="#fff3d6" stroke="#7a4a1a" strokeWidth="1.3"/>
+    <path d="M32 58 Q50 50 68 58" fill="#ff8fa0"/>
+    <circle cx="50" cy="36" r="16" fill="#ffe4b0" stroke="#7a4a1a" strokeWidth="1.2"/>
+    <path d="M34 28 Q50 12 66 28 Q60 22 50 22 Q40 22 34 28 Z" fill="#ff8fa0"/>
+    <circle cx="44" cy="36" r="2.2" fill="#1a0a04"/><circle cx="56" cy="36" r="2.2" fill="#1a0a04"/>
+    <path d="M44 44 q6 5 12 0" stroke="#7a1410" strokeWidth="1.2" fill="none"/>
+    <ellipse cx="72" cy="62" rx="7" ry="5" fill="#ff8fa0" stroke="#7a1430" strokeWidth="0.8"/>
+    <path d="M70 58 q4 -8 8 -2" fill="#ffd0e0"/>
+  </g>;
+}
+function Duende({t}:{t:number}){
+  const hop=Math.abs(Math.sin(t*6))*6;
+  return <g transform={`translate(0 ${-hop})`}>
+    <ellipse cx="50" cy="88" rx="16" ry="3" fill="#000" opacity="0.25"/>
+    <ellipse cx="50" cy="64" rx="14" ry="12" fill="#4a8a28" stroke="#1a3a08" strokeWidth="1.2"/>
+    <circle cx="50" cy="42" r="13" fill="#7fc24a" stroke="#2a5a10" strokeWidth="1.2"/>
+    <path d="M38 34 L50 10 L62 34 Z" fill="#d44a6a" stroke="#7a1430" strokeWidth="1"/>
+    <circle cx="50" cy="16" r="2.4" fill="#ffd27a"/>
+    <circle cx="45" cy="42" r="2" fill="#0a1404"/><circle cx="55" cy="42" r="2" fill="#0a1404"/>
+    <path d="M46 48 q4 3 8 0" stroke="#1a3a08" strokeWidth="1" fill="none"/>
+    <path d="M36 62 Q28 74 34 80" stroke="#4a8a28" strokeWidth="4" strokeLinecap="round"/>
+    <path d="M64 62 Q72 74 66 80" stroke="#4a8a28" strokeWidth="4" strokeLinecap="round"/>
+  </g>;
+}
+function ReinaMigas({t}:{t:number}){
+  const sway=Math.sin(t*1.4)*3;
+  return <g transform={`rotate(${sway} 50 70)`}>
+    <ellipse cx="50" cy="90" rx="24" ry="4" fill="#000" opacity="0.25"/>
+    <ellipse cx="50" cy="68" rx="20" ry="14" fill="#6a3418" stroke="#2a1408" strokeWidth="1.3"/>
+    <circle cx="50" cy="42" r="14" fill="#c9842a" stroke="#5a2a0a" strokeWidth="1.2"/>
+    <path d="M36 30 L40 12 L50 22 L60 10 L64 30 Z" fill="#ffd27a" stroke="#8a6a10" strokeWidth="1"/>
+    <circle cx="50" cy="16" r="3" fill="#fff"/>
+    <circle cx="44" cy="42" r="2" fill="#1a0a04"/><circle cx="56" cy="42" r="2" fill="#1a0a04"/>
+    <path d="M44 50 q6 4 12 0" stroke="#3a1808" strokeWidth="1.1" fill="none"/>
+    {[-18,-6,6,18].map((x,i)=><ellipse key={i} cx={50+x} cy={78} rx="4" ry="3" fill="#d99243" stroke="#5a2a0a" strokeWidth="0.6"/>)}
+  </g>;
+}
+function MaestroChoco({t}:{t:number}){
+  const drip=4+Math.sin(t*5)*2;
+  return <g>
+    <ellipse cx="50" cy="90" rx="22" ry="4" fill="#000" opacity="0.25"/>
+    <rect x="26" y="46" width="48" height="34" rx="6" fill="#4a2010" stroke="#1a0c04" strokeWidth="1.4"/>
+    <path d={`M30 46 Q36 ${46+drip} 42 46 Q50 ${50+drip} 58 46 Q66 ${46+drip} 72 46`} fill="#3a1408"/>
+    <rect x="30" y="22" width="40" height="22" rx="4" fill="#f4f1e6" stroke="#1a0c04" strokeWidth="1.1"/>
+    <rect x="28" y="18" width="44" height="8" rx="2" fill="#fff"/>
+    <circle cx="42" cy="32" r="1.6" fill="#1a0a04"/><circle cx="58" cy="32" r="1.6" fill="#1a0a04"/>
+    <path d="M44 38 q6 3 12 0" stroke="#5a2a0a" strokeWidth="1" fill="none"/>
+    <rect x="38" y="58" width="24" height="10" rx="2" fill="#7a3a14"/>
+    <circle cx="50" cy="63" r="2" fill="#ffd27a"/>
+  </g>;
+}
+function Espectro({t}:{t:number}){
+  const ph=0.55+Math.sin(t*2)*0.25;
+  return <g opacity={ph}>
+    <path d="M28 48 Q26 22 50 20 Q74 22 72 48 Q74 72 62 80 Q50 86 38 80 Q26 72 28 48 Z" fill="#c8e8ff" stroke="#4a8aa8" strokeWidth="1.2"/>
+    <ellipse cx="50" cy="44" rx="16" ry="12" fill="#e8f6ff" opacity="0.7"/>
+    <circle cx="42" cy="44" r="3.2" fill="#2a4a68"/><circle cx="58" cy="44" r="3.2" fill="#2a4a68"/>
+    <circle cx="43" cy="43" r="1" fill="#fff"/><circle cx="59" cy="43" r="1" fill="#fff"/>
+    <path d="M44 54 q6 5 12 0" stroke="#2a4a68" strokeWidth="1.2" fill="none"/>
+    <path d="M34 70 q4 8 0 14 M50 74 q0 10 0 16 M66 70 q-4 8 0 14" stroke="#7fd0ff" strokeWidth="2" fill="none" opacity="0.6"/>
+  </g>;
+}
 
 export function BulletView({ b }: { b: Bullet }) {
   if (b.kind === "dust") return <div className="absolute rounded-full" style={{ left: b.x - 5, top: b.y - 5, width: 10, height: 10, background: "radial-gradient(circle,#d9c39a,#7a5a2c)", boxShadow: "0 0 6px #d9c39a88" }} />;
