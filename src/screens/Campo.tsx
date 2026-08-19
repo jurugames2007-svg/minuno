@@ -5,7 +5,7 @@ import { Plushie, type ToolId } from "../art/Plushie";
 import { Maria, Lina, Tico, Nube, HadaNpc, DonLlanta } from "../art/Folk";
 import type { SkinId } from "../data/skins";
 import { FIELD_SECRETS } from "../data/secrets";
-import { AREAS, AREA_LIST, type AreaId } from "../data/areas";
+import { AREAS, type AreaId } from "../data/areas";
 import { CAMPO_STORY, NPCS, PICKUPS, QUESTS, type QuestId, type QuestState } from "../data/campoStory";
 import PawButton from "../ui/PawButton";
 
@@ -60,8 +60,9 @@ function emptyQuests(): QLog {
 }
 
 function surfaceAt(c: number, area: AreaId) {
-  const base = area === "C1" || area === "E1" ? 18 : 20;
-  return base + Math.round(Math.sin(c * 0.16 + area.charCodeAt(0)) * 1.4);
+  const z = AREAS[area].zone;
+  const base = z === "C" || z === "E" ? 18 : 20;
+  return base + Math.round(Math.sin(c * 0.16 + area.charCodeAt(0) + AREAS[area].depth) * 1.4);
 }
 
 function fill(grid: Cell[][], r0: number, c0: number, r1: number, c1: number, cell: Cell) {
@@ -71,6 +72,8 @@ function fill(grid: Cell[][], r0: number, c0: number, r1: number, c1: number, ce
 }
 
 function buildArea(area: AreaId) {
+  const def = AREAS[area];
+  const metal = def.zone === "B" || def.zone === "F";
   const grid: Cell[][] = [];
   for (let r = 0; r < ROWS; r++) {
     const row: Cell[] = [];
@@ -78,41 +81,40 @@ function buildArea(area: AreaId) {
       const s = surfaceAt(c, area);
       if (c === 0 || c === COLS - 1) row.push(2);
       else if (r < s) row.push(0);
-      else if (r === s) row.push(area === "B1" || area === "F1" ? 4 : 3);
+      else if (r === s) row.push(metal ? 4 : 3);
       else if (r < s + 4) row.push(1);
       else row.push(2);
     }
     grid.push(row);
   }
   const plat = (r: number, a: number, b: number) => fill(grid, r, a, r, b, 6);
-  if (area === "A1") {
-    plat(16, 8, 14); plat(13, 20, 28); plat(11, 34, 42); plat(15, 44, 50);
-    plat(9, 16, 22); plat(14, 2, 6);
-    fill(grid, 20, 5, 25, 7, 0);
-  }
-  if (area === "B1") {
+  const shape = def.shape;
+  const n = def.depth;
+  if (shape === "hills") {
+    plat(16 - n, 8, 14); plat(13, 20, 28); plat(11, 34, 42); plat(15, 44, 50);
+    plat(9, 16, 22); if (n > 1) plat(8, 30, 36);
+  } else if (shape === "garage") {
     plat(17, 6, 12); plat(14, 16, 24); plat(11, 28, 36); plat(15, 40, 50);
-    plat(8, 32, 40); plat(18, 26, 30);
-    fill(grid, 8, 10, 8, 14, 5);
-  }
-  if (area === "C1") {
-    fill(grid, 10, 8, 17, 48, 0);
+    plat(8, 32, 40); fill(grid, 8, 10, 8, 14, 5);
+  } else if (shape === "cave" || shape === "grotto" || shape === "pit") {
+    fill(grid, 9, 8, 17, 48, 0);
     plat(16, 10, 18); plat(13, 22, 32); plat(17, 36, 46); plat(11, 40, 48);
-    plat(9, 14, 20); plat(15, 4, 8);
-  }
-  if (area === "D1") {
+    plat(9, 14, 20); if (n > 2) plat(8, 26, 34);
+  } else if (shape === "forest") {
     plat(16, 10, 16); plat(12, 22, 30); plat(15, 36, 46);
     plat(9, 18, 24); plat(18, 40, 48); plat(11, 4, 9);
-  }
-  if (area === "E1") {
-    fill(grid, 8, 10, 18, 46, 0);
-    plat(17, 8, 16); plat(14, 20, 28); plat(11, 32, 42); plat(16, 40, 50);
-    plat(8, 24, 30);
-  }
-  if (area === "F1") {
+  } else if (shape === "tower") {
     plat(16, 8, 16); plat(12, 22, 32); plat(15, 38, 48);
-    plat(9, 28, 36); plat(18, 18, 24);
+    plat(9, 28, 36); plat(18, 18, 24); plat(7, 40, 48);
+  } else if (shape === "bridge") {
+    plat(14, 4, 18); plat(14, 24, 38); plat(10, 16, 28); plat(18, 40, 52);
+  } else if (shape === "shaft") {
+    fill(grid, 6, 18, 20, 36, 0);
+    plat(18, 8, 16); plat(14, 20, 28); plat(10, 32, 42); plat(7, 12, 20);
+  } else if (shape === "rooftop") {
+    plat(18, 6, 20); plat(14, 22, 34); plat(10, 36, 50); plat(7, 14, 26);
   }
+  if (def.down) fill(grid, 20, 5, 25, 7, 0);
   return grid;
 }
 
@@ -513,24 +515,27 @@ export default function Campo({ skin, owned, ownedTools, crumbs, onFindSkin, onF
       {mapOn && (
         <div className="absolute inset-0 z-50 bg-black/75 flex items-center justify-center p-3">
           <div className="w-full rounded-2xl border-2 border-[#3a8ab0] p-3" style={{ background: "#0a1830" }}>
-            <div className="font-display font-bold text-[#7fd0ff] text-center mb-2">Mapa del campo</div>
-            <div className="relative h-[210px] mb-2">
-              {AREA_LIST.map((id) => {
-                const pos: Record<AreaId, { x: string; y: string }> = {
-                  A1: { x: "8%", y: "18%" }, B1: { x: "38%", y: "18%" }, F1: { x: "68%", y: "18%" },
-                  C1: { x: "8%", y: "58%" }, D1: { x: "38%", y: "58%" }, E1: { x: "68%", y: "58%" },
-                };
-                const a = AREAS[id];
-                const seen = visited.includes(id);
-                return (
-                  <button key={id} disabled={!seen} onClick={() => { if (seen) { go(id, "right"); setMapOn(false); } }}
-                    className="absolute rounded-lg border-2 px-2 py-1.5 font-display font-bold text-[12px] disabled:opacity-40"
-                    style={{ left: pos[id].x, top: pos[id].y, background: id === area ? "#2a6a8a" : "#12243a", color: "#d8f4ff", borderColor: seen ? "#4aa0c8" : "#1a3048" }}>
-                    {seen ? `${a.tag}` : "???"}
-                    <div className="text-[10px] font-semibold">{seen ? a.name : "—"}</div>
-                  </button>
-                );
-              })}
+            <div className="font-display font-bold text-[#7fd0ff] text-center mb-1">Mapa · 30 áreas</div>
+            <div className="font-pixel text-[7px] text-[#7fd0ff]/70 text-center mb-2">{visited.length}/30</div>
+            <div className="grid gap-1 mb-2" style={{ gridTemplateColumns: "repeat(6, 1fr)" }}>
+              {([1, 2, 3, 4, 5] as const).flatMap((depth) =>
+                (["A", "B", "C", "D", "E", "F"] as const).map((z) => {
+                  const id = `${z}${depth}` as AreaId;
+                  const a = AREAS[id];
+                  const seen = visited.includes(id);
+                  return (
+                    <button key={id} disabled={!seen} onClick={() => { if (seen) { go(id, "right"); setMapOn(false); } }}
+                      className="rounded-sm border font-pixel text-[6px] py-1.5 leading-tight disabled:opacity-35"
+                      style={{
+                        background: id === area ? "#3a90b8" : seen ? "#163048" : "#0c1828",
+                        color: "#d8f4ff",
+                        borderColor: id === area ? "#7fd0ff" : seen ? "#2a6080" : "#122030",
+                      }}>
+                      {seen ? a.tag : "·"}
+                    </button>
+                  );
+                })
+              )}
             </div>
             <button onClick={() => setMapOn(false)} className="btn-3d w-full font-display font-bold py-2 rounded-full" style={{ background: "#ffd27a", color: "#3a1808" }}>Cerrar</button>
           </div>

@@ -26,7 +26,7 @@ export interface QuestDef {
 export const CAMPO_STORY = [
   "Alguien se llevó la canasta del domingo.",
   "Los vecinos del campo vieron una sombra con bigotes.",
-  "Recorre A-1 a F-1, salta las plataformas y pregunta con cariño.",
+  "Recorre las 30 áreas, A-1 a F-5. Preguntá con cariño.",
 ];
 
 export const QUESTS: Record<QuestId, QuestDef> = {
