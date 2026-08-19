@@ -197,7 +197,10 @@ function HelpModal({ onClose }: { onClose: () => void }) {
           El último es <b className="text-[#c07040]">Bigotes el Feo</b>. Si lo derrotas, desbloqueas su piel en la categoría Feo.
         </p>
         <p className="font-display text-[13px] text-amber-100/80 mt-2 leading-snug">
-          En el <b className="text-amber-200">Campo</b> hay llantas, cuevas y secretos. Las pieles y herramientas secretas no aparecen en la tienda hasta que las encuentres.
+          En la <b className="text-amber-200">Casa</b> Maxine camina, salta y sube la escalera. En Construir colocás muebles en la rejilla, girás y expandís con +.
+        </p>
+        <p className="font-display text-[13px] text-amber-100/80 mt-2 leading-snug">
+          En el <b className="text-amber-200">Campo</b> hay mapas A-1 a F-1, plataformas, vecinos, misiones y secretos. Tocá para ladrar. Las pieles secretas no aparecen en la tienda hasta que las encuentres.
         </p>
         <button onClick={onClose} className="btn-3d mt-4 w-full font-display font-bold text-[16px] text-white py-2.5 rounded-full border-b-4" style={{ background: "linear-gradient(180deg,#ff7a4a,#d9342b)", borderColor: "#7a1410" }}>
           Entendido
