@@ -511,8 +511,8 @@ export default function House({ skin, crumbs, onSpend, onEarn, onBack }: Props) 
 function Pad({ label, onDown, onUp, gold, dim }: { label: string; onDown: () => void; onUp: () => void; gold?: boolean; dim?: boolean }) {
   return (
     <button
-      className="btn-3d w-12 h-12 rounded-full border-2 border-b-4 font-display font-bold text-[20px]"
-      style={{ background: gold ? "#ffd27a" : dim ? "#5a3a22" : "#3a2010", color: gold ? "#3a1808" : "#fff3d6", borderColor: "#1a0c04" }}
+      className="w-11 h-11 font-pixel text-[14px]"
+      style={{ background: gold ? "#e8b45a" : dim ? "#4a2e18" : "#3a2010", color: gold ? "#2a1408" : "#fff3d6", border: "2px solid #1a0c04", boxShadow: "2px 2px 0 #100804", borderRadius: 2 }}
       onPointerDown={onDown} onPointerUp={onUp} onPointerLeave={onUp}
     >{label}</button>
   );

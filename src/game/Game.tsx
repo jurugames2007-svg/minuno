@@ -92,7 +92,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
   const startY = useRef(startRow * TILE);
   const maxDepth = useRef((startLevel||1)>1? (startLevel-1)*CYCLE:0);
   const ids = useRef(1);
-  const input = useRef({ left: false, right: false, digEdge: false, jumpEdge: false, attackEdge: false, lastHoriz: 0 });
+  const input = useRef({ left: false, right: false, down: false, digEdge: false, jumpEdge: false, attackEdge: false });
   const aim = useRef<{ x: number; y: number }>({ x: 0, y: 1 });
   const over = useRef(false);
   const elapsed = useRef(0);
@@ -374,9 +374,10 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       p.invuln = Math.max(0, p.invuln - dt); p.hurtTimer = Math.max(0, p.hurtTimer - dt); p.digTimer = Math.max(0, p.digTimer - dt); p.attackTimer = Math.max(0, p.attackTimer - dt); p.attackCd = Math.max(0, p.attackCd - dt);
       p.prevY = p.y;
 
-      if (input.current.left) { aim.current = { x: -1, y: 0 }; input.current.lastHoriz = now; }
-      else if (input.current.right) { aim.current = { x: 1, y: 0 }; input.current.lastHoriz = now; }
-      else if (now - input.current.lastHoriz > 180) aim.current = { x: 0, y: 1 };
+      if (input.current.left) aim.current = { x: -1, y: 0 };
+      else if (input.current.right) aim.current = { x: 1, y: 0 };
+      else if (input.current.down) aim.current = { x: 0, y: 1 };
+      else aim.current = { x: p.facing, y: 0 };
 
       const frozenMul = a.frozen > 0 ? 0.4 : 1;
       const speedMul = (a.speed > 0 ? 1.4 : 1) * frozenMul;
@@ -645,7 +646,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
       if (e.repeat) return;
       if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") input.current.left = true;
       if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") input.current.right = true;
-      if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") { input.current.digEdge = true; e.preventDefault(); }
+      if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") { input.current.down = true; e.preventDefault(); }
       if (e.key === " " || e.key === "ArrowUp" || e.key === "w" || e.key === "W") { input.current.jumpEdge = true; e.preventDefault(); }
       if (e.key === "j" || e.key === "J" || e.key === "x" || e.key === "X" || e.key === "Shift") { input.current.attackEdge = true; }
       if (e.key === "p" || e.key === "P" || e.key === "Escape") setPaused((v) => !v);
@@ -653,6 +654,7 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
     const ku = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") input.current.left = false;
       if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") input.current.right = false;
+      if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") input.current.down = false;
     };
     window.addEventListener("keydown", kd); window.addEventListener("keyup", ku);
     return () => { cancelAnimationFrame(raf); clearInterval(gamepadPoll); Audio.stopAmbientMusic(); window.removeEventListener("keydown", kd); window.removeEventListener("keyup", ku); };
@@ -795,17 +797,11 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
           <div className="flex items-center gap-1 bg-black/45 rounded-full px-2 py-0.5 border border-amber-300/30"><span className="font-display text-[11px] font-bold text-amber-200/80">Pan</span><span className="font-display font-bold text-[12px] text-amber-100">{breadRun.current}</span></div>
         </div>
         <div className="absolute top-2 left-1/2 -translate-x-1/2 text-center z-30 pointer-events-none">
-          <div className="font-display font-semibold text-[11px] text-amber-200/80">Nivel {level.current} · {ZONE_NAME[zone]}</div>
-          <div className="font-display font-bold text-amber-50 text-base leading-none" style={{ textShadow: "0 2px 0 #7a3410" }}>{depth} m</div>
+          <div className="font-pixel text-[7px] text-amber-200/80">N{level.current} {ZONE_NAME[zone]}</div>
+          <div className="font-pixel text-[9px] text-amber-50 leading-none" style={{ textShadow: "2px 2px 0 #3a1808" }}>{depth}m</div>
         </div>
         <div className="absolute top-[58px] left-1/2 -translate-x-1/2 z-30 pointer-events-none flex items-center gap-1 bg-black/35 rounded-full px-2 py-0.5 border border-amber-300/20"><Plushie id={tool.current} size={14} /><span className="font-display font-semibold text-[11px] text-amber-100">{TOOL_MAP[tool.current].name}</span></div>
-        {!bossActive.current && (
-          <div className="absolute top-[86px] left-1/2 -translate-x-1/2 z-30 pointer-events-none text-center">
-            <div className="font-display text-[11px] text-amber-100/70 bg-black/30 rounded-full px-2 py-0.5">
-              {!p.onGround ? "Deslizá arriba para saltar" : "Deslizá para moverte · toca para pegar"}
-            </div>
-          </div>
-        )}
+        <div />
 
         {bossActive.current && boss.current && (
           <div className="absolute left-4 right-4 z-30 pointer-events-none" style={{ top: 86 }}>
@@ -832,11 +828,11 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
 
         <TouchPad
           onMove={(dir) => { input.current.left = dir < 0; input.current.right = dir > 0; }}
+          onDown={(v) => { input.current.down = v; }}
           onJump={() => { input.current.jumpEdge = true; }}
-          onDig={() => { input.current.digEdge = true; }}
           onAttack={() => { input.current.attackEdge = true; }}
         />
-        <PawButton onPress={() => { input.current.digEdge = true; }} />
+        <PawButton aim={aim.current} onPress={() => { input.current.digEdge = true; }} />
         <MagicButton spell={spell} locked={spells.length === 0} onCycle={() => onCycleSpell?.()} />
         {gate && (
           <BossStage
@@ -854,16 +850,14 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
             }}
           />
         )}
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-30 pointer-events-none font-display text-[10px] text-amber-100/55 bg-black/35 px-2 py-0.5 rounded-full">
-          Deslizá ← → · arriba salta · abajo cava · toca pega
-        </div>
+        <div />
 
         {paused && !resting && (
           <div className="absolute inset-0 z-50 bg-black/70 flex flex-col items-center justify-center gap-4 backdrop-blur-sm">
             <div className="font-display font-bold text-4xl text-amber-100">PAUSA</div>
             <Maxine skin={skin} pose="idle" size={120} />
             <div className="font-pixel text-[8px] text-amber-200/70 text-center leading-relaxed px-6">
-              ← → moverse · ESPACIO saltar<br />↓ cavar · J / X pegar · P pausa
+              ← → apuntar lado · ↓ apunta abajo<br />huella cava · J pega · P pausa
             </div>
             <button onClick={() => setPaused(false)} className="btn-3d font-display font-bold text-xl text-white px-8 py-2 rounded-full border-b-4" style={{ background: "linear-gradient(180deg,#7fc24a,#3a7a1a)", borderColor: "#1a3a08" }}>CONTINUAR</button>
           </div>
@@ -875,15 +869,15 @@ export default function Game({ skin, onExit, onVictory, best, startTool, ownedMe
   );
 }
 
-function TouchPad({ onMove, onJump, onDig, onAttack }: { onMove: (dir: -1 | 0 | 1) => void; onJump: () => void; onDig: () => void; onAttack: () => void }) {
-  const g = useRef({ x: 0, y: 0, t: 0, jumped: false, dug: false, id: -1 });
+function TouchPad({ onMove, onDown, onJump, onAttack }: { onMove: (dir: -1 | 0 | 1) => void; onDown: (v: boolean) => void; onJump: () => void; onAttack: () => void }) {
+  const g = useRef({ x: 0, y: 0, t: 0, jumped: false, id: -1 });
   const end = (e: PointerEvent<HTMLDivElement>) => {
     if (g.current.id !== e.pointerId && g.current.id !== -1) return;
     const dx = e.clientX - g.current.x; const dy = e.clientY - g.current.y;
     const dt = performance.now() - g.current.t;
     const dist = Math.hypot(dx, dy);
     if (dist < 18 && dt < 320) onAttack();
-    onMove(0); g.current.id = -1;
+    onMove(0); onDown(false); g.current.id = -1;
   };
   return (
     <div
@@ -892,14 +886,14 @@ function TouchPad({ onMove, onJump, onDig, onAttack }: { onMove: (dir: -1 | 0 | 
       onPointerDown={(e) => {
         if (g.current.id !== -1) return;
         (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
-        g.current = { x: e.clientX, y: e.clientY, t: performance.now(), jumped: false, dug: false, id: e.pointerId };
+        g.current = { x: e.clientX, y: e.clientY, t: performance.now(), jumped: false, id: e.pointerId };
       }}
       onPointerMove={(e) => {
         if (g.current.id !== e.pointerId) return;
         const dx = e.clientX - g.current.x; const dy = e.clientY - g.current.y;
         if (Math.abs(dx) > 16) onMove(dx < 0 ? -1 : 1);
         if (dy < -36 && !g.current.jumped) { onJump(); g.current.jumped = true; }
-        if (dy > 36 && !g.current.dug) { onDig(); g.current.dug = true; }
+        onDown(dy > 28);
       }}
       onPointerUp={end} onPointerCancel={end}
     />

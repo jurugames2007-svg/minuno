@@ -186,7 +186,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
         <ul className="mt-3 space-y-1.5 font-display text-[13px] text-amber-100/90">
           <li><b className="text-amber-200">Mover</b> — deslizá a los lados (o A / D)</li>
           <li><b className="text-amber-200">Saltar</b> — deslizá hacia arriba (o espacio)</li>
-          <li><b className="text-amber-200">Cavar</b> — huella de perrito, deslizá abajo o S</li>
+          <li><b className="text-amber-200">Cavar</b> — flechas eligen el lado, huella cava</li>
           <li><b className="text-amber-200">Pegar</b> — tocá la pantalla (o J)</li>
           <li><b className="text-amber-200">Pausa</b> — P o el botón de arriba</li>
         </ul>

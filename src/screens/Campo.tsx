@@ -87,25 +87,31 @@ function buildArea(area: AreaId) {
   const plat = (r: number, a: number, b: number) => fill(grid, r, a, r, b, 6);
   if (area === "A1") {
     plat(16, 8, 14); plat(13, 20, 28); plat(11, 34, 42); plat(15, 44, 50);
+    plat(9, 16, 22); plat(14, 2, 6);
     fill(grid, 20, 5, 25, 7, 0);
   }
   if (area === "B1") {
     plat(17, 6, 12); plat(14, 16, 24); plat(11, 28, 36); plat(15, 40, 50);
+    plat(8, 32, 40); plat(18, 26, 30);
     fill(grid, 8, 10, 8, 14, 5);
   }
   if (area === "C1") {
     fill(grid, 10, 8, 17, 48, 0);
     plat(16, 10, 18); plat(13, 22, 32); plat(17, 36, 46); plat(11, 40, 48);
+    plat(9, 14, 20); plat(15, 4, 8);
   }
   if (area === "D1") {
     plat(16, 10, 16); plat(12, 22, 30); plat(15, 36, 46);
+    plat(9, 18, 24); plat(18, 40, 48); plat(11, 4, 9);
   }
   if (area === "E1") {
     fill(grid, 8, 10, 18, 46, 0);
     plat(17, 8, 16); plat(14, 20, 28); plat(11, 32, 42); plat(16, 40, 50);
+    plat(8, 24, 30);
   }
   if (area === "F1") {
     plat(16, 8, 16); plat(12, 22, 32); plat(15, 38, 48);
+    plat(9, 28, 36); plat(18, 18, 24);
   }
   return grid;
 }
@@ -210,8 +216,10 @@ export default function Campo({ skin, owned, ownedTools, crumbs, onFindSkin, onF
       if (input.current.dig) {
         input.current.dig = false;
         const pc = Math.floor((pl.x + PW / 2) / TILE); const pr = Math.floor((pl.y + PH / 2) / TILE);
-        const rr = pr + 1, cc = pc;
-        if (cc > 0 && cc < COLS - 1 && rr < ROWS) {
+        const ax = input.current.down ? 0 : pl.face;
+        const ay = input.current.down ? 1 : 0;
+        const rr = pr + ay, cc = pc + ax;
+        if (cc > 0 && cc < COLS - 1 && rr >= 0 && rr < ROWS) {
           const cell = get(rr, cc);
           if (cell === 1 || cell === 3 || cell === 4 || cell === 5) {
             grid.current[rr][cc] = 0; pl.dig = 0.16; onEarn(1);
@@ -302,7 +310,7 @@ export default function Campo({ skin, owned, ownedTools, crumbs, onFindSkin, onF
       if (e.key === "ArrowLeft" || e.key === "a") input.current.l = true;
       if (e.key === "ArrowRight" || e.key === "d") input.current.r = true;
       if (e.key === " " || e.key === "ArrowUp" || e.key === "w") { input.current.jump = true; e.preventDefault(); }
-      if (e.key === "ArrowDown" || e.key === "s") { input.current.dig = true; input.current.down = true; }
+      if (e.key === "ArrowDown" || e.key === "s") input.current.down = true;
       if (e.key === "j" || e.key === "k") input.current.atk = true;
     };
     const ku = (e: KeyboardEvent) => {
@@ -314,17 +322,17 @@ export default function Campo({ skin, owned, ownedTools, crumbs, onFindSkin, onF
     return () => { cancelAnimationFrame(raf); window.removeEventListener("keydown", kd); window.removeEventListener("keyup", ku); };
   }, [area, onEarn, onFindSkin, onFindTool]);
 
-  const pad = useRef({ x: 0, y: 0, id: -1, jumped: false, dug: false });
+  const pad = useRef({ x: 0, y: 0, id: -1, jumped: false });
   const onPadDown = (e: PointerEvent<HTMLDivElement>) => {
     (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
-    pad.current = { x: e.clientX, y: e.clientY, id: e.pointerId, jumped: false, dug: false };
+    pad.current = { x: e.clientX, y: e.clientY, id: e.pointerId, jumped: false };
   };
   const onPadMove = (e: PointerEvent<HTMLDivElement>) => {
     if (pad.current.id !== e.pointerId) return;
     const dx = e.clientX - pad.current.x; const dy = e.clientY - pad.current.y;
     if (Math.abs(dx) > 14) { input.current.l = dx < 0; input.current.r = dx > 0; }
     if (dy < -34 && !pad.current.jumped) { input.current.jump = true; pad.current.jumped = true; }
-    if (dy > 34 && !pad.current.dug) { input.current.dig = true; input.current.down = true; pad.current.dug = true; }
+    input.current.down = dy > 28;
   };
   const onPadUp = (e: PointerEvent<HTMLDivElement>) => {
     const dx = e.clientX - pad.current.x; const dy = e.clientY - pad.current.y;
@@ -451,7 +459,10 @@ export default function Campo({ skin, owned, ownedTools, crumbs, onFindSkin, onF
 
       <div className="absolute inset-0 z-20" style={{ touchAction: "none" }}
         onPointerDown={onPadDown} onPointerMove={onPadMove} onPointerUp={onPadUp} onPointerCancel={onPadUp} />
-      <PawButton onPress={() => { input.current.dig = true; }} />
+      <PawButton
+        aim={input.current.down ? { x: 0, y: 1 } : { x: p.current.face, y: 0 }}
+        onPress={() => { input.current.dig = true; }}
+      />
       {nearNpc && (
         <button onClick={speak} className="absolute z-40 btn-3d font-display font-bold text-[13px] px-3 py-2 rounded-full border-2"
           style={{ left: 10, bottom: 56, background: "#ffd27a", color: "#3a1808", borderColor: "#7a4410" }}>Hablar</button>
