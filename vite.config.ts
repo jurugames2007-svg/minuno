@@ -8,9 +8,12 @@ import { viteSingleFile } from "vite-plugin-singlefile";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(), tailwindcss(), viteSingleFile()],
+export default defineConfig(({ command }) => ({
+  plugins: [
+    react(),
+    tailwindcss(),
+    ...(command === "build" ? [viteSingleFile()] : []),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
@@ -18,9 +21,16 @@ export default defineConfig({
   },
   server: {
     host: "0.0.0.0",
-    allowedHosts: true as unknown as string[],
+    port: 5173,
+    strictPort: true,
+    allowedHosts: true,
     headers: {
       "X-Frame-Options": "ALLOWALL",
+      "Content-Security-Policy": "frame-ancestors *",
     },
   },
-});
+  preview: {
+    host: "0.0.0.0",
+    allowedHosts: true,
+  },
+}));

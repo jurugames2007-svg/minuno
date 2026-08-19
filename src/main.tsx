@@ -1,6 +1,5 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App";
 import "./index.css";
 
 declare global {
@@ -8,16 +7,28 @@ declare global {
 }
 
 const rootEl = document.getElementById("root")!;
-try {
-  createRoot(rootEl).render(
-    <StrictMode>
-      <App />
-    </StrictMode>
-  );
-  // signal ready on next frame so the splash can fade
-  requestAnimationFrame(() => setTimeout(() => { try { window.hideSplash && window.hideSplash(); } catch { /* noop */ } }, 80));
-} catch (err) {
-  const msg = err instanceof Error ? (err.stack || err.message || String(err)) : String(err);
-  rootEl.innerHTML = `<pre style="color:#ff8fa0;padding:20px;font-family:monospace;white-space:pre-wrap;font-size:14px;background:#1a0c04;border:2px solid #ff8fa0">DEBUG ERROR MAXINE:\n${msg}</pre>`;
-  try { window.hideSplash && window.hideSplash(msg); } catch { /* noop */ }
+
+function showBootError(msg: string) {
+  rootEl.innerHTML = `<div style="color:#fff3d6;padding:24px;font-family:sans-serif;background:#1a0c04;min-height:100%">
+    <b>Maxine no arrancó</b>
+    <pre style="white-space:pre-wrap;color:#ff8fa0;font-size:12px;margin-top:12px">${msg}</pre>
+    <button onclick="location.reload()" style="margin-top:12px;padding:8px 16px;background:#ffd27a;border:0;font-weight:700">Recargar</button>
+  </div>`;
+  try { window.hideSplash?.(); } catch { /* */ }
 }
+
+import("./App")
+  .then(({ default: App }) => {
+    createRoot(rootEl).render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    );
+    requestAnimationFrame(() => {
+      try { window.hideSplash?.(); } catch { /* */ }
+    });
+  })
+  .catch((err: unknown) => {
+    const msg = err instanceof Error ? (err.stack || err.message) : String(err);
+    showBootError(msg);
+  });

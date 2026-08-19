@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import Menu from "./screens/Menu";
+import Intro from "./screens/Intro";
 import { Flour } from "./art/Decor";
 import { SKINS, type SkinId } from "./data/skins";
 import type { ToolId } from "./art/Plushie";
@@ -7,7 +8,6 @@ import { CYCLE } from "./data/world";
 import { type SpellId } from "./data/spells";
 import ErrorBound from "./ui/ErrorBound";
 
-const Intro = lazy(() => import("./screens/Intro"));
 const Victory = lazy(() => import("./screens/Victory"));
 const Shop = lazy(() => import("./screens/Shop"));
 const GameOver = lazy(() => import("./screens/GameOver"));
@@ -200,12 +200,12 @@ export default function App() {
           </Gate>
         )}
         {screen === "intro" && (
-          <Gate>
+          <ErrorBound>
             <Intro
               skin={skin}
               onStart={() => { save("maxine_intro_seen", true); setScreen("menu"); }}
             />
-          </Gate>
+          </ErrorBound>
         )}
         {screen === "game" && (
           <Gate>
